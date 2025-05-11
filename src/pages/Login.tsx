@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -75,16 +76,7 @@ const Login = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-4">Already authenticated!</div>
-          <Button 
-            onClick={() => {
-              console.log('Dashboard button clicked, initiating direct navigation');
-              // Force full page navigation to root to reset any problematic state
-              window.location.href = '/';
-            }}
-          >
-            Go to Dashboard
-          </Button>
+          <div className="mb-4">Already authenticated! Redirecting to dashboard...</div>
         </div>
       </div>
     );
