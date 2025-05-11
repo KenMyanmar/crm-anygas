@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Index from "./pages/Index";
 
 // Main pages
 import Dashboard from "./pages/Dashboard";
@@ -41,8 +42,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             
-            {/* Main Routes */}
-            <Route path="/" element={<Dashboard />} />
+            {/* Main Routes - Use Index as the root route handler */}
+            <Route path="/" element={<Index />} />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/restaurants" element={<RestaurantsPage />} />
             <Route path="/orders" element={<OrdersPage />} />

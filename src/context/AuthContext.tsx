@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
@@ -27,8 +26,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Initialize auth state from Supabase
+    setIsLoading(true);
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -39,21 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
     return () => {
       subscription.unsubscribe();
     };
@@ -61,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchUserProfile(userId: string) {
     try {
-      setIsLoading(true);
+      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -73,10 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error.code === 'PGRST116') {
           console.log('User profile not found, this is expected for new users');
         } else {
+          console.error('Error fetching profile:', error);
           throw error;
         }
       }
 
+      console.log('User profile fetched:', data);
       setProfile(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -93,18 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signIn(email: string, password: string) {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('Signing in with:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        console.error('Sign in error:', error);
         throw error;
       }
 
-      // Successful login
+      console.log('Sign in successful:', data.user?.id);
+      
+      // Session will be handled by onAuthStateChange, don't set manually
+      
       toast({
         description: "Welcome back!",
       });
-      
-      // Let component handle navigation
     } catch (error: any) {
       console.error('Error signing in:', error);
       toast({
@@ -114,7 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       throw error;
     } finally {
-      setIsLoading(false);
+      // Don't set isLoading to false here, let the auth state change handler do it
+      // after the user profile is fetched
     }
   }
 

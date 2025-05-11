@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,15 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  // If user is already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,10 +30,7 @@ const Login = () => {
       toast({
         description: "Login successful! Redirecting to dashboard..."
       });
-      // Force navigation to dashboard after successful login
-      setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 500);
+      // Navigate is now handled by the useEffect above that watches for user
     } catch (error) {
       console.error('Login error:', error);
       toast({
