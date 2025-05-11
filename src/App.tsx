@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,7 +12,6 @@ import ResetPassword from "./pages/ResetPassword";
 import Index from "./pages/Index";
 
 // Main pages
-import Dashboard from "./pages/Dashboard";
 import LeadsPage from "./pages/placeholder/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
 import OrdersPage from "./pages/placeholder/OrdersPage";

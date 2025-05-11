@@ -80,9 +80,9 @@ const Login = () => {
           <div className="mb-4">Already authenticated!</div>
           <Button 
             onClick={() => {
-              console.log('Dashboard button clicked, navigating to / directly');
-              // Use forceful navigation approach
-              window.location.href = '/';
+              console.log('Dashboard button clicked, navigating to dashboard');
+              // Use react router navigation instead of direct location change
+              navigate('/', { replace: true });
             }}
           >
             Go to Dashboard
