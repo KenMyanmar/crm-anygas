@@ -15,25 +15,17 @@ const Login = () => {
   const { signIn, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
 
-  console.log('Login component rendering - auth state:', { userId: user?.id, isLoading, redirectAttempted });
+  console.log('Login component rendering - auth state:', { userId: user?.id, isLoading });
 
-  // Only redirect if user is already authenticated AND we're on the login page
+  // Only redirect if user is already authenticated
   useEffect(() => {
-    if (!isLoading && user && location.pathname === '/login' && !redirectAttempted) {
-      console.log('User already authenticated, will redirect to dashboard');
-      setRedirectAttempted(true);
-      
-      // Use a timeout to ensure state updates complete before navigation
-      const redirectTimer = setTimeout(() => {
-        console.log('Executing redirect to dashboard');
-        navigate('/', { replace: true });
-      }, 300);
-      
-      return () => clearTimeout(redirectTimer);
+    if (!isLoading && user) {
+      console.log('User already authenticated, redirecting to dashboard');
+      // Force navigation to root to ensure proper routing
+      navigate('/', { replace: true });
     }
-  }, [user, navigate, location.pathname, isLoading, redirectAttempted]);
+  }, [user, navigate, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +68,15 @@ const Login = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-4">Already authenticated! Redirecting to dashboard...</div>
+          <div className="mb-4">Already authenticated!</div>
+          <Button 
+            onClick={() => {
+              console.log('Dashboard button clicked, navigating to dashboard');
+              navigate('/', { replace: true });
+            }}
+          >
+            Go to Dashboard
+          </Button>
         </div>
       </div>
     );
