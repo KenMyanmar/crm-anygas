@@ -26,9 +26,11 @@ const Login = () => {
       console.log('User already authenticated, redirecting to dashboard once');
       setRedirectAttempted(true);
       
+      // Force this to happen outside the current render cycle
       const redirectTimer = setTimeout(() => {
+        console.log('Executing redirect to dashboard');
         navigate('/', { replace: true });
-      }, 100);
+      }, 200);
       
       return () => clearTimeout(redirectTimer);
     }
@@ -43,7 +45,12 @@ const Login = () => {
       toast({
         description: "Login successful! Redirecting to dashboard..."
       });
-      // Don't navigate here - let the useEffect handle navigation
+      
+      // Add explicit navigation here as a fallback in case the useEffect doesn't trigger
+      setTimeout(() => {
+        console.log('Manual redirect after successful login');
+        navigate('/', { replace: true });
+      }, 500);
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -61,6 +68,20 @@ const Login = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse">Loading authentication status...</div>
+      </div>
+    );
+  }
+
+  // Only render login form if user is not authenticated
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4">Already authenticated!</div>
+          <Button onClick={() => navigate('/', { replace: true })}>
+            Go to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
