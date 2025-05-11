@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -51,6 +52,19 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				anygas: {
+					// ANY GAS brand colors based on yellow for Easy Gas
+					50: '#fffde7',
+					100: '#fff9c4',
+					200: '#fff59d',
+					300: '#fff176',
+					400: '#ffee58',
+					500: '#ffeb3b', // Primary yellow
+					600: '#fdd835',
+					700: '#fbc02d',
+					800: '#f9a825',
+					900: '#f57f17',
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
