@@ -78,7 +78,13 @@ const Login = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="mb-4">Already authenticated!</div>
-          <Button onClick={() => navigate('/', { replace: true })}>
+          <Button 
+            onClick={() => {
+              console.log('Dashboard button clicked, navigating to / directly');
+              // Use forceful navigation approach
+              window.location.href = '/';
+            }}
+          >
             Go to Dashboard
           </Button>
         </div>
