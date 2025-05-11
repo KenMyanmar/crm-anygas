@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -19,10 +20,20 @@ const Login = () => {
     setIsSubmitting(true);
     try {
       await signIn(email, password);
-      // Explicitly navigate to dashboard after successful login
-      navigate('/');
+      toast({
+        description: "Login successful! Redirecting to dashboard..."
+      });
+      // Force navigation to dashboard after successful login
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 500);
     } catch (error) {
       console.error('Login error:', error);
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -32,15 +43,11 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-muted/30">
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
-          <img 
-            src="/logo.png" 
-            alt="ANY GAS Myanmar" 
-            className="mx-auto h-16 w-auto"
-            onError={(e) => {
-              // Fallback if logo image doesn't exist
-              e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="40"><rect width="100" height="40" fill="%23fdd835" /><text x="50%" y="50%" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="%23000">ANY GAS</text></svg>';
-            }}
-          />
+          <div 
+            className="mx-auto h-16 w-64 bg-[#FDD835] flex items-center justify-center mb-4"
+          >
+            <span className="text-2xl font-bold text-black">ANY GAS</span>
+          </div>
           <h2 className="mt-4 text-2xl font-bold text-gray-900">NY GAS Myanmar</h2>
           <p className="text-gray-600">Customer Relationship Management</p>
         </div>
@@ -85,7 +92,11 @@ const Login = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                className="w-full bg-[#FDD835] text-black hover:bg-[#FDD835]/90" 
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </CardFooter>

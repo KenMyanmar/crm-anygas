@@ -7,9 +7,16 @@ import { useAuth } from '@/context/AuthContext';
 const Index = () => {
   const { user, isLoading } = useAuth();
   
-  // If authentication is still loading, show nothing yet
+  // If authentication is still loading, show a simple loading indicator
   if (isLoading) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-24 h-8 bg-muted rounded mb-4"></div>
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
   }
   
   // If user is not authenticated, redirect to login
