@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
 const Login = () => {
@@ -14,23 +14,35 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // If user is already authenticated, redirect to dashboard
+  // Only redirect if user is already authenticated AND we're on the login page
   useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
+    console.log('Login check - user:', user?.id, 'path:', location.pathname);
+    
+    // Only redirect if we're actually on the login page and user is authenticated
+    if (user && location.pathname === '/login') {
+      console.log('User already authenticated, redirecting to dashboard');
+      // Use single-time navigation flag to prevent loops
+      const redirectTimer = setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 0);
+      
+      return () => clearTimeout(redirectTimer);
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      console.log('Attempting sign in for:', email);
       await signIn(email, password);
       toast({
         description: "Login successful! Redirecting to dashboard..."
       });
-      // Navigate is now handled by the useEffect above that watches for user
+      // Don't navigate here - let the useEffect handle navigation
+      // This prevents potential race conditions with auth state updates
     } catch (error) {
       console.error('Login error:', error);
       toast({

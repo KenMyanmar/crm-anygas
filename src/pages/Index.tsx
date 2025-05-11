@@ -21,10 +21,12 @@ const Index = () => {
   
   // If user is not authenticated, redirect to login
   if (!user) {
+    console.log('Index: User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   // User is authenticated, show dashboard
+  console.log('Index: User authenticated, showing dashboard');
   return (
     <DashboardLayout>
       <Dashboard />
