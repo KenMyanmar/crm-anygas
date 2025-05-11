@@ -18,14 +18,14 @@ const Login = () => {
 
   console.log('Login component rendering - auth state:', { userId: user?.id, isLoading });
 
-  // Only redirect if user is already authenticated
+  // Only attempt redirect once when auth state is confirmed
   useEffect(() => {
+    // Only redirect if authentication check is complete AND user is authenticated
     if (!isLoading && user) {
-      console.log('User already authenticated, redirecting to dashboard');
-      // Force navigation to root to ensure proper routing
-      navigate('/', { replace: true });
+      console.log('User already authenticated, showing dashboard button');
+      // Do not automatically redirect - this prevents infinite loops
     }
-  }, [user, navigate, isLoading]);
+  }, [user, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
