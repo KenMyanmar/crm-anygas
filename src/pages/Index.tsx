@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 const Index = () => {
   const { user, isLoading } = useAuth();
   
-  console.log('Index rendering - user:', user?.id, 'isLoading:', isLoading);
+  console.log('Index page rendering - auth state:', { userId: user?.id, isLoading });
   
   // If authentication is still loading, show a simple loading indicator
   if (isLoading) {
@@ -15,7 +15,7 @@ const Index = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-24 h-8 bg-muted rounded mb-4"></div>
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="text-muted-foreground">Loading authentication...</div>
         </div>
       </div>
     );

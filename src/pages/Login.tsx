@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,20 +16,19 @@ const Login = () => {
   const location = useLocation();
   const [redirectAttempted, setRedirectAttempted] = useState(false);
 
+  console.log('Login component rendering - auth state:', { userId: user?.id, isLoading, redirectAttempted });
+
   // Only redirect if user is already authenticated AND we're on the login page
   useEffect(() => {
-    console.log('Login check - user:', user?.id, 'path:', location.pathname, 'isLoading:', isLoading, 'redirectAttempted:', redirectAttempted);
-    
-    // Wait until authentication check is complete and only redirect once
     if (!isLoading && user && location.pathname === '/login' && !redirectAttempted) {
-      console.log('User already authenticated, redirecting to dashboard once');
+      console.log('User already authenticated, will redirect to dashboard');
       setRedirectAttempted(true);
       
-      // Force this to happen outside the current render cycle
+      // Use a timeout to ensure state updates complete before navigation
       const redirectTimer = setTimeout(() => {
         console.log('Executing redirect to dashboard');
         navigate('/', { replace: true });
-      }, 200);
+      }, 300);
       
       return () => clearTimeout(redirectTimer);
     }
@@ -46,7 +44,7 @@ const Login = () => {
         description: "Login successful! Redirecting to dashboard..."
       });
       
-      // Add explicit navigation here as a fallback in case the useEffect doesn't trigger
+      // Add a delay before navigation to ensure auth context updates
       setTimeout(() => {
         console.log('Manual redirect after successful login');
         navigate('/', { replace: true });
@@ -80,9 +78,9 @@ const Login = () => {
           <div className="mb-4">Already authenticated!</div>
           <Button 
             onClick={() => {
-              console.log('Dashboard button clicked, navigating to dashboard');
-              // Use react router navigation instead of direct location change
-              navigate('/', { replace: true });
+              console.log('Dashboard button clicked, initiating direct navigation');
+              // Force full page navigation to root to reset any problematic state
+              window.location.href = '/';
             }}
           >
             Go to Dashboard
