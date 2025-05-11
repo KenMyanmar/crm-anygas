@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
 // Auth pages
@@ -27,7 +28,14 @@ import SettingsPage from "./pages/admin/SettingsPage";
 // Other pages
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1, // Reduce retry attempts to prevent excessive requests
+      staleTime: 10000, // 10 seconds
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -44,6 +52,7 @@ const App = () => (
             
             {/* Main Routes - Use Index as the root route handler */}
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} /> {/* Redirect /dashboard to root */}
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/restaurants" element={<RestaurantsPage />} />
             <Route path="/orders" element={<OrdersPage />} />

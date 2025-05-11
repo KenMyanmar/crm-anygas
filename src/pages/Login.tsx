@@ -12,25 +12,27 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
 
   // Only redirect if user is already authenticated AND we're on the login page
   useEffect(() => {
-    console.log('Login check - user:', user?.id, 'path:', location.pathname);
+    console.log('Login check - user:', user?.id, 'path:', location.pathname, 'isLoading:', isLoading, 'redirectAttempted:', redirectAttempted);
     
-    // Only redirect if we're actually on the login page and user is authenticated
-    if (user && location.pathname === '/login') {
-      console.log('User already authenticated, redirecting to dashboard');
-      // Use single-time navigation flag to prevent loops
+    // Wait until authentication check is complete and only redirect once
+    if (!isLoading && user && location.pathname === '/login' && !redirectAttempted) {
+      console.log('User already authenticated, redirecting to dashboard once');
+      setRedirectAttempted(true);
+      
       const redirectTimer = setTimeout(() => {
         navigate('/', { replace: true });
-      }, 0);
+      }, 100);
       
       return () => clearTimeout(redirectTimer);
     }
-  }, [user, navigate, location.pathname]);
+  }, [user, navigate, location.pathname, isLoading, redirectAttempted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +44,6 @@ const Login = () => {
         description: "Login successful! Redirecting to dashboard..."
       });
       // Don't navigate here - let the useEffect handle navigation
-      // This prevents potential race conditions with auth state updates
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -54,6 +55,15 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
+
+  // If we're still checking auth status, show loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse">Loading authentication status...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30">

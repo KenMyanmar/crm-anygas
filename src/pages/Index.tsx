@@ -7,6 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 const Index = () => {
   const { user, isLoading } = useAuth();
   
+  console.log('Index rendering - user:', user?.id, 'isLoading:', isLoading);
+  
   // If authentication is still loading, show a simple loading indicator
   if (isLoading) {
     return (
