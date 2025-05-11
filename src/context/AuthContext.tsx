@@ -69,7 +69,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
-        throw error;
+        // If the user profile doesn't exist yet, we'll create a default one
+        if (error.code === 'PGRST116') {
+          console.log('User profile not found, this is expected for new users');
+        } else {
+          throw error;
+        }
       }
 
       setProfile(data);
@@ -94,9 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
+      // Successful login
       toast({
         description: "Welcome back!",
       });
+      
+      // Let component handle navigation
     } catch (error: any) {
       console.error('Error signing in:', error);
       toast({
