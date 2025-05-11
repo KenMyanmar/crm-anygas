@@ -2,7 +2,19 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Sidebar, SidebarTrigger, SidebarContent, SidebarProvider, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
+import { 
+  Sidebar, 
+  SidebarTrigger, 
+  SidebarContent, 
+  SidebarProvider, 
+  SidebarGroup, 
+  SidebarGroupLabel, 
+  SidebarGroupContent, 
+  SidebarMenu, 
+  SidebarMenuItem, 
+  SidebarMenuButton, 
+  useSidebar 
+} from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
@@ -16,7 +28,7 @@ interface DashboardLayoutProps {
 
 const NavMenu = () => {
   const { profile } = useAuth();
-  const { collapsed } = useSidebar();
+  const sidebar = useSidebar();
   const isAdmin = profile?.role === 'admin';
 
   const MenuLink = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
@@ -34,7 +46,7 @@ const NavMenu = () => {
         <SidebarMenuButton asChild>
           <NavLink to={to} className={getNavClass} end>
             <Icon className="h-5 w-5 mr-2" />
-            {!collapsed && <span>{label}</span>}
+            {!sidebar.state.includes("collapsed") && <span>{label}</span>}
           </NavLink>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -43,7 +55,7 @@ const NavMenu = () => {
 
   return (
     <>
-      <SidebarGroup defaultOpen>
+      <SidebarGroup>
         <SidebarGroupLabel>General</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -123,12 +135,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     .substring(0, 2);
 
   return (
-    <SidebarProvider collapsedWidth={56}>
+    <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar className="transition-all duration-300" collapsible>
+        <Sidebar className="transition-all duration-300" collapsible="icon">
           <div className="h-16 border-b flex items-center px-3">
             <div className="flex-1 overflow-hidden">
-              {!useSidebar().collapsed && (
+              {useSidebar().state !== "collapsed" && (
                 <div className="font-semibold text-lg truncate">
                   ANY GAS Myanmar
                 </div>
