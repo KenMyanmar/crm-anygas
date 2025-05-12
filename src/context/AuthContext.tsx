@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
-import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { Session, User as SupabaseUser, AuthResponse } from '@supabase/supabase-js';
 
@@ -24,13 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     console.log("AuthProvider: Setting up auth state listener");
     setIsLoading(true);
     
-    // First set up auth state change listener
+    // First set up auth state change listener to ensure we don't miss events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
@@ -113,8 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('Sign in successful:', response.data.user?.id);
       
-      // Session will be handled by onAuthStateChange, don't set manually
-      
       toast({
         description: "Welcome back!",
       });
@@ -143,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      // No need to navigate here, the auth state change will trigger a redirect
       toast({
         description: "You have been signed out",
       });
@@ -198,8 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({
         description: "Your password has been updated",
       });
-      
-      navigate('/');
     } catch (error: any) {
       console.error('Error updating password:', error);
       toast({

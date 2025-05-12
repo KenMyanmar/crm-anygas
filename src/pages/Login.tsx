@@ -15,22 +15,25 @@ const Login = () => {
   const { signIn, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Get the page the user was trying to visit before being redirected to login
+  const from = location.state?.from || '/';
 
-  console.log('Login component rendering - auth state:', { userId: user?.id, isLoading });
+  console.log('Login component rendering - auth state:', { userId: user?.id, isLoading, from });
 
-  // Only redirect if user is already authenticated and not in the process of loading
+  // Handle redirection if user is already authenticated
   useEffect(() => {
-    // Prevent redirection during loading state or if no user is found
-    if (user && !isLoading) {
-      // Use a timeout to avoid immediate redirect that could cause loops
-      const redirectTimeout = setTimeout(() => {
-        console.log('User is already authenticated, will navigate to dashboard');
-        navigate('/', { replace: true });
+    // Only redirect if auth is not loading and user is authenticated
+    if (!isLoading && user) {
+      console.log('User is already authenticated, navigating to:', from);
+      // Use a small timeout to avoid potential rapid state changes
+      const redirectTimer = setTimeout(() => {
+        navigate(from, { replace: true });
       }, 100);
       
-      return () => clearTimeout(redirectTimeout);
+      return () => clearTimeout(redirectTimer);
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, from]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +58,8 @@ const Login = () => {
         description: "Please check your credentials and try again",
         variant: "destructive"
       });
-      setIsSubmitting(false); // Only set submitting to false on error, success is handled by redirect
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -68,7 +72,8 @@ const Login = () => {
     );
   }
 
-  // If user is already authenticated, no need to show anything here as we'll redirect in useEffect
+  // If user is already authenticated, show a simple loading message
+  // The useEffect will handle the redirection
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
