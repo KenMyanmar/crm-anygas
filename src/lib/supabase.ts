@@ -14,4 +14,29 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Helper functions for type-safe Supabase queries will be added here
+// Helper function to check if a user has admin role
+export const isUserAdmin = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+  
+  if (error || !data) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+  
+  return data.role === 'admin';
+};
+
+// Helper function to get a formatted date string
+export const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return '';
+  
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+};

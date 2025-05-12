@@ -4,14 +4,14 @@ import { supabase } from '../lib/supabase';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser, AuthResponse } from '@supabase/supabase-js';
 
 interface AuthContextType {
   session: Session | null;
   user: SupabaseUser | null;
   profile: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -104,14 +104,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       console.log('Signing in with:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const response = await supabase.auth.signInWithPassword({ email, password });
       
-      if (error) {
-        console.error('Sign in error:', error);
-        throw error;
+      if (response.error) {
+        console.error('Sign in error:', response.error);
+        throw response.error;
       }
 
-      console.log('Sign in successful:', data.user?.id);
+      console.log('Sign in successful:', response.data.user?.id);
       
       // Session will be handled by onAuthStateChange, don't set manually
       
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Welcome back!",
       });
 
-      return data;
+      return response;
     } catch (error: any) {
       console.error('Error signing in:', error);
       toast({

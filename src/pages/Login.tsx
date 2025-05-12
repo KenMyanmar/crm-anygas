@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
 const Login = () => {
@@ -14,6 +14,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   console.log('Login component rendering - auth state:', { userId: user?.id, isLoading });
 
@@ -21,9 +22,7 @@ const Login = () => {
   useEffect(() => {
     if (user && !isLoading) {
       console.log('User is already authenticated, will navigate to dashboard');
-      // Use a short delay to avoid potential race conditions
-      const timer = setTimeout(() => navigate('/', { replace: true }), 100);
-      return () => clearTimeout(timer);
+      navigate('/', { replace: true });
     }
   }, [user, isLoading, navigate]);
   
@@ -32,11 +31,17 @@ const Login = () => {
     setIsSubmitting(true);
     try {
       console.log('Attempting sign in for:', email);
-      await signIn(email, password);
+      const response = await signIn(email, password);
+      
+      if (response.error) {
+        throw response.error;
+      }
+      
       toast({
         description: "Login successful!"
       });
-      // Navigate to dashboard after successful login - handled by the useEffect above
+      
+      // Navigation will be handled by the useEffect above
     } catch (error) {
       console.error('Login error:', error);
       toast({
