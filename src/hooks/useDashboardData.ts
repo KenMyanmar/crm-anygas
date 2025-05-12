@@ -27,6 +27,18 @@ export const useDashboardData = () => {
       
       console.log('Dashboard data received:', data);
       
+      if (!data) {
+        console.warn('No dashboard data returned from the RPC function');
+        // Show empty state instead of error
+        setDashboardData({
+          leadSummary: [],
+          upcomingActions: [],
+          recentActivity: [],
+          notifications: []
+        });
+        return;
+      }
+      
       // Transform the data to match our interface
       const transformedData: DashboardData = {
         leadSummary: data.leads_by_status?.map((item: any) => ({
@@ -162,6 +174,10 @@ export const useDashboardData = () => {
   useEffect(() => {
     if (profile) {
       fetchDashboardData();
+    } else {
+      // Reset data when no profile
+      setDashboardData(null);
+      setIsLoading(true);
     }
   }, [profile]);
 
