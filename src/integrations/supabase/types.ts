@@ -44,7 +44,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_dashboard_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       user_role: "admin" | "salesperson" | "staff" | "manager"
