@@ -25,6 +25,7 @@ const Index = () => {
   // If user is not authenticated, redirect to login
   if (!user) {
     console.log('Index: User not authenticated, redirecting to login');
+    // Use replace to prevent adding to history stack
     return <Navigate to="/login" replace />;
   }
   

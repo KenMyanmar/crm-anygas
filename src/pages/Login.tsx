@@ -20,9 +20,15 @@ const Login = () => {
 
   // Only redirect if user is already authenticated and not in the process of loading
   useEffect(() => {
+    // Prevent redirection during loading state or if no user is found
     if (user && !isLoading) {
-      console.log('User is already authenticated, will navigate to dashboard');
-      navigate('/', { replace: true });
+      // Use a timeout to avoid immediate redirect that could cause loops
+      const redirectTimeout = setTimeout(() => {
+        console.log('User is already authenticated, will navigate to dashboard');
+        navigate('/', { replace: true });
+      }, 100);
+      
+      return () => clearTimeout(redirectTimeout);
     }
   }, [user, isLoading, navigate]);
   

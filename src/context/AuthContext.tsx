@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // First set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
@@ -128,8 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      // Set isLoading to false here in case of error to prevent UI lock
+      setIsLoading(false);
     }
-    // Don't set isLoading to false here, let the auth state change handler do it
   }
 
   async function signOut() {
