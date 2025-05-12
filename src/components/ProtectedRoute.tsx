@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
@@ -14,6 +14,16 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  
+  // Log authentication state for debugging
+  useEffect(() => {
+    console.log('ProtectedRoute - Auth state:', { 
+      isAuthenticated: !!user, 
+      isLoading, 
+      userId: user?.id,
+      currentPath: location.pathname
+    });
+  }, [user, isLoading, location.pathname]);
   
   // While checking auth status, show a loading indicator
   if (isLoading) {

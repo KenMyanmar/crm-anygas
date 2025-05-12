@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { DashboardData } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { toast as sonnerToast } from 'sonner';
 
 export const useDashboardData = () => {
   const { profile } = useAuth();
@@ -44,26 +45,26 @@ export const useDashboardData = () => {
       
       // Transform the data to match our interface
       const transformedData: DashboardData = {
-        leadSummary: data.leads_by_status?.map((item: any) => ({
+        leadSummary: Array.isArray(data.leads_by_status) ? data.leads_by_status.map((item: any) => ({
           status: item.status,
           count: item.count
-        })) || [],
-        upcomingActions: data.upcoming_followups?.map((item: any) => ({
+        })) : [],
+        upcomingActions: Array.isArray(data.upcoming_followups) ? data.upcoming_followups.map((item: any) => ({
           id: item.id,
           restaurant_name: item.restaurant_name,
           next_action_description: item.next_action_description,
           next_action_date: item.next_action_date,
           status: item.status
-        })) || [],
-        recentActivity: data.recent_activities?.map((item: any) => ({
+        })) : [],
+        recentActivity: Array.isArray(data.recent_activities) ? data.recent_activities.map((item: any) => ({
           id: item.id,
           user_id: item.user_id,
           target_id: item.target_id,
           target_type: item.target_type,
           activity_message: item.activity_message,
           created_at: item.created_at
-        })) || [],
-        notifications: data.user_notifications?.map((item: any) => ({
+        })) : [],
+        notifications: Array.isArray(data.user_notifications) ? data.user_notifications.map((item: any) => ({
           id: item.id,
           user_id: item.user_id,
           title: item.title,
@@ -71,11 +72,14 @@ export const useDashboardData = () => {
           link: item.link,
           read: item.read,
           created_at: item.created_at
-        })) || []
+        })) : []
       };
       
       console.log('Transformed dashboard data:', transformedData);
       setDashboardData(transformedData);
+      
+      // Show success toast
+      sonnerToast.success('Dashboard data loaded successfully');
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message || 'Failed to load dashboard data');
