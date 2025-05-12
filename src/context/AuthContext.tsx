@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
@@ -26,8 +27,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("AuthProvider: Setting up auth state listener");
     setIsLoading(true);
     
+    // First set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
@@ -35,8 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // Use setTimeout to defer the profile fetch to avoid potential deadlocks
           setTimeout(() => {
-            fetchUserProfile(session.user.id);
+            fetchUserProfile(session.user!.id);
           }, 0);
         } else {
           setProfile(null);
@@ -45,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Then check the current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
@@ -113,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({
         description: "Welcome back!",
       });
+
+      return data;
     } catch (error: any) {
       console.error('Error signing in:', error);
       toast({
@@ -121,10 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      // Don't set isLoading to false here, let the auth state change handler do it
-      // after the user profile is fetched
     }
+    // Don't set isLoading to false here, let the auth state change handler do it
   }
 
   async function signOut() {
@@ -136,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      navigate('/login');
+      // No need to navigate here, the auth state change will trigger a redirect
       toast({
         description: "You have been signed out",
       });

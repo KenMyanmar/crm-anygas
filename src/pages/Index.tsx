@@ -22,12 +22,10 @@ const Index = () => {
     );
   }
   
-  // If user is not authenticated and we're not already on the login page,
-  // redirect to login
+  // If user is not authenticated, redirect to login
   if (!user) {
     console.log('Index: User not authenticated, redirecting to login');
-    // No need to check previous location to avoid loops - just redirect
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
   
   // User is authenticated, show dashboard

@@ -1,11 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
 const Login = () => {
@@ -14,10 +14,19 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   console.log('Login component rendering - auth state:', { userId: user?.id, isLoading });
 
+  // Only redirect if user is already authenticated and not in the process of loading
+  useEffect(() => {
+    if (user && !isLoading) {
+      console.log('User is already authenticated, will navigate to dashboard');
+      // Use a short delay to avoid potential race conditions
+      const timer = setTimeout(() => navigate('/', { replace: true }), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isLoading, navigate]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -27,10 +36,7 @@ const Login = () => {
       toast({
         description: "Login successful!"
       });
-      
-      // Navigate to dashboard after successful login
-      // Use navigate without replace to avoid issues with history
-      navigate('/', { replace: false });
+      // Navigate to dashboard after successful login - handled by the useEffect above
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -38,8 +44,7 @@ const Login = () => {
         description: "Please check your credentials and try again",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only set submitting to false on error, success is handled by redirect
     }
   };
 
@@ -52,20 +57,12 @@ const Login = () => {
     );
   }
 
-  // If user is already authenticated, show a button to go to dashboard
+  // If user is already authenticated, no need to show anything here as we'll redirect in useEffect
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-4">You are already logged in as {user.email}</div>
-          <Button 
-            onClick={() => {
-              console.log('Dashboard button clicked, navigating to dashboard');
-              navigate('/', { replace: false });
-            }}
-          >
-            Go to Dashboard
-          </Button>
+          <div className="mb-4">Redirecting to dashboard...</div>
         </div>
       </div>
     );
