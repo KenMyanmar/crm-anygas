@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,15 +18,6 @@ const Login = () => {
 
   console.log('Login component rendering - auth state:', { userId: user?.id, isLoading });
 
-  // Only attempt redirect once when auth state is confirmed
-  useEffect(() => {
-    // Only redirect if authentication check is complete AND user is authenticated
-    if (!isLoading && user) {
-      console.log('User already authenticated, showing dashboard button');
-      // Do not automatically redirect - this prevents infinite loops
-    }
-  }, [user, isLoading]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -34,14 +25,11 @@ const Login = () => {
       console.log('Attempting sign in for:', email);
       await signIn(email, password);
       toast({
-        description: "Login successful! Redirecting to dashboard..."
+        description: "Login successful!"
       });
       
-      // Add a delay before navigation to ensure auth context updates
-      setTimeout(() => {
-        console.log('Manual redirect after successful login');
-        navigate('/', { replace: true });
-      }, 500);
+      // Navigate to dashboard after successful login
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -63,16 +51,16 @@ const Login = () => {
     );
   }
 
-  // Only render login form if user is not authenticated
+  // If user is already authenticated, show a button to go to dashboard
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-4">Already authenticated!</div>
+          <div className="mb-4">You are already logged in as {user.email}</div>
           <Button 
             onClick={() => {
               console.log('Dashboard button clicked, navigating to dashboard');
-              navigate('/', { replace: true });
+              navigate('/', { replace: false });
             }}
           >
             Go to Dashboard
