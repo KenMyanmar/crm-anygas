@@ -16,6 +16,8 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
   const { profile } = useAuth();
+  console.log('DashboardHeader - AuthContext profile:', profile);
+  
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 

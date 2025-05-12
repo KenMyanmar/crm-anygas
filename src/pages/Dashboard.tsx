@@ -63,23 +63,24 @@ const Dashboard = () => {
     }
   };
 
-  // Error state
-  if (error && !dashboardData) {
-    return <DashboardError error={error} onRetry={fetchDashboardData} />;
-  }
-
-  // Loading state
+  // Loading state - show this first
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
-  // Handle empty data state
+  // Error state - only show if we have an error and no data
+  if (error && !dashboardData) {
+    return <DashboardError error={error} onRetry={fetchDashboardData} />;
+  }
+
+  // Handle empty data state - this happens when we have successfully loaded data but there's nothing to show
   const isEmpty = 
     (!dashboardData?.leadSummary || dashboardData.leadSummary.length === 0) &&
     (!dashboardData?.upcomingActions || dashboardData.upcomingActions.length === 0) &&
     (!dashboardData?.recentActivity || dashboardData.recentActivity.length === 0) &&
     (!dashboardData?.notifications || dashboardData.notifications.length === 0);
 
+  // If we have no data but also no error, show empty state
   if (isEmpty && !isLoading) {
     return (
       <div className="space-y-6">
@@ -97,6 +98,7 @@ const Dashboard = () => {
     );
   }
 
+  // If we have data, show the dashboard
   return (
     <div className="space-y-6">
       <DashboardHeader onRefresh={fetchDashboardData} />
@@ -114,21 +116,45 @@ const Dashboard = () => {
       )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {dashboardData?.upcomingActions && (
+        {dashboardData?.upcomingActions && dashboardData.upcomingActions.length > 0 ? (
           <UpcomingActions 
             actions={dashboardData.upcomingActions} 
             onActionClick={(leadId) => navigate(`/leads/${leadId}`)}
           />
+        ) : (
+          <Alert>
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>No Upcoming Actions</AlertTitle>
+            <AlertDescription>
+              You don't have any upcoming actions scheduled.
+            </AlertDescription>
+          </Alert>
         )}
         <div className="space-y-6">
-          {dashboardData?.recentActivity && (
+          {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
             <ActivityFeed activities={dashboardData.recentActivity} />
+          ) : (
+            <Alert>
+              <InfoIcon className="h-4 w-4" />
+              <AlertTitle>No Recent Activity</AlertTitle>
+              <AlertDescription>
+                There has been no recent activity recorded.
+              </AlertDescription>
+            </Alert>
           )}
-          {dashboardData?.notifications && (
+          {dashboardData?.notifications && dashboardData.notifications.length > 0 ? (
             <NotificationsCard 
               notifications={dashboardData.notifications}
               onMarkAsRead={handleMarkAsRead}
             />
+          ) : (
+            <Alert>
+              <InfoIcon className="h-4 w-4" />
+              <AlertTitle>No Notifications</AlertTitle>
+              <AlertDescription>
+                You don't have any notifications at this time.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </div>

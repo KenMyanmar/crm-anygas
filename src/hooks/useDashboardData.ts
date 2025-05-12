@@ -17,15 +17,18 @@ export const useDashboardData = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log('Starting fetchDashboardData with profile:', profile);
+      
       // Call the Supabase function to get dashboard data
-      console.log('Fetching dashboard data for user:', profile?.id);
+      console.log('Attempting to call get_my_dashboard_data RPC');
       const { data, error } = await supabase.rpc('get_my_dashboard_data');
       
       if (error) {
+        console.error('RPC Error:', error);
         throw error;
       }
       
-      console.log('Dashboard data received:', data);
+      console.log('Dashboard RPC data received:', data);
       
       if (!data) {
         console.warn('No dashboard data returned from the RPC function');
@@ -71,6 +74,7 @@ export const useDashboardData = () => {
         })) || []
       };
       
+      console.log('Transformed dashboard data:', transformedData);
       setDashboardData(transformedData);
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
@@ -172,12 +176,14 @@ export const useDashboardData = () => {
   };
 
   useEffect(() => {
+    console.log('useDashboardData useEffect triggered, profile:', profile);
     if (profile) {
       fetchDashboardData();
     } else {
       // Reset data when no profile
+      console.log('No profile detected in useDashboardData, resetting data');
       setDashboardData(null);
-      setIsLoading(true);
+      setIsLoading(false);
     }
   }, [profile]);
 
