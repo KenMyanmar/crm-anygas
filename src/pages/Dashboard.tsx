@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import { useNavigate } from 'react-router-dom';
 import LeadSummary from '@/components/dashboard/LeadSummary';
 import UpcomingActions from '@/components/dashboard/UpcomingActions';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
@@ -9,71 +9,77 @@ import NotificationsCard from '@/components/dashboard/NotificationsCard';
 import { DashboardData } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 const Dashboard = () => {
   const { profile } = useAuth();
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    leadSummary: [],
-    upcomingActions: [],
-    recentActivity: [],
-    notifications: []
-  });
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setIsLoading(true);
-        // Call the Supabase function to get dashboard data
-        const { data, error } = await supabase.rpc('get_my_dashboard_data');
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Transform the data to match our interface
-        const transformedData: DashboardData = {
-          leadSummary: data.lead_summary.map((item: any) => ({
-            status: item.status,
-            count: item.count
-          })),
-          upcomingActions: data.upcoming_actions.map((item: any) => ({
-            id: item.id,
-            restaurant_name: item.restaurant_name,
-            next_action_description: item.next_action_description,
-            next_action_date: item.next_action_date,
-            status: item.status
-          })),
-          recentActivity: data.recent_activity.map((item: any) => ({
-            id: item.id,
-            user_id: item.user_id,
-            target_id: item.target_id,
-            target_type: item.target_type,
-            activity_message: item.activity_message,
-            created_at: item.created_at
-          })),
-          notifications: data.notifications.map((item: any) => ({
-            id: item.id,
-            user_id: item.user_id,
-            title: item.title,
-            message: item.message,
-            link: item.link,
-            read: item.read,
-            created_at: item.created_at
-          }))
-        };
-        
-        setDashboardData(transformedData);
-      } catch (error: any) {
-        console.error('Error fetching dashboard data:', error);
-        toast({
-          title: "Error loading dashboard",
-          description: error?.message || "Could not load dashboard data",
-          variant: "destructive",
-        });
-        
-        // Use mock data if there's an error
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Call the Supabase function to get dashboard data
+      console.log('Fetching dashboard data for user:', profile?.id);
+      const { data, error } = await supabase.rpc('get_my_dashboard_data');
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Dashboard data received:', data);
+      
+      // Transform the data to match our interface
+      const transformedData: DashboardData = {
+        leadSummary: data.leads_by_status?.map((item: any) => ({
+          status: item.status,
+          count: item.count
+        })) || [],
+        upcomingActions: data.upcoming_followups?.map((item: any) => ({
+          id: item.id,
+          restaurant_name: item.restaurant_name,
+          next_action_description: item.next_action_description,
+          next_action_date: item.next_action_date,
+          status: item.status
+        })) || [],
+        recentActivity: data.recent_activities?.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          target_id: item.target_id,
+          target_type: item.target_type,
+          activity_message: item.activity_message,
+          created_at: item.created_at
+        })) || [],
+        notifications: data.user_notifications?.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          title: item.title,
+          message: item.message,
+          link: item.link,
+          read: item.read,
+          created_at: item.created_at
+        })) || []
+      };
+      
+      setDashboardData(transformedData);
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error);
+      setError(error.message || 'Failed to load dashboard data');
+      toast({
+        title: "Error loading dashboard",
+        description: error?.message || "Could not load dashboard data",
+        variant: "destructive",
+      });
+      
+      // Use mock data if there's an error in development
+      if (import.meta.env.DEV) {
+        console.log('Using mock data for development');
         setDashboardData({
           leadSummary: [
             { status: 'NEW', count: 12 },
@@ -155,49 +161,117 @@ const Dashboard = () => {
             }
           ]
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchDashboardData();
-  }, [profile, toast]);
+  useEffect(() => {
+    if (profile) {
+      fetchDashboardData();
+    }
+  }, [profile]);
 
-  if (isLoading) {
+  // Error state
+  if (error && !dashboardData) {
     return (
-      <DashboardLayout>
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-muted rounded mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="h-32 bg-muted rounded"></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-64 bg-muted rounded"></div>
-            <div className="h-64 bg-muted rounded"></div>
+      <div className="flex flex-col items-center justify-center h-[80vh]">
+        <div className="text-red-500 mb-4">{error}</div>
+        <Button 
+          variant="outline" 
+          onClick={fetchDashboardData}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" /> 
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading || !dashboardData) {
+    return (
+      <div className="animate-pulse space-y-6">
+        <div className="h-8 w-48 bg-muted rounded mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-32 bg-muted rounded"></div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-64 bg-muted rounded"></div>
+          <div className="space-y-6">
+            <div className="h-48 bg-muted rounded"></div>
+            <div className="h-48 bg-muted rounded"></div>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        
-        <LeadSummary statusCounts={dashboardData.leadSummary} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <UpcomingActions actions={dashboardData.upcomingActions} />
-          <div className="space-y-6">
-            <ActivityFeed activities={dashboardData.recentActivity} />
-            <NotificationsCard notifications={dashboardData.notifications} />
-          </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={fetchDashboardData}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh Data
+        </Button>
+      </div>
+      
+      <LeadSummary statusCounts={dashboardData.leadSummary} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UpcomingActions 
+          actions={dashboardData.upcomingActions} 
+          onActionClick={(leadId) => navigate(`/leads/${leadId}`)}
+        />
+        <div className="space-y-6">
+          <ActivityFeed activities={dashboardData.recentActivity} />
+          <NotificationsCard 
+            notifications={dashboardData.notifications}
+            onMarkAsRead={(id) => {
+              // Function to mark notification as read
+              console.log('Marking notification as read:', id);
+              // Update notification read status in Supabase here
+              (async () => {
+                try {
+                  const { error } = await supabase
+                    .from('user_notifications')
+                    .update({ read: true })
+                    .eq('id', id);
+                    
+                  if (error) {
+                    console.error('Failed to mark notification as read:', error);
+                    return;
+                  }
+                  
+                  // Update local state
+                  setDashboardData(prev => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      notifications: prev.notifications.map(n => 
+                        n.id === id ? { ...n, read: true } : n
+                      )
+                    };
+                  });
+                } catch (err) {
+                  console.error('Error updating notification:', err);
+                }
+              })();
+            }}
+          />
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

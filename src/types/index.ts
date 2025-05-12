@@ -1,5 +1,5 @@
 
-export type UserRole = 'admin' | 'salesperson' | 'staff';
+export type UserRole = 'admin' | 'salesperson' | 'staff' | 'manager';
 
 export interface User {
   id: string;
@@ -100,7 +100,7 @@ export interface CallLog {
   lead?: Lead; // Join field, not in DB schema
 }
 
-export type ActivityTargetType = 'LEAD' | 'ORDER' | 'RESTAURANT' | 'USER' | 'CALL_LOG' | 'SYSTEM';
+export type ActivityTargetType = 'LEAD' | 'ORDER' | 'RESTAURANT' | 'USER' | 'CALL_LOG' | 'NOTIFICATION' | 'SYSTEM';
 
 export interface ActivityLog {
   id: string;

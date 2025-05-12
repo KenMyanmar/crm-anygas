@@ -29,7 +29,8 @@ const Login = () => {
       });
       
       // Navigate to dashboard after successful login
-      navigate('/', { replace: true });
+      // Use navigate without replace to avoid issues with history
+      navigate('/', { replace: false });
     } catch (error) {
       console.error('Login error:', error);
       toast({

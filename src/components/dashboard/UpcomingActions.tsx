@@ -2,8 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LeadStatus } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { format, isToday, isPast, parseISO } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 interface UpcomingAction {
   id: string;
@@ -15,6 +16,7 @@ interface UpcomingAction {
 
 interface UpcomingActionsProps {
   actions: UpcomingAction[];
+  onActionClick?: (id: string) => void;
 }
 
 const getStatusColor = (status: LeadStatus): string => {
@@ -48,11 +50,24 @@ const StatusBadge = ({ status }: { status: LeadStatus }) => {
   );
 };
 
-const UpcomingActions = ({ actions }: UpcomingActionsProps) => {
+const UpcomingActions = ({ actions, onActionClick }: UpcomingActionsProps) => {
+  const handleClick = (id: string) => {
+    if (onActionClick) {
+      onActionClick(id);
+    }
+  };
+
+  const sortedActions = [...actions].sort((a, b) => {
+    const dateA = parseISO(a.next_action_date);
+    const dateB = parseISO(b.next_action_date);
+    return dateA.getTime() - dateB.getTime();
+  });
+  
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Upcoming Actions</CardTitle>
+        <Badge variant="outline">{actions.length} items</Badge>
       </CardHeader>
       <CardContent>
         {actions.length === 0 ? (
@@ -61,29 +76,40 @@ const UpcomingActions = ({ actions }: UpcomingActionsProps) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {actions.map(action => {
-              const formattedDate = format(new Date(action.next_action_date), 'MMM d, yyyy');
-              const isToday = format(new Date(action.next_action_date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+            {sortedActions.map(action => {
+              const actionDate = parseISO(action.next_action_date);
+              const formattedDate = format(actionDate, 'MMM d, yyyy');
+              const isOverdue = isPast(actionDate) && !isToday(actionDate);
+              const isTodayAction = isToday(actionDate);
               
               return (
-                <Link to={`/leads/${action.id}`} key={action.id} className="block">
-                  <div className="flex flex-col space-y-1 p-3 rounded-md hover:bg-muted transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <StatusBadge status={action.status} />
-                        <span className="font-medium">{action.restaurant_name}</span>
-                      </div>
-                      <Badge variant={isToday ? "destructive" : "outline"}>
-                        {formattedDate}
-                      </Badge>
+                <div 
+                  key={action.id} 
+                  className="flex flex-col space-y-1 p-3 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                  onClick={() => handleClick(action.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <StatusBadge status={action.status} />
+                      <span className="font-medium truncate">{action.restaurant_name}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground pl-4">
-                      {action.next_action_description}
-                    </div>
+                    <Badge variant={isOverdue ? "destructive" : isTodayAction ? "default" : "outline"}>
+                      {isOverdue && <AlertCircle className="h-3 w-3 mr-1" />}
+                      {formattedDate}
+                    </Badge>
                   </div>
-                </Link>
+                  <div className="text-sm text-muted-foreground pl-4 truncate">
+                    {action.next_action_description}
+                  </div>
+                </div>
               );
             })}
+            
+            {actions.length > 5 && (
+              <Button variant="link" className="w-full mt-2">
+                View All Actions
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
