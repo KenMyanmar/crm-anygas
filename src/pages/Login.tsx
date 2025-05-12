@@ -26,12 +26,7 @@ const Login = () => {
     // Only redirect if auth is not loading and user is authenticated
     if (!isLoading && user) {
       console.log('User is already authenticated, navigating to:', from);
-      // Use a small timeout to avoid potential rapid state changes
-      const redirectTimer = setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 100);
-      
-      return () => clearTimeout(redirectTimer);
+      navigate(from, { replace: true });
     }
   }, [user, isLoading, navigate, from]);
   
