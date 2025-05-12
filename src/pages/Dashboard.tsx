@@ -1,230 +1,53 @@
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
+import DashboardError from '@/components/dashboard/DashboardError';
 import LeadSummary from '@/components/dashboard/LeadSummary';
 import UpcomingActions from '@/components/dashboard/UpcomingActions';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import NotificationsCard from '@/components/dashboard/NotificationsCard';
-import { DashboardData } from '@/types';
-import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
 
 const Dashboard = () => {
-  const { profile } = useAuth();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { dashboardData, isLoading, error, fetchDashboardData } = useDashboardData();
   const navigate = useNavigate();
 
-  const fetchDashboardData = async () => {
+  // Handle notification mark as read
+  const handleMarkAsRead = async (id: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Call the Supabase function to get dashboard data
-      console.log('Fetching dashboard data for user:', profile?.id);
-      const { data, error } = await supabase.rpc('get_my_dashboard_data');
-      
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('id', id);
+        
       if (error) {
-        throw error;
+        console.error('Failed to mark notification as read:', error);
+        return;
       }
       
-      console.log('Dashboard data received:', data);
-      
-      // Transform the data to match our interface
-      const transformedData: DashboardData = {
-        leadSummary: data.leads_by_status?.map((item: any) => ({
-          status: item.status,
-          count: item.count
-        })) || [],
-        upcomingActions: data.upcoming_followups?.map((item: any) => ({
-          id: item.id,
-          restaurant_name: item.restaurant_name,
-          next_action_description: item.next_action_description,
-          next_action_date: item.next_action_date,
-          status: item.status
-        })) || [],
-        recentActivity: data.recent_activities?.map((item: any) => ({
-          id: item.id,
-          user_id: item.user_id,
-          target_id: item.target_id,
-          target_type: item.target_type,
-          activity_message: item.activity_message,
-          created_at: item.created_at
-        })) || [],
-        notifications: data.user_notifications?.map((item: any) => ({
-          id: item.id,
-          user_id: item.user_id,
-          title: item.title,
-          message: item.message,
-          link: item.link,
-          read: item.read,
-          created_at: item.created_at
-        })) || []
-      };
-      
-      setDashboardData(transformedData);
-    } catch (error: any) {
-      console.error('Error fetching dashboard data:', error);
-      setError(error.message || 'Failed to load dashboard data');
-      toast({
-        title: "Error loading dashboard",
-        description: error?.message || "Could not load dashboard data",
-        variant: "destructive",
-      });
-      
-      // Use mock data if there's an error in development
-      if (import.meta.env.DEV) {
-        console.log('Using mock data for development');
-        setDashboardData({
-          leadSummary: [
-            { status: 'NEW', count: 12 },
-            { status: 'CONTACTED', count: 28 },
-            { status: 'NEEDS_FOLLOW_UP', count: 8 },
-            { status: 'TRIAL', count: 5 },
-            { status: 'WON', count: 34 }
-          ],
-          upcomingActions: [
-            {
-              id: '1',
-              restaurant_name: 'Golden Palace Restaurant',
-              next_action_description: 'Follow-up call regarding cylinder delivery',
-              next_action_date: new Date().toISOString(),
-              status: 'NEEDS_FOLLOW_UP'
-            },
-            {
-              id: '2',
-              restaurant_name: 'Silver Spoon Café',
-              next_action_description: 'Arrange demo for new gas equipment',
-              next_action_date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-              status: 'TRIAL'
-            },
-            {
-              id: '3',
-              restaurant_name: 'Yangon Tastes',
-              next_action_description: 'Confirm pricing for bulk order',
-              next_action_date: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
-              status: 'NEGOTIATION'
-            }
-          ],
-          recentActivity: [
-            {
-              id: '1',
-              activity_message: 'Added new lead for Golden Palace Restaurant',
-              created_at: new Date(Date.now() - 3600000).toISOString(),
-              target_type: 'LEAD'
-            },
-            {
-              id: '2',
-              activity_message: 'Logged call with Silver Spoon Café manager',
-              created_at: new Date(Date.now() - 7200000).toISOString(),
-              target_type: 'CALL_LOG'
-            },
-            {
-              id: '3',
-              activity_message: 'Created new order #1234 for Yangon Tastes',
-              created_at: new Date(Date.now() - 10800000).toISOString(),
-              target_type: 'ORDER'
-            }
-          ],
-          notifications: [
-            {
-              id: '1',
-              user_id: profile?.id || '',
-              title: 'New Lead Assigned',
-              message: 'You have been assigned a new lead for Ocean View Restaurant',
-              link: '/leads/4',
-              read: false,
-              created_at: new Date(Date.now() - 1800000).toISOString()
-            },
-            {
-              id: '2',
-              user_id: profile?.id || '',
-              title: 'Order Confirmed',
-              message: 'Order #5678 for Golden Palace has been confirmed',
-              link: '/orders/5678',
-              read: false,
-              created_at: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              id: '3',
-              user_id: profile?.id || '',
-              title: 'Follow-up Reminder',
-              message: 'Due follow-up with Silver Spoon Café',
-              link: '/leads/2',
-              read: true,
-              created_at: new Date(Date.now() - 86400000).toISOString()
-            }
-          ]
-        });
-      }
-    } finally {
-      setIsLoading(false);
+      // Refresh dashboard data to update the UI
+      fetchDashboardData();
+    } catch (err) {
+      console.error('Error updating notification:', err);
     }
   };
 
-  useEffect(() => {
-    if (profile) {
-      fetchDashboardData();
-    }
-  }, [profile]);
-
   // Error state
   if (error && !dashboardData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh]">
-        <div className="text-red-500 mb-4">{error}</div>
-        <Button 
-          variant="outline" 
-          onClick={fetchDashboardData}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className="h-4 w-4" /> 
-          Try Again
-        </Button>
-      </div>
-    );
+    return <DashboardError error={error} onRetry={fetchDashboardData} />;
   }
 
   // Loading state
   if (isLoading || !dashboardData) {
-    return (
-      <div className="animate-pulse space-y-6">
-        <div className="h-8 w-48 bg-muted rounded mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-muted rounded"></div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-64 bg-muted rounded"></div>
-          <div className="space-y-6">
-            <div className="h-48 bg-muted rounded"></div>
-            <div className="h-48 bg-muted rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={fetchDashboardData}
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh Data
-        </Button>
-      </div>
+      <DashboardHeader onRefresh={fetchDashboardData} />
       
       <LeadSummary statusCounts={dashboardData.leadSummary} />
       
@@ -237,37 +60,7 @@ const Dashboard = () => {
           <ActivityFeed activities={dashboardData.recentActivity} />
           <NotificationsCard 
             notifications={dashboardData.notifications}
-            onMarkAsRead={(id) => {
-              // Function to mark notification as read
-              console.log('Marking notification as read:', id);
-              // Update notification read status in Supabase here
-              (async () => {
-                try {
-                  const { error } = await supabase
-                    .from('user_notifications')
-                    .update({ read: true })
-                    .eq('id', id);
-                    
-                  if (error) {
-                    console.error('Failed to mark notification as read:', error);
-                    return;
-                  }
-                  
-                  // Update local state
-                  setDashboardData(prev => {
-                    if (!prev) return prev;
-                    return {
-                      ...prev,
-                      notifications: prev.notifications.map(n => 
-                        n.id === id ? { ...n, read: true } : n
-                      )
-                    };
-                  });
-                } catch (err) {
-                  console.error('Error updating notification:', err);
-                }
-              })();
-            }}
+            onMarkAsRead={handleMarkAsRead}
           />
         </div>
       </div>
