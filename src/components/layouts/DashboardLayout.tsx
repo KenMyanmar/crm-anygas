@@ -1,4 +1,5 @@
 
+
 import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,7 +7,6 @@ import {
   Sidebar, 
   SidebarTrigger, 
   SidebarContent, 
-  SidebarProvider, 
   SidebarGroup, 
   SidebarGroupLabel, 
   SidebarGroupContent, 
@@ -135,97 +135,95 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     .substring(0, 2);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <Sidebar className="transition-all duration-300" collapsible="icon">
-          <div className="h-16 border-b flex items-center px-3">
-            <div className="flex-1 overflow-hidden">
-              {useSidebar().state !== "collapsed" && (
-                <div className="font-semibold text-lg truncate">
-                  ANY GAS Myanmar
-                </div>
-              )}
-            </div>
-            <SidebarTrigger />
+    <div className="min-h-screen flex w-full">
+      <Sidebar className="transition-all duration-300" collapsible="icon">
+        <div className="h-16 border-b flex items-center px-3">
+          <div className="flex-1 overflow-hidden">
+            {useSidebar().state !== "collapsed" && (
+              <div className="font-semibold text-lg truncate">
+                ANY GAS Myanmar
+              </div>
+            )}
           </div>
-          <SidebarContent>
-            <NavMenu />
-          </SidebarContent>
-        </Sidebar>
-        
-        <div className="flex-1 flex flex-col min-h-screen">
-          <header className="h-16 border-b px-6 flex items-center justify-between bg-background">
-            <div className="flex-1">
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Search className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/notifications')} className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </Button>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center">
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start text-sm max-md:hidden">
-                      <span className="font-medium">{profile.full_name}</span>
-                      <span className="text-xs text-muted-foreground capitalize">{profile.role}</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="flex items-center justify-start p-2">
-                    <div className="flex flex-col space-y-0.5">
-                      <span className="font-medium text-sm">{profile.full_name}</span>
-                      <span className="text-xs text-muted-foreground">{profile.email}</span>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  {profile.role === 'admin' && (
-                    <DropdownMenuItem onClick={() => navigate('/admin/users')}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Manage Users
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => navigate('/settings')}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
-          
-          <main className="flex-1 overflow-auto">
-            <div className="container mx-auto p-6">
-              {children}
-            </div>
-          </main>
+          <SidebarTrigger />
         </div>
+        <SidebarContent>
+          <NavMenu />
+        </SidebarContent>
+      </Sidebar>
+      
+      <div className="flex-1 flex flex-col min-h-screen">
+        <header className="h-16 border-b px-6 flex items-center justify-between bg-background">
+          <div className="flex-1">
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Search className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/notifications')} className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadNotifications > 0 && (
+                <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                  {unreadNotifications}
+                </span>
+              )}
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center">
+                  <Avatar className="h-8 w-8 mr-2">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start text-sm max-md:hidden">
+                    <span className="font-medium">{profile.full_name}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{profile.role}</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center justify-start p-2">
+                  <div className="flex flex-col space-y-0.5">
+                    <span className="font-medium text-sm">{profile.full_name}</span>
+                    <span className="text-xs text-muted-foreground">{profile.email}</span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                {profile.role === 'admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/admin/users')}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Manage Users
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+        
+        <main className="flex-1 overflow-auto">
+          <div className="container mx-auto p-6">
+            {children}
+          </div>
+        </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
