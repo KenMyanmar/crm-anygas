@@ -9,6 +9,228 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_message: string
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          activity_message: string
+          created_at?: string
+          id?: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          activity_message?: string
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calls: {
+        Row: {
+          call_date: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          outcome: string | null
+          restaurant_id: string
+          salesperson_id: string
+          status: string | null
+        }
+        Insert: {
+          call_date: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          restaurant_id: string
+          salesperson_id: string
+          status?: string | null
+        }
+        Update: {
+          call_date?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          restaurant_id?: string
+          salesperson_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_to_user_id: string
+          created_at: string
+          id: string
+          name: string
+          next_action_date: string | null
+          next_action_description: string | null
+          restaurant_id: string
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_user_id: string
+          created_at?: string
+          id?: string
+          name: string
+          next_action_date?: string | null
+          next_action_description?: string | null
+          restaurant_id: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_user_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          next_action_date?: string | null
+          next_action_description?: string | null
+          restaurant_id?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_to_user_id_fkey"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          remarks: string | null
+          salesperson_id: string
+          township: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          remarks?: string | null
+          salesperson_id: string
+          township?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          remarks?: string | null
+          salesperson_id?: string
+          township?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
@@ -48,9 +270,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      invite_user: {
+        Args: {
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
-      user_role: "admin" | "salesperson" | "staff" | "manager"
+      user_role: "admin" | "salesperson" | "staff" | "manager" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -166,7 +396,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["admin", "salesperson", "staff", "manager"],
+      user_role: ["admin", "salesperson", "staff", "manager", "viewer"],
     },
   },
 } as const
