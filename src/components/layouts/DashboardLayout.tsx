@@ -6,6 +6,7 @@ import { Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar
 import { useSidebar } from '@/components/ui/sidebar';
 import NavMenu from './NavMenu';
 import Header from './Header';
+import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -42,12 +43,22 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }
 
   return (
-    <div className="min-h-screen flex w-full">
-      <Sidebar className="transition-all duration-300" collapsible="icon">
+    <div className="min-h-screen flex w-full bg-gray-50 dark:bg-gray-900">
+      <Sidebar 
+        className={cn(
+          "transition-all duration-300 border-r shadow-sm",
+          sidebar.state === "expanded" ? "w-64" : 
+          sidebar.state === "collapsed-icon" ? "w-16" : "w-0"
+        )}
+        collapsible="icon"
+      >
         <div className="h-16 border-b flex items-center px-3">
           <div className="flex-1 overflow-hidden">
             {sidebar.state !== "collapsed" && (
-              <div className="font-semibold text-lg truncate">
+              <div className="font-semibold text-lg truncate flex items-center">
+                <svg className="h-6 w-6 text-yellow-500 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3L4 9V21H20V9L12 3Z" />
+                </svg>
                 ANY GAS Myanmar
               </div>
             )}
@@ -62,8 +73,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="flex-1 flex flex-col min-h-screen">
         <Header unreadNotifications={unreadNotifications} />
         
-        <main className="flex-1 overflow-auto">
-          <div className="container mx-auto p-6">
+        <main className="flex-1 overflow-auto p-0">
+          <div className="container mx-auto p-6 max-w-7xl">
             {children}
           </div>
         </main>

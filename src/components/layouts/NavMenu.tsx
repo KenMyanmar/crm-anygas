@@ -1,6 +1,6 @@
 
 import { FC } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/components/ui/sidebar';
 import { 
@@ -18,32 +18,40 @@ import {
   Package, 
   Search, 
   Settings, 
-  Users 
+  Users,
+  Clipboard,
+  Phone,
+  CalendarDays
 } from 'lucide-react';
 
 interface MenuLinkProps {
   to: string;
   icon: React.ComponentType<any>;
   label: string;
+  end?: boolean;
 }
 
-const MenuLink: FC<MenuLinkProps> = ({ to, icon: Icon, label }) => {
+const MenuLink: FC<MenuLinkProps> = ({ to, icon: Icon, label, end = false }) => {
   const sidebar = useSidebar();
+  const location = useLocation();
   
-  // Determine if the current link is active
-  const getNavClass = ({ isActive }: { isActive: boolean }) => {
-    return `flex items-center py-2 px-3 rounded-md transition-colors ${
-      isActive
-        ? 'bg-primary/10 text-primary font-medium'
-        : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-    }`;
-  };
+  // More precise active state detection
+  const isActive = end 
+    ? location.pathname === to
+    : location.pathname === to || location.pathname.startsWith(`${to}/`);
+  
+  // Build class names conditionally
+  const baseClasses = "flex items-center py-2 px-3 rounded-md transition-colors";
+  const activeClasses = "bg-primary/10 text-primary font-medium border-l-2 border-primary";
+  const inactiveClasses = "hover:bg-muted/50 text-muted-foreground hover:text-foreground";
+  
+  const combinedClasses = `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild>
-        <NavLink to={to} className={getNavClass} end>
-          <Icon className="h-5 w-5 mr-2" />
+        <NavLink to={to} className={combinedClasses} end={end}>
+          <Icon className="h-5 w-5 mr-2 flex-shrink-0" />
           {!sidebar.state.includes("collapsed") && <span>{label}</span>}
         </NavLink>
       </SidebarMenuButton>
@@ -54,25 +62,60 @@ const MenuLink: FC<MenuLinkProps> = ({ to, icon: Icon, label }) => {
 const NavMenu: FC = () => {
   const { profile } = useAuth();
   const sidebar = useSidebar();
+  const location = useLocation();
   const isAdmin = profile?.role === 'admin';
+  
+  // Determine which group should be expanded by default
+  const isLeadsActive = location.pathname.includes('/leads');
+  const isOrdersActive = location.pathname.includes('/orders');
+  const isReportsActive = location.pathname.includes('/reports');
+  const isSettingsActive = location.pathname.includes('/admin');
 
   return (
-    <>
+    <div className="space-y-1">
       <SidebarGroup>
-        <SidebarGroupLabel>General</SidebarGroupLabel>
+        <SidebarMenu>
+          <MenuLink to="/" icon={Home} label="Dashboard" end={true} />
+          <MenuLink to="/restaurants" icon={Search} label="Restaurants" />
+        </SidebarMenu>
+      </SidebarGroup>
+      
+      <SidebarGroup defaultOpen={isLeadsActive}>
+        <SidebarGroupLabel>Leads</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <MenuLink to="/" icon={Home} label="Dashboard" />
-            <MenuLink to="/leads" icon={FileText} label="Leads" />
-            <MenuLink to="/restaurants" icon={Search} label="Restaurants" />
-            <MenuLink to="/orders" icon={Package} label="Orders" />
-            <MenuLink to="/reports" icon={BarChart} label="Reports" />
+            <MenuLink to="/leads" icon={FileText} label="All Leads" />
+            <MenuLink to="/leads/assigned" icon={Clipboard} label="Assigned to Me" />
+            <MenuLink to="/leads/calls" icon={Phone} label="Call Log" />
+            <MenuLink to="/leads/meetings" icon={CalendarDays} label="Meetings" />
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+      
+      <SidebarGroup defaultOpen={isOrdersActive}>
+        <SidebarGroupLabel>Orders</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <MenuLink to="/orders" icon={Package} label="All Orders" />
+            <MenuLink to="/orders/pending" icon={Package} label="Pending Orders" />
+            <MenuLink to="/orders/delivered" icon={Package} label="Delivered Orders" />
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+      
+      <SidebarGroup defaultOpen={isReportsActive}>
+        <SidebarGroupLabel>Reports</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <MenuLink to="/reports" icon={BarChart} label="Sales Reports" />
+            <MenuLink to="/reports/leads" icon={BarChart} label="Lead Reports" />
+            <MenuLink to="/reports/performance" icon={BarChart} label="Performance" />
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
       
       {isAdmin && (
-        <SidebarGroup>
+        <SidebarGroup defaultOpen={isSettingsActive}>
           <SidebarGroupLabel>Admin</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -84,7 +127,7 @@ const NavMenu: FC = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       )}
-    </>
+    </div>
   );
 };
 

@@ -1,51 +1,40 @@
 
-import { ReactNode, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import DashboardLayout from './layouts/DashboardLayout';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children: React.ReactNode;
+  requiredRole?: string;
 }
 
-/**
- * ProtectedRoute component that redirects to login if user is not authenticated
- * This is the recommended pattern with React Router v6
- */
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+  const { profile, isLoading } = useAuth();
   
-  // Log authentication state for debugging
-  useEffect(() => {
-    console.log('ProtectedRoute - Auth state:', { 
-      isAuthenticated: !!user, 
-      isLoading, 
-      userId: user?.id,
-      currentPath: location.pathname
-    });
-  }, [user, isLoading, location.pathname]);
-  
-  // While checking auth status, show a loading indicator
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-24 h-8 bg-muted rounded mb-4"></div>
-          <div className="text-muted-foreground">Verifying authentication...</div>
+          <div className="text-muted-foreground">Loading...</div>
         </div>
       </div>
     );
   }
   
-  // If not authenticated, redirect to login page
-  if (!user) {
-    console.log('ProtectedRoute: User not authenticated, redirecting to login');
-    // Use state to remember where the user was trying to go
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  // If not logged in, redirect to login
+  if (!profile) {
+    return <Navigate to="/login" />;
   }
   
-  // User is authenticated, render the child components
-  return <>{children}</>;
+  // Check for role requirements if specified
+  if (requiredRole && profile.role !== requiredRole) {
+    return <Navigate to="/" />;
+  }
+  
+  // User is authenticated and has proper role, render the protected content within the layout
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 export default ProtectedRoute;
