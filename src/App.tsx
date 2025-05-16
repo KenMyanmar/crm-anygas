@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -19,6 +20,19 @@ import LeadsPage from "./pages/placeholder/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
 import OrdersPage from "./pages/placeholder/OrdersPage";
 import ReportsPage from "./pages/placeholder/ReportsPage";
+
+// Lead management pages
+import AssignedLeadsPage from "./pages/leads/AssignedLeadsPage";
+import CallLogPage from "./pages/leads/CallLogPage";
+import MeetingsPage from "./pages/leads/MeetingsPage";
+
+// Order management pages
+import PendingOrdersPage from "./pages/orders/PendingOrdersPage";
+import DeliveredOrdersPage from "./pages/orders/DeliveredOrdersPage";
+
+// Report pages
+import LeadReportsPage from "./pages/reports/LeadReportsPage";
+import PerformancePage from "./pages/reports/PerformancePage";
 
 // Admin pages
 import UsersPage from "./pages/admin/UsersPage";
@@ -60,6 +74,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              
+              {/* Leads Routes */}
               <Route 
                 path="/leads" 
                 element={
@@ -69,6 +85,32 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/leads/assigned" 
+                element={
+                  <ProtectedRoute>
+                    <AssignedLeadsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/leads/calls" 
+                element={
+                  <ProtectedRoute>
+                    <CallLogPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/leads/meetings" 
+                element={
+                  <ProtectedRoute>
+                    <MeetingsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Restaurants Route */}
+              <Route 
                 path="/restaurants" 
                 element={
                   <ProtectedRoute>
@@ -76,6 +118,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              
+              {/* Orders Routes */}
               <Route 
                 path="/orders" 
                 element={
@@ -85,10 +129,44 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/orders/pending" 
+                element={
+                  <ProtectedRoute>
+                    <PendingOrdersPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/orders/delivered" 
+                element={
+                  <ProtectedRoute>
+                    <DeliveredOrdersPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Reports Routes */}
+              <Route 
                 path="/reports" 
                 element={
                   <ProtectedRoute>
                     <ReportsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reports/leads" 
+                element={
+                  <ProtectedRoute>
+                    <LeadReportsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reports/performance" 
+                element={
+                  <ProtectedRoute>
+                    <PerformancePage />
                   </ProtectedRoute>
                 } 
               />

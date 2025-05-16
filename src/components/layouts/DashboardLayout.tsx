@@ -48,7 +48,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         className={cn(
           "transition-all duration-300 border-r shadow-sm",
           sidebar.state === "expanded" ? "w-64" : 
-          sidebar.state === "collapsed-icon" ? "w-16" : "w-0"
+          sidebar.state === "collapsed" ? "w-16" : "w-0"
         )}
         collapsible="icon"
       >
