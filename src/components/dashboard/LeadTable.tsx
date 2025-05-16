@@ -279,7 +279,7 @@ const LeadTable = ({ upcomingActions }: LeadTableProps) => {
                 {/* Ellipsis */}
                 {currentPage > 3 && (
                   <PaginationItem>
-                    <PaginationLink disabled>...</PaginationLink>
+                    <PaginationLink className="cursor-not-allowed">...</PaginationLink>
                   </PaginationItem>
                 )}
                 
@@ -309,7 +309,7 @@ const LeadTable = ({ upcomingActions }: LeadTableProps) => {
                 {/* Ellipsis */}
                 {currentPage < totalPages - 2 && (
                   <PaginationItem>
-                    <PaginationLink disabled>...</PaginationLink>
+                    <PaginationLink className="cursor-not-allowed">...</PaginationLink>
                   </PaginationItem>
                 )}
                 

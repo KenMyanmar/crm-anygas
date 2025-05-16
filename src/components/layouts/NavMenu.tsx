@@ -80,7 +80,7 @@ const NavMenu: FC = () => {
         </SidebarMenu>
       </SidebarGroup>
       
-      <SidebarGroup defaultOpen={isLeadsActive}>
+      <SidebarGroup open={isLeadsActive} onOpenChange={() => {}}>
         <SidebarGroupLabel>Leads</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -92,7 +92,7 @@ const NavMenu: FC = () => {
         </SidebarGroupContent>
       </SidebarGroup>
       
-      <SidebarGroup defaultOpen={isOrdersActive}>
+      <SidebarGroup open={isOrdersActive} onOpenChange={() => {}}>
         <SidebarGroupLabel>Orders</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -103,7 +103,7 @@ const NavMenu: FC = () => {
         </SidebarGroupContent>
       </SidebarGroup>
       
-      <SidebarGroup defaultOpen={isReportsActive}>
+      <SidebarGroup open={isReportsActive} onOpenChange={() => {}}>
         <SidebarGroupLabel>Reports</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -115,7 +115,7 @@ const NavMenu: FC = () => {
       </SidebarGroup>
       
       {isAdmin && (
-        <SidebarGroup defaultOpen={isSettingsActive}>
+        <SidebarGroup open={isSettingsActive} onOpenChange={() => {}}>
           <SidebarGroupLabel>Admin</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

@@ -1,4 +1,4 @@
-
+import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +29,7 @@ import SettingsPage from "./pages/admin/SettingsPage";
 // Other pages
 import NotFound from "./pages/NotFound";
 
+// Create query client outside of the component to avoid issues with React hooks
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -39,9 +40,9 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
         <AuthProvider>
           <SidebarProvider>
             <Routes>
@@ -133,9 +134,9 @@ const App = () => (
             <Sonner />
           </SidebarProvider>
         </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;
