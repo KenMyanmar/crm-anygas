@@ -93,51 +93,67 @@ const NavMenu: FC = () => {
         </SidebarMenu>
       </SidebarGroup>
       
-      <SidebarGroup open={leadsGroupOpen} onOpenChange={setLeadsGroupOpen}>
-        <SidebarGroupLabel>Leads</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <MenuLink to="/leads" icon={FileText} label="All Leads" />
-            <MenuLink to="/leads/assigned" icon={Clipboard} label="Assigned to Me" />
-            <MenuLink to="/leads/calls" icon={Phone} label="Call Log" />
-            <MenuLink to="/leads/meetings" icon={CalendarDays} label="Meetings" />
-          </SidebarMenu>
-        </SidebarGroupContent>
+      <SidebarGroup>
+        <div onClick={() => setLeadsGroupOpen(!leadsGroupOpen)} className="cursor-pointer">
+          <SidebarGroupLabel>Leads</SidebarGroupLabel>
+        </div>
+        {leadsGroupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <MenuLink to="/leads" icon={FileText} label="All Leads" />
+              <MenuLink to="/leads/assigned" icon={Clipboard} label="Assigned to Me" />
+              <MenuLink to="/leads/calls" icon={Phone} label="Call Log" />
+              <MenuLink to="/leads/meetings" icon={CalendarDays} label="Meetings" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
       </SidebarGroup>
       
-      <SidebarGroup open={ordersGroupOpen} onOpenChange={setOrdersGroupOpen}>
-        <SidebarGroupLabel>Orders</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <MenuLink to="/orders" icon={Package} label="All Orders" />
-            <MenuLink to="/orders/pending" icon={Package} label="Pending Orders" />
-            <MenuLink to="/orders/delivered" icon={Package} label="Delivered Orders" />
-          </SidebarMenu>
-        </SidebarGroupContent>
+      <SidebarGroup>
+        <div onClick={() => setOrdersGroupOpen(!ordersGroupOpen)} className="cursor-pointer">
+          <SidebarGroupLabel>Orders</SidebarGroupLabel>
+        </div>
+        {ordersGroupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <MenuLink to="/orders" icon={Package} label="All Orders" />
+              <MenuLink to="/orders/pending" icon={Package} label="Pending Orders" />
+              <MenuLink to="/orders/delivered" icon={Package} label="Delivered Orders" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
       </SidebarGroup>
       
-      <SidebarGroup open={reportsGroupOpen} onOpenChange={setReportsGroupOpen}>
-        <SidebarGroupLabel>Reports</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <MenuLink to="/reports" icon={BarChart} label="Sales Reports" />
-            <MenuLink to="/reports/leads" icon={BarChart} label="Lead Reports" />
-            <MenuLink to="/reports/performance" icon={BarChart} label="Performance" />
-          </SidebarMenu>
-        </SidebarGroupContent>
+      <SidebarGroup>
+        <div onClick={() => setReportsGroupOpen(!reportsGroupOpen)} className="cursor-pointer">
+          <SidebarGroupLabel>Reports</SidebarGroupLabel>
+        </div>
+        {reportsGroupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <MenuLink to="/reports" icon={BarChart} label="Sales Reports" />
+              <MenuLink to="/reports/leads" icon={BarChart} label="Lead Reports" />
+              <MenuLink to="/reports/performance" icon={BarChart} label="Performance" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
       </SidebarGroup>
       
       {isAdmin && (
-        <SidebarGroup open={adminGroupOpen} onOpenChange={setAdminGroupOpen}>
-          <SidebarGroupLabel>Admin</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/admin/users" icon={Users} label="Users" />
-              <MenuLink to="/admin/products" icon={Package} label="Products" />
-              <MenuLink to="/admin/import" icon={FileText} label="Import Data" />
-              <MenuLink to="/admin/settings" icon={Settings} label="Settings" />
-            </SidebarMenu>
-          </SidebarGroupContent>
+        <SidebarGroup>
+          <div onClick={() => setAdminGroupOpen(!adminGroupOpen)} className="cursor-pointer">
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+          </div>
+          {adminGroupOpen && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <MenuLink to="/admin/users" icon={Users} label="Users" />
+                <MenuLink to="/admin/products" icon={Package} label="Products" />
+                <MenuLink to="/admin/import" icon={FileText} label="Import Data" />
+                <MenuLink to="/admin/settings" icon={Settings} label="Settings" />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
       )}
     </div>

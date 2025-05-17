@@ -272,11 +272,11 @@ export type Database = {
       }
       invite_user: {
         Args: {
-          email: string
-          full_name: string
-          role: Database["public"]["Enums"]["user_role"]
+          p_new_user_email: string
+          p_user_full_name: string
+          p_user_role: Database["public"]["Enums"]["user_role"]
         }
-        Returns: undefined
+        Returns: Json
       }
     }
     Enums: {
