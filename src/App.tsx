@@ -16,6 +16,7 @@ import ResetPassword from "./pages/ResetPassword";
 
 // Main pages
 import Dashboard from "./pages/Dashboard";
+import NotificationsPage from "./pages/Notifications";
 import LeadsPage from "./pages/placeholder/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
 import OrdersPage from "./pages/placeholder/OrdersPage";
@@ -71,6 +72,16 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Notifications Route */}
+              <Route 
+                path="/notifications" 
+                element={
+                  <ProtectedRoute>
+                    <NotificationsPage />
                   </ProtectedRoute>
                 } 
               />

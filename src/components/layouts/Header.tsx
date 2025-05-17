@@ -2,7 +2,7 @@
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -44,11 +44,13 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
   };
 
   const initials = profile?.full_name
-    .split(' ')
-    .map(name => name[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
+    ? profile.full_name
+        .split(' ')
+        .map(name => name[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2)
+    : 'U';
 
   return (
     <header className="h-16 border-b px-6 flex items-center justify-between bg-background">
@@ -59,11 +61,18 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
       </div>
 
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/notifications')} className="relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => navigate('/notifications')} 
+          className="relative"
+          title="View notifications"
+          aria-label="View notifications"
+        >
           <Bell className="h-5 w-5" />
           {unreadNotifications > 0 && (
             <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-              {unreadNotifications}
+              {unreadNotifications > 9 ? '9+' : unreadNotifications}
             </span>
           )}
         </Button>
