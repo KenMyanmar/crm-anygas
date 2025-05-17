@@ -1,5 +1,5 @@
 
-import { FC } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -65,11 +65,24 @@ const NavMenu: FC = () => {
   const location = useLocation();
   const isAdmin = profile?.role === 'admin';
   
-  // Determine which group should be expanded by default
-  const isLeadsActive = location.pathname.includes('/leads');
-  const isOrdersActive = location.pathname.includes('/orders');
-  const isReportsActive = location.pathname.includes('/reports');
-  const isSettingsActive = location.pathname.includes('/admin');
+  // Control open states manually instead of using defaultOpen
+  const [leadsGroupOpen, setLeadsGroupOpen] = useState(false);
+  const [ordersGroupOpen, setOrdersGroupOpen] = useState(false);
+  const [reportsGroupOpen, setReportsGroupOpen] = useState(false);
+  const [adminGroupOpen, setAdminGroupOpen] = useState(false);
+  
+  // Determine which group should be expanded based on current route
+  useEffect(() => {
+    const isLeadsActive = location.pathname.includes('/leads');
+    const isOrdersActive = location.pathname.includes('/orders');
+    const isReportsActive = location.pathname.includes('/reports');
+    const isSettingsActive = location.pathname.includes('/admin');
+    
+    setLeadsGroupOpen(isLeadsActive);
+    setOrdersGroupOpen(isOrdersActive);
+    setReportsGroupOpen(isReportsActive);
+    setAdminGroupOpen(isSettingsActive);
+  }, [location.pathname]);
 
   return (
     <div className="space-y-1">
@@ -80,7 +93,7 @@ const NavMenu: FC = () => {
         </SidebarMenu>
       </SidebarGroup>
       
-      <SidebarGroup defaultOpen={isLeadsActive}>
+      <SidebarGroup open={leadsGroupOpen} onOpenChange={setLeadsGroupOpen}>
         <SidebarGroupLabel>Leads</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -92,7 +105,7 @@ const NavMenu: FC = () => {
         </SidebarGroupContent>
       </SidebarGroup>
       
-      <SidebarGroup defaultOpen={isOrdersActive}>
+      <SidebarGroup open={ordersGroupOpen} onOpenChange={setOrdersGroupOpen}>
         <SidebarGroupLabel>Orders</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -103,7 +116,7 @@ const NavMenu: FC = () => {
         </SidebarGroupContent>
       </SidebarGroup>
       
-      <SidebarGroup defaultOpen={isReportsActive}>
+      <SidebarGroup open={reportsGroupOpen} onOpenChange={setReportsGroupOpen}>
         <SidebarGroupLabel>Reports</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -115,7 +128,7 @@ const NavMenu: FC = () => {
       </SidebarGroup>
       
       {isAdmin && (
-        <SidebarGroup defaultOpen={isSettingsActive}>
+        <SidebarGroup open={adminGroupOpen} onOpenChange={setAdminGroupOpen}>
           <SidebarGroupLabel>Admin</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
