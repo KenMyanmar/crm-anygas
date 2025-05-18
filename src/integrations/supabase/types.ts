@@ -146,6 +146,65 @@ export type Database = {
           },
         ]
       }
+      meetings: {
+        Row: {
+          action_items: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          location: string | null
+          meeting_date: string
+          meeting_type: string | null
+          outcome: string | null
+          restaurant_id: string
+          scheduled_by_user_id: string
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          location?: string | null
+          meeting_date: string
+          meeting_type?: string | null
+          outcome?: string | null
+          restaurant_id: string
+          scheduled_by_user_id: string
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          location?: string | null
+          meeting_date?: string
+          meeting_type?: string | null
+          outcome?: string | null
+          restaurant_id?: string
+          scheduled_by_user_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

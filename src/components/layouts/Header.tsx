@@ -1,8 +1,9 @@
 
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -19,7 +20,8 @@ import {
   Search, 
   Settings, 
   User, 
-  UserPlus 
+  UserPlus,
+  CalendarDays 
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -30,6 +32,7 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [upcomingMeetings, setUpcomingMeetings] = useState(0);
 
   const handleSignOut = async () => {
     try {
@@ -42,6 +45,34 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
       });
     }
   };
+
+  useEffect(() => {
+    const fetchUpcomingMeetings = async () => {
+      if (!profile?.id) return;
+      
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const { count, error } = await supabase
+          .from('meetings')
+          .select('*', { count: 'exact', head: true })
+          .eq('scheduled_by_user_id', profile.id)
+          .gte('meeting_date', today.toISOString())
+          .in('status', ['SCHEDULED', 'RESCHEDULED']);
+          
+        if (error) {
+          throw error;
+        }
+        
+        setUpcomingMeetings(count || 0);
+      } catch (error) {
+        console.error('Error fetching upcoming meetings:', error);
+      }
+    };
+    
+    fetchUpcomingMeetings();
+  }, [profile?.id]);
 
   const initials = profile?.full_name
     ? profile.full_name
@@ -73,6 +104,22 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
           {unreadNotifications > 0 && (
             <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
               {unreadNotifications > 9 ? '9+' : unreadNotifications}
+            </span>
+          )}
+        </Button>
+
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => navigate('/leads/meetings')} 
+          className="relative"
+          title="View meetings"
+          aria-label="View meetings"
+        >
+          <CalendarDays className="h-5 w-5" />
+          {upcomingMeetings > 0 && (
+            <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              {upcomingMeetings > 9 ? '9+' : upcomingMeetings}
             </span>
           )}
         </Button>
