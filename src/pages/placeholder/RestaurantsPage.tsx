@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -89,19 +88,11 @@ const RestaurantsPage = () => {
   });
 
   const handleViewRestaurant = (id: string) => {
-    // This would navigate to a restaurant detail page in the future
-    toast({
-      title: "Feature coming soon",
-      description: "Restaurant details view will be available soon",
-    });
+    navigate(`/restaurants/${id}`);
   };
 
   const handleCreateLead = (restaurantId: string) => {
-    // This would navigate to a lead creation page with the restaurant pre-selected
-    toast({
-      title: "Feature coming soon",
-      description: "Lead creation for restaurants will be available soon",
-    });
+    navigate(`/leads/new?restaurantId=${restaurantId}`);
   };
 
   const handleImportClick = () => {

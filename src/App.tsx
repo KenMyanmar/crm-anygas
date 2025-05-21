@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -19,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import NotificationsPage from "./pages/Notifications";
 import LeadsPage from "./pages/placeholder/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
+import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import OrdersPage from "./pages/placeholder/OrdersPage";
 import ReportsPage from "./pages/placeholder/ReportsPage";
 
@@ -120,12 +120,20 @@ const App = () => (
                 } 
               />
               
-              {/* Restaurants Route */}
+              {/* Restaurants Routes */}
               <Route 
                 path="/restaurants" 
                 element={
                   <ProtectedRoute>
                     <RestaurantsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/restaurants/:id" 
+                element={
+                  <ProtectedRoute>
+                    <RestaurantDetailPage />
                   </ProtectedRoute>
                 } 
               />
