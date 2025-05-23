@@ -102,7 +102,9 @@ export type Database = {
           next_action_description: string | null
           restaurant_id: string
           source: string | null
-          status: string
+          stage_entered_at: string | null
+          stage_notes: string | null
+          status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
         }
         Insert: {
@@ -114,7 +116,9 @@ export type Database = {
           next_action_description?: string | null
           restaurant_id: string
           source?: string | null
-          status?: string
+          stage_entered_at?: string | null
+          stage_notes?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
         }
         Update: {
@@ -126,7 +130,9 @@ export type Database = {
           next_action_description?: string | null
           restaurant_id?: string
           source?: string | null
-          status?: string
+          stage_entered_at?: string | null
+          stage_notes?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
         }
         Relationships: [
@@ -243,6 +249,114 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          product_name: string
+          quantity: number
+          sub_total_kyats: number
+          unit_price_kyats: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          product_name: string
+          quantity?: number
+          sub_total_kyats: number
+          unit_price_kyats: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          product_name?: string
+          quantity?: number
+          sub_total_kyats?: number
+          unit_price_kyats?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          created_by_user_id: string | null
+          delivery_date_actual: string | null
+          delivery_date_scheduled: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          order_date: string | null
+          order_number: string
+          restaurant_id: string
+          status: string | null
+          total_amount_kyats: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          delivery_date_actual?: string | null
+          delivery_date_scheduled?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          order_date?: string | null
+          order_number: string
+          restaurant_id: string
+          status?: string | null
+          total_amount_kyats?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          delivery_date_actual?: string | null
+          delivery_date_scheduled?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          order_date?: string | null
+          order_number?: string
+          restaurant_id?: string
+          status?: string | null
+          total_amount_kyats?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           address: string | null
@@ -286,6 +400,80 @@ export type Database = {
             columns: ["salesperson_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_to_user_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by_user_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_completed: boolean | null
+          lead_id: string | null
+          priority: string | null
+          restaurant_id: string | null
+          title: string
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          lead_id?: string | null
+          priority?: string | null
+          restaurant_id?: string | null
+          title: string
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          lead_id?: string | null
+          priority?: string | null
+          restaurant_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_user_id_fkey"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -339,6 +527,12 @@ export type Database = {
       }
     }
     Enums: {
+      lead_status:
+        | "CONTACT_STAGE"
+        | "MEETING_STAGE"
+        | "PRESENTATION_NEGOTIATION"
+        | "CLOSED_WON"
+        | "CLOSED_LOST"
       user_role: "admin" | "salesperson" | "staff" | "manager" | "viewer"
     }
     CompositeTypes: {
@@ -455,6 +649,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      lead_status: [
+        "CONTACT_STAGE",
+        "MEETING_STAGE",
+        "PRESENTATION_NEGOTIATION",
+        "CLOSED_WON",
+        "CLOSED_LOST",
+      ],
       user_role: ["admin", "salesperson", "staff", "manager", "viewer"],
     },
   },

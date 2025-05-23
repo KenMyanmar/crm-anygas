@@ -21,7 +21,9 @@ import LeadsPage from "./pages/placeholder/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import RestaurantEditPage from "./pages/RestaurantEditPage";
-import OrdersPage from "./pages/placeholder/OrdersPage";
+import OrdersPage from "./pages/orders/OrdersPage";
+import NewOrderPage from "./pages/orders/NewOrderPage";
+import OrderDetailPage from "./pages/orders/OrderDetailPage";
 import ReportsPage from "./pages/placeholder/ReportsPage";
 
 // Lead management pages
@@ -154,6 +156,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <OrdersPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/orders/new" 
+                element={
+                  <ProtectedRoute>
+                    <NewOrderPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/orders/:id" 
+                element={
+                  <ProtectedRoute>
+                    <OrderDetailPage />
                   </ProtectedRoute>
                 } 
               />

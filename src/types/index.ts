@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'salesperson' | 'staff' | 'manager';
 
 export interface User {
@@ -26,7 +25,7 @@ export interface Restaurant {
   created_by_user_id?: string;
 }
 
-export type LeadStatus = 'NEW' | 'CONTACTED' | 'NEEDS_FOLLOW_UP' | 'TRIAL' | 'NEGOTIATION' | 'WON' | 'LOST' | 'ON_HOLD';
+export type LeadStatus = 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
 
 export interface Lead {
   id: string;
@@ -40,6 +39,8 @@ export interface Lead {
   updated_at: string;
   created_by_user_id?: string;
   restaurant?: Restaurant; // Join field, not in DB schema
+  stage_notes?: string;
+  stage_entered_at?: string;
 }
 
 export interface Product {
@@ -58,6 +59,7 @@ export type OrderStatus = 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'OUT_FOR_DELIVE
 
 export interface Order {
   id: string;
+  order_number: string;
   restaurant_id: string;
   lead_id?: string;
   order_date: string;
@@ -76,12 +78,11 @@ export interface Order {
 export interface OrderItem {
   id: string;
   order_id: string;
-  product_id: string;
+  product_name: string;
   quantity: number;
   unit_price_kyats: number;
   sub_total_kyats: number;
   created_at: string;
-  product?: Product; // Join field, not in DB schema
 }
 
 export type CallType = 'OUTBOUND' | 'INBOUND';
