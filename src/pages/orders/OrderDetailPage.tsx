@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { Order, OrderItem } from '@/types';
+import { Order, OrderItem, Restaurant } from '@/types';
 import { formatDate } from '@/lib/supabase';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -45,10 +45,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Custom type that includes the phone field for backward compatibility
+interface RestaurantWithPhone extends Restaurant {
+  phone?: string;
+}
+
+interface ExtendedOrder extends Order {
+  restaurant?: RestaurantWithPhone;
+}
+
 const OrderDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<ExtendedOrder | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -68,13 +77,21 @@ const OrderDetailPage = () => {
         .from('orders')
         .select(`
           *,
-          restaurant:restaurants(id, name, township, address, phone)
+          restaurant:restaurants(id, name, township, address, phone, phone_primary)
         `)
         .eq('id', orderId)
         .single();
 
       if (orderError) {
         throw orderError;
+      }
+
+      // Process restaurant data to ensure it has a phone field for compatibility
+      if (orderData?.restaurant) {
+        // Use phone_primary as phone if phone is missing
+        if (!orderData.restaurant.phone && orderData.restaurant.phone_primary) {
+          orderData.restaurant.phone = orderData.restaurant.phone_primary;
+        }
       }
 
       // Fetch order items

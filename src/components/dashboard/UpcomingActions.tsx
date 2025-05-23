@@ -21,22 +21,16 @@ interface UpcomingActionsProps {
 
 const getStatusColor = (status: LeadStatus): string => {
   switch(status) {
-    case 'NEW':
-      return 'bg-blue-500';
-    case 'CONTACTED':
+    case 'CONTACT_STAGE':
       return 'bg-purple-500';
-    case 'NEEDS_FOLLOW_UP':
+    case 'MEETING_STAGE':
       return 'bg-amber-500';
-    case 'TRIAL':
-      return 'bg-orange-500';
-    case 'NEGOTIATION':
+    case 'PRESENTATION_NEGOTIATION':
       return 'bg-teal-500';
-    case 'WON':
+    case 'CLOSED_WON':
       return 'bg-green-500';
-    case 'LOST':
+    case 'CLOSED_LOST':
       return 'bg-red-500';
-    case 'ON_HOLD':
-      return 'bg-gray-500';
     default:
       return 'bg-gray-500';
   }

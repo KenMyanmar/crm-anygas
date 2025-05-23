@@ -90,7 +90,15 @@ const NewOrderPage = () => {
         throw error;
       }
 
-      setRestaurants(data || []);
+      // Ensure we have a complete Restaurant object by setting default values for required fields
+      const completeRestaurants = (data || []).map(restaurant => ({
+        ...restaurant,
+        phone_primary: restaurant.phone || '', // Use existing phone or empty string
+        created_at: restaurant.created_at || new Date().toISOString(),
+        updated_at: restaurant.updated_at || new Date().toISOString()
+      })) as Restaurant[];
+
+      setRestaurants(completeRestaurants);
     } catch (error: any) {
       console.error('Error fetching restaurants:', error);
       toast({

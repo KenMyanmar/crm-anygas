@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { DashboardData } from '@/types';
+import { DashboardData, LeadStatus, legacyStatusToNew } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { toast as sonnerToast } from 'sonner';
 
@@ -46,7 +46,7 @@ export const useDashboardData = () => {
       // Transform the data to match our interface
       const transformedData: DashboardData = {
         leadSummary: Array.isArray(data.leads_by_status) ? data.leads_by_status.map((item: any) => ({
-          status: item.status,
+          status: item.status as LeadStatus,
           count: item.count
         })) : [],
         upcomingActions: Array.isArray(data.upcoming_followups) ? data.upcoming_followups.map((item: any) => ({
@@ -54,7 +54,7 @@ export const useDashboardData = () => {
           restaurant_name: item.restaurant_name,
           next_action_description: item.next_action_description,
           next_action_date: item.next_action_date,
-          status: item.status
+          status: item.status as LeadStatus
         })) : [],
         recentActivity: Array.isArray(data.recent_activities) ? data.recent_activities.map((item: any) => ({
           id: item.id,
@@ -94,11 +94,11 @@ export const useDashboardData = () => {
         console.log('Using mock data for development');
         setDashboardData({
           leadSummary: [
-            { status: 'NEW', count: 12 },
-            { status: 'CONTACTED', count: 28 },
-            { status: 'NEEDS_FOLLOW_UP', count: 8 },
-            { status: 'TRIAL', count: 5 },
-            { status: 'WON', count: 34 }
+            { status: 'CONTACT_STAGE', count: 12 },
+            { status: 'MEETING_STAGE', count: 8 },
+            { status: 'PRESENTATION_NEGOTIATION', count: 5 },
+            { status: 'CLOSED_WON', count: 34 },
+            { status: 'CLOSED_LOST', count: 12 }
           ],
           upcomingActions: [
             {
@@ -106,21 +106,21 @@ export const useDashboardData = () => {
               restaurant_name: 'Golden Palace Restaurant',
               next_action_description: 'Follow-up call regarding cylinder delivery',
               next_action_date: new Date().toISOString(),
-              status: 'NEEDS_FOLLOW_UP'
+              status: 'CONTACT_STAGE'
             },
             {
               id: '2',
               restaurant_name: 'Silver Spoon Café',
               next_action_description: 'Arrange demo for new gas equipment',
               next_action_date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-              status: 'TRIAL'
+              status: 'MEETING_STAGE'
             },
             {
               id: '3',
               restaurant_name: 'Yangon Tastes',
               next_action_description: 'Confirm pricing for bulk order',
               next_action_date: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
-              status: 'NEGOTIATION'
+              status: 'PRESENTATION_NEGOTIATION'
             }
           ],
           recentActivity: [

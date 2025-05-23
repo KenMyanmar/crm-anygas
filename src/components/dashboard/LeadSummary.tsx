@@ -1,5 +1,5 @@
 
-import { LeadStatus } from '@/types';
+import { LeadStatus, legacyStatusToNew } from '@/types';
 import StatCard from './StatCard';
 import { FileText, AlertCircle, CheckCircle, Clock, MessageCircle, Briefcase, PauseCircle, XCircle } from 'lucide-react';
 
@@ -12,22 +12,16 @@ interface LeadSummaryProps {
 
 const getIconForStatus = (status: LeadStatus) => {
   switch(status) {
-    case 'NEW':
-      return <FileText className="h-4 w-4" />;
-    case 'CONTACTED':
+    case 'CONTACT_STAGE':
       return <MessageCircle className="h-4 w-4" />;
-    case 'NEEDS_FOLLOW_UP':
-      return <AlertCircle className="h-4 w-4" />;
-    case 'TRIAL':
+    case 'MEETING_STAGE':
       return <Clock className="h-4 w-4" />;
-    case 'NEGOTIATION':
+    case 'PRESENTATION_NEGOTIATION':
       return <Briefcase className="h-4 w-4" />;
-    case 'WON':
+    case 'CLOSED_WON':
       return <CheckCircle className="h-4 w-4" />;
-    case 'LOST':
+    case 'CLOSED_LOST':
       return <XCircle className="h-4 w-4" />;
-    case 'ON_HOLD':
-      return <PauseCircle className="h-4 w-4" />;
     default:
       return <FileText className="h-4 w-4" />;
   }
@@ -35,22 +29,16 @@ const getIconForStatus = (status: LeadStatus) => {
 
 const getDisplayName = (status: LeadStatus): string => {
   switch(status) {
-    case 'NEW':
-      return 'New Leads';
-    case 'CONTACTED':
-      return 'Contacted';
-    case 'NEEDS_FOLLOW_UP':
-      return 'Need Follow-up';
-    case 'TRIAL':
-      return 'In Trial';
-    case 'NEGOTIATION':
-      return 'In Negotiation';
-    case 'WON':
-      return 'Won';
-    case 'LOST':
-      return 'Lost';
-    case 'ON_HOLD':
-      return 'On Hold';
+    case 'CONTACT_STAGE':
+      return 'Contact Stage';
+    case 'MEETING_STAGE':
+      return 'Meeting Stage';
+    case 'PRESENTATION_NEGOTIATION':
+      return 'Presentation/Negotiation';
+    case 'CLOSED_WON':
+      return 'Closed Won';
+    case 'CLOSED_LOST':
+      return 'Closed Lost';
     default:
       return status;
   }
@@ -58,22 +46,16 @@ const getDisplayName = (status: LeadStatus): string => {
 
 const getStatusColor = (status: LeadStatus): string => {
   switch(status) {
-    case 'NEW':
-      return 'text-blue-500';
-    case 'CONTACTED':
+    case 'CONTACT_STAGE':
       return 'text-purple-500';
-    case 'NEEDS_FOLLOW_UP':
+    case 'MEETING_STAGE':
       return 'text-amber-500';
-    case 'TRIAL':
-      return 'text-orange-500';
-    case 'NEGOTIATION':
+    case 'PRESENTATION_NEGOTIATION':
       return 'text-teal-500';
-    case 'WON':
+    case 'CLOSED_WON':
       return 'text-green-500';
-    case 'LOST':
+    case 'CLOSED_LOST':
       return 'text-red-500';
-    case 'ON_HOLD':
-      return 'text-gray-500';
     default:
       return '';
   }
@@ -82,14 +64,11 @@ const getStatusColor = (status: LeadStatus): string => {
 const LeadSummary = ({ statusCounts }: LeadSummaryProps) => {
   // Show all statuses but sort them in a logical flow
   const priorityOrder: { [key in LeadStatus]?: number } = {
-    'NEW': 1,
-    'CONTACTED': 2,
-    'NEEDS_FOLLOW_UP': 3,
-    'TRIAL': 4,
-    'NEGOTIATION': 5,
-    'WON': 6,
-    'LOST': 7,
-    'ON_HOLD': 8
+    'CONTACT_STAGE': 1,
+    'MEETING_STAGE': 2,
+    'PRESENTATION_NEGOTIATION': 3,
+    'CLOSED_WON': 4,
+    'CLOSED_LOST': 5
   };
   
   const sortedCounts = [...statusCounts].sort((a, b) => {

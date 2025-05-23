@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'salesperson' | 'staff' | 'manager';
 
 export interface User {
@@ -23,9 +24,23 @@ export interface Restaurant {
   created_at: string;
   updated_at: string;
   created_by_user_id?: string;
+  // Adding this alias to make the Restaurant compatible with both old and new interfaces
+  phone?: string;
 }
 
 export type LeadStatus = 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
+
+// Status mapping for backward compatibility
+export const legacyStatusToNew: Record<string, LeadStatus> = {
+  'NEW': 'CONTACT_STAGE',
+  'CONTACTED': 'CONTACT_STAGE',
+  'NEEDS_FOLLOW_UP': 'CONTACT_STAGE',
+  'TRIAL': 'MEETING_STAGE',
+  'NEGOTIATION': 'PRESENTATION_NEGOTIATION',
+  'WON': 'CLOSED_WON',
+  'LOST': 'CLOSED_LOST',
+  'ON_HOLD': 'CONTACT_STAGE'
+};
 
 export interface Lead {
   id: string;

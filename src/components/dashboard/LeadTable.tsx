@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LeadStatus } from '@/types';
@@ -46,22 +45,16 @@ interface LeadTableProps {
 
 const getStatusColor = (status: LeadStatus): string => {
   switch(status) {
-    case 'NEW':
-      return 'bg-blue-500';
-    case 'CONTACTED':
+    case 'CONTACT_STAGE':
       return 'bg-purple-500';
-    case 'NEEDS_FOLLOW_UP':
+    case 'MEETING_STAGE':
       return 'bg-amber-500';
-    case 'TRIAL':
-      return 'bg-orange-500';
-    case 'NEGOTIATION':
+    case 'PRESENTATION_NEGOTIATION':
       return 'bg-teal-500';
-    case 'WON':
+    case 'CLOSED_WON':
       return 'bg-green-500';
-    case 'LOST':
+    case 'CLOSED_LOST':
       return 'bg-red-500';
-    case 'ON_HOLD':
-      return 'bg-gray-500';
     default:
       return 'bg-gray-500';
   }
@@ -73,7 +66,7 @@ const StatusBadge = ({ status }: { status: LeadStatus }) => {
   return (
     <div className="flex items-center">
       <span className={`inline-block w-2 h-2 rounded-full mr-2 ${bgColor}`}></span>
-      <span className="text-xs capitalize">{status.toLowerCase().replace('_', ' ')}</span>
+      <span className="text-xs capitalize">{status.toLowerCase().replace(/_/g, ' ')}</span>
     </div>
   );
 };
@@ -174,10 +167,10 @@ const LeadTable = ({ upcomingActions }: LeadTableProps) => {
               <DropdownMenuItem onClick={() => setFilter(null)}>
                 All Statuses
               </DropdownMenuItem>
-              {['NEW', 'CONTACTED', 'NEEDS_FOLLOW_UP', 'TRIAL', 'NEGOTIATION', 'WON', 'LOST'].map(
+              {['CONTACT_STAGE', 'MEETING_STAGE', 'PRESENTATION_NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST'].map(
                 (status) => (
                   <DropdownMenuItem key={status} onClick={() => setFilter(status)}>
-                    {status.toLowerCase().replace('_', ' ')}
+                    {status.toLowerCase().replace(/_/g, ' ')}
                   </DropdownMenuItem>
                 )
               )}
