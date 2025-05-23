@@ -83,7 +83,7 @@ const NewOrderPage = () => {
     try {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('id, name, township')
+        .select('id, name, township, phone_primary, created_at, updated_at')
         .order('name', { ascending: true });
 
       if (error) {
@@ -93,7 +93,9 @@ const NewOrderPage = () => {
       // Ensure we have a complete Restaurant object by setting default values for required fields
       const completeRestaurants = (data || []).map(restaurant => ({
         ...restaurant,
-        phone_primary: restaurant.phone || '', // Use existing phone or empty string
+        id: restaurant.id || '',
+        name: restaurant.name || '',
+        phone_primary: restaurant.phone_primary || '',
         created_at: restaurant.created_at || new Date().toISOString(),
         updated_at: restaurant.updated_at || new Date().toISOString()
       })) as Restaurant[];
