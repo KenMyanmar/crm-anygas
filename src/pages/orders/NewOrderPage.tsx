@@ -83,7 +83,7 @@ const NewOrderPage = () => {
     try {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('id, name, township, phone_primary, created_at, updated_at')
+        .select('id, name, township, phone, created_at, updated_at')
         .order('name', { ascending: true });
 
       if (error) {
@@ -95,7 +95,7 @@ const NewOrderPage = () => {
         ...restaurant,
         id: restaurant.id || '',
         name: restaurant.name || '',
-        phone_primary: restaurant.phone_primary || '',
+        phone_primary: restaurant.phone || '', // Map phone to phone_primary for compatibility
         created_at: restaurant.created_at || new Date().toISOString(),
         updated_at: restaurant.updated_at || new Date().toISOString()
       })) as Restaurant[];
