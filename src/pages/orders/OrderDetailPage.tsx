@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -72,26 +71,18 @@ const OrderDetailPage = () => {
   const fetchOrderDetails = async (orderId: string) => {
     setIsLoading(true);
     try {
-      // Fetch order data
+      // Fetch order data - removed phone_primary from the query
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select(`
           *,
-          restaurant:restaurants(id, name, township, address, phone, phone_primary)
+          restaurant:restaurants(id, name, township, address, phone)
         `)
         .eq('id', orderId)
         .single();
 
       if (orderError) {
         throw orderError;
-      }
-
-      // Process restaurant data to ensure it has a phone field for compatibility
-      if (orderData?.restaurant) {
-        // Use phone_primary as phone if phone is missing
-        if (!orderData.restaurant.phone && orderData.restaurant.phone_primary) {
-          orderData.restaurant.phone = orderData.restaurant.phone_primary;
-        }
       }
 
       // Fetch order items
@@ -318,7 +309,7 @@ const OrderDetailPage = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
-                  <p>{order.total_amount_kyats.toLocaleString()} Kyats</p>
+                  <p>{order.total_amount_kyats?.toLocaleString()} Kyats</p>
                 </div>
               </div>
 
@@ -433,7 +424,7 @@ const OrderDetailPage = () => {
           </CardContent>
           <CardFooter className="flex justify-end border-t p-4">
             <div className="text-lg font-semibold">
-              Total: {order.total_amount_kyats.toLocaleString()} Kyats
+              Total: {order.total_amount_kyats?.toLocaleString()} Kyats
             </div>
           </CardFooter>
         </Card>
