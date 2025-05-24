@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -46,7 +45,7 @@ import PerformancePage from "./pages/reports/PerformancePage";
 import UsersPage from "./pages/admin/UsersPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import ImportPage from "./pages/admin/ImportPage";
-import SettingsPage from "./pages/admin/SettingsPage";
+import AdminSettingsPage from "./pages/admin/SettingsPage";
 
 // Other pages
 import NotFound from "./pages/NotFound";
@@ -276,7 +275,7 @@ const App = () => (
                 path="/admin/settings" 
                 element={
                   <ProtectedRoute>
-                    <SettingsPage />
+                    <AdminSettingsPage />
                   </ProtectedRoute>
                 } 
               />
