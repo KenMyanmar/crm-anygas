@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw, Calendar, Download, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +18,7 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -85,7 +87,7 @@ const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
             </Tooltip>
           </TooltipProvider>
           
-          <Button>
+          <Button onClick={() => navigate('/leads/new')}>
             <Plus className="mr-1.5 h-4 w-4" />
             New Lead
           </Button>

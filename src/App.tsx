@@ -25,11 +25,14 @@ import OrdersPage from "./pages/orders/OrdersPage";
 import NewOrderPage from "./pages/orders/NewOrderPage";
 import OrderDetailPage from "./pages/orders/OrderDetailPage";
 import ReportsPage from "./pages/placeholder/ReportsPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 
 // Lead management pages
 import AssignedLeadsPage from "./pages/leads/AssignedLeadsPage";
 import CallLogPage from "./pages/leads/CallLogPage";
 import MeetingsPage from "./pages/leads/MeetingsPage";
+import NewLeadPage from "./pages/leads/NewLeadPage";
 
 // Order management pages
 import PendingOrdersPage from "./pages/orders/PendingOrdersPage";
@@ -80,6 +83,24 @@ const App = () => (
                 } 
               />
               
+              {/* Profile and Settings Routes */}
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
               {/* Notifications Route */}
               <Route 
                 path="/notifications" 
@@ -96,6 +117,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <LeadsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/leads/new" 
+                element={
+                  <ProtectedRoute>
+                    <NewLeadPage />
                   </ProtectedRoute>
                 } 
               />

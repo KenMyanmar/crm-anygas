@@ -513,6 +513,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_my_dashboard_data: {
         Args: Record<PropertyKey, never>
         Returns: Json

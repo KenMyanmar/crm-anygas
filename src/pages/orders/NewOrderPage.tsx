@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -129,6 +128,14 @@ const NewOrderPage = () => {
     }, 0);
   };
 
+  // Generate order number on frontend
+  const generateOrderNumber = () => {
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = today.getTime().toString().slice(-4);
+    return `ORD-${dateStr}-${timeStr}`;
+  };
+
   const onSubmit = async (values: OrderFormValues) => {
     setIsSubmitting(true);
 
@@ -145,6 +152,9 @@ const NewOrderPage = () => {
         return total + (item.quantity * item.unit_price_kyats);
       }, 0);
 
+      // Generate order number
+      const orderNumber = generateOrderNumber();
+
       // Create the order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -154,6 +164,7 @@ const NewOrderPage = () => {
           delivery_date_scheduled: values.delivery_date ? values.delivery_date.toISOString() : null,
           notes: values.notes,
           created_by_user_id: user.id,
+          order_number: orderNumber, // Explicitly set the order number
         })
         .select('id')
         .single();
@@ -183,7 +194,7 @@ const NewOrderPage = () => {
 
       toast({
         title: "Order created",
-        description: "The order has been created successfully",
+        description: `Order ${orderNumber} has been created successfully`,
       });
 
       // Navigate to orders page
