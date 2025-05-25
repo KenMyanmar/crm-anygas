@@ -18,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import NotificationsPage from "./pages/Notifications";
 import LeadsPage from "./pages/leads/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
+import NewRestaurantPage from "./pages/restaurants/NewRestaurantPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import RestaurantEditPage from "./pages/RestaurantEditPage";
 import OrdersPage from "./pages/orders/OrdersPage";
@@ -149,6 +150,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <RestaurantsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/restaurants/new" 
+                element={
+                  <ProtectedRoute>
+                    <NewRestaurantPage />
                   </ProtectedRoute>
                 } 
               />

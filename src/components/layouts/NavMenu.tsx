@@ -70,6 +70,7 @@ const NavMenu: FC = () => {
   const [ordersGroupOpen, setOrdersGroupOpen] = useState(false);
   const [reportsGroupOpen, setReportsGroupOpen] = useState(false);
   const [adminGroupOpen, setAdminGroupOpen] = useState(false);
+  const [restaurantsGroupOpen, setRestaurantsGroupOpen] = useState(false);
   
   // Determine which group should be expanded based on current route
   useEffect(() => {
@@ -77,11 +78,13 @@ const NavMenu: FC = () => {
     const isOrdersActive = location.pathname.includes('/orders');
     const isReportsActive = location.pathname.includes('/reports');
     const isSettingsActive = location.pathname.includes('/admin');
+    const isRestaurantsActive = location.pathname.includes('/restaurants');
     
     setLeadsGroupOpen(isLeadsActive);
     setOrdersGroupOpen(isOrdersActive);
     setReportsGroupOpen(isReportsActive);
     setAdminGroupOpen(isSettingsActive);
+    setRestaurantsGroupOpen(isRestaurantsActive);
   }, [location.pathname]);
 
   return (
@@ -90,8 +93,20 @@ const NavMenu: FC = () => {
         <SidebarMenu>
           <MenuLink to="/" icon={Home} label="Dashboard" end={true} />
           <MenuLink to="/notifications" icon={Bell} label="Notifications" />
-          <MenuLink to="/restaurants" icon={Search} label="Restaurants" />
         </SidebarMenu>
+      </SidebarGroup>
+
+      <SidebarGroup>
+        <div onClick={() => setRestaurantsGroupOpen(!restaurantsGroupOpen)} className="cursor-pointer">
+          <SidebarGroupLabel>Restaurants</SidebarGroupLabel>
+        </div>
+        {restaurantsGroupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <MenuLink to="/restaurants" icon={Search} label="All Restaurants" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
       </SidebarGroup>
       
       <SidebarGroup>
