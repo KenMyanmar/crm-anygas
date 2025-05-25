@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -98,8 +97,14 @@ const PendingOrdersPage = () => {
           order_date,
           total_amount_kyats,
           status,
-          restaurant:restaurants(id, name, township),
-          created_by_user:users(full_name)
+          restaurants!inner (
+            id,
+            name,
+            township
+          ),
+          users!orders_created_by_user_id_fkey (
+            full_name
+          )
         `)
         .eq('status', 'PENDING_CONFIRMATION')
         .order('order_date', { ascending: false });
@@ -108,7 +113,24 @@ const PendingOrdersPage = () => {
         throw error;
       }
 
-      setOrders(data || []);
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(order => ({
+        id: order.id,
+        order_number: order.order_number,
+        order_date: order.order_date,
+        total_amount_kyats: order.total_amount_kyats,
+        status: order.status,
+        restaurant: {
+          id: order.restaurants.id,
+          name: order.restaurants.name,
+          township: order.restaurants.township || 'N/A'
+        },
+        created_by_user: order.users ? {
+          full_name: order.users.full_name
+        } : null
+      }));
+
+      setOrders(transformedData);
     } catch (error: any) {
       console.error('Error fetching pending orders:', error);
       toast({
