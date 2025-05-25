@@ -114,16 +114,16 @@ const PendingOrdersPage = () => {
       }
 
       // Transform the data to match our interface
-      const transformedData = (data || []).map(order => ({
+      const transformedData = (data || []).map((order: any) => ({
         id: order.id,
         order_number: order.order_number,
         order_date: order.order_date,
         total_amount_kyats: order.total_amount_kyats,
         status: order.status,
         restaurant: {
-          id: order.restaurants.id,
-          name: order.restaurants.name,
-          township: order.restaurants.township || 'N/A'
+          id: order.restaurants?.id || '',
+          name: order.restaurants?.name || 'Unknown Restaurant',
+          township: order.restaurants?.township || 'N/A'
         },
         created_by_user: order.users ? {
           full_name: order.users.full_name
