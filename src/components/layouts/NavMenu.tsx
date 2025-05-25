@@ -1,4 +1,3 @@
-
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -21,7 +20,8 @@ import {
   Users,
   Clipboard,
   CalendarDays,
-  Bell
+  Bell,
+  Plus
 } from 'lucide-react';
 
 interface MenuLinkProps {
@@ -104,6 +104,7 @@ const NavMenu: FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <MenuLink to="/restaurants" icon={Search} label="All Restaurants" />
+              <MenuLink to="/restaurants/new" icon={Plus} label="New Restaurant" />
             </SidebarMenu>
           </SidebarGroupContent>
         )}
