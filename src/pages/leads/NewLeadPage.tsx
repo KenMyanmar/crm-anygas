@@ -167,25 +167,27 @@ const NewLeadPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="assigned_to">Assign To *</Label>
-                  <Select
-                    value={formData.assigned_to_user_id}
-                    onValueChange={(value) => setFormData({ ...formData, assigned_to_user_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a user to assign this lead to" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {usersLoading ? (
-                        <SelectItem value="" disabled>Loading users...</SelectItem>
-                      ) : (
-                        users.map((user) => (
+                  {usersLoading ? (
+                    <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                      Loading users...
+                    </div>
+                  ) : (
+                    <Select
+                      value={formData.assigned_to_user_id}
+                      onValueChange={(value) => setFormData({ ...formData, assigned_to_user_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a user to assign this lead to" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.full_name} ({user.role})
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -202,7 +204,7 @@ const NewLeadPage = () => {
                 <div className="flex gap-2 pt-4">
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || !formData.assigned_to_user_id} 
+                    disabled={isSubmitting || !formData.assigned_to_user_id || usersLoading} 
                     className="flex-1"
                   >
                     {isSubmitting ? 'Creating Lead...' : 'Create Lead'}
