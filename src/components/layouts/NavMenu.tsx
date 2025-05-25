@@ -1,3 +1,4 @@
+
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -19,7 +20,6 @@ import {
   Settings, 
   Users,
   Clipboard,
-  Phone,
   CalendarDays,
   Bell
 } from 'lucide-react';
@@ -103,7 +103,6 @@ const NavMenu: FC = () => {
             <SidebarMenu>
               <MenuLink to="/leads" icon={FileText} label="All Leads" />
               <MenuLink to="/leads/assigned" icon={Clipboard} label="Assigned to Me" />
-              <MenuLink to="/leads/calls" icon={Phone} label="Call Log" />
               <MenuLink to="/leads/meetings" icon={CalendarDays} label="Meetings" />
             </SidebarMenu>
           </SidebarGroupContent>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { useLeads } from '@/hooks/useLeads';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import LeadStatusSelect from '@/components/leads/LeadStatusSelect';
-import { Search, Clipboard } from 'lucide-react';
+import { Plus, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
 const LEAD_STATUSES = [
@@ -27,9 +28,10 @@ const LEAD_STATUSES = [
   { value: 'LOST', label: 'Lost', color: 'bg-red-100 text-red-800' },
 ];
 
-const AssignedLeadsPage = () => {
+const LeadsPage = () => {
   const navigate = useNavigate();
-  const { leads, isLoading, error, updateLeadStatus } = useLeads(true); // Only assigned leads
+  const { profile } = useAuth();
+  const { leads, isLoading, error, updateLeadStatus } = useLeads();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -58,7 +60,7 @@ const AssignedLeadsPage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading your assigned leads...</p>
+            <p>Loading leads...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -81,14 +83,17 @@ const AssignedLeadsPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <Clipboard className="h-6 w-6 text-primary" />
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Assigned to Me</h1>
+            <h1 className="text-2xl font-bold tracking-tight">All Leads</h1>
             <p className="text-muted-foreground">
-              View and manage leads that have been assigned to you ({filteredLeads.length} total)
+              Manage and track all leads in your pipeline
             </p>
           </div>
+          <Button onClick={() => navigate('/leads/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Lead
+          </Button>
         </div>
 
         <Card>
@@ -97,7 +102,7 @@ const AssignedLeadsPage = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search your leads by name, restaurant, or township..."
+                  placeholder="Search leads by name, restaurant, or township..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -120,17 +125,15 @@ const AssignedLeadsPage = () => {
           <CardContent>
             {filteredLeads.length === 0 ? (
               <div className="text-center py-8">
-                <Clipboard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No assigned leads found</h3>
                 <p className="text-muted-foreground mb-4">
                   {searchTerm || statusFilter !== 'ALL' 
-                    ? 'No leads match your current filters' 
-                    : 'You don\'t have any leads assigned to you yet'
+                    ? 'No leads match your filters' 
+                    : 'No leads found'
                   }
                 </p>
                 {!searchTerm && statusFilter === 'ALL' && (
-                  <Button onClick={() => navigate('/leads')}>
-                    View All Leads
+                  <Button onClick={() => navigate('/leads/new')}>
+                    Create Your First Lead
                   </Button>
                 )}
               </div>
@@ -141,9 +144,8 @@ const AssignedLeadsPage = () => {
                     <TableHead>Lead Name</TableHead>
                     <TableHead>Restaurant</TableHead>
                     <TableHead>Township</TableHead>
-                    <TableHead>Phone</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Next Action</TableHead>
+                    <TableHead>Assigned To</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -154,24 +156,8 @@ const AssignedLeadsPage = () => {
                       <TableCell className="font-medium">{lead.name}</TableCell>
                       <TableCell>{lead.restaurant.name}</TableCell>
                       <TableCell>{lead.restaurant.township || 'N/A'}</TableCell>
-                      <TableCell>{lead.restaurant.phone || 'N/A'}</TableCell>
                       <TableCell>{getStatusBadge(lead.status)}</TableCell>
-                      <TableCell>
-                        <div className="max-w-xs">
-                          {lead.next_action_description ? (
-                            <div>
-                              <p className="text-sm truncate">{lead.next_action_description}</p>
-                              {lead.next_action_date && (
-                                <p className="text-xs text-muted-foreground">
-                                  Due: {format(new Date(lead.next_action_date), 'MMM dd, yyyy')}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">No action set</span>
-                          )}
-                        </div>
-                      </TableCell>
+                      <TableCell>{lead.assigned_user.full_name}</TableCell>
                       <TableCell>
                         {format(new Date(lead.created_at), 'MMM dd, yyyy')}
                       </TableCell>
@@ -196,4 +182,4 @@ const AssignedLeadsPage = () => {
   );
 };
 
-export default AssignedLeadsPage;
+export default LeadsPage;
