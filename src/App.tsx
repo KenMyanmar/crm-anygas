@@ -16,7 +16,7 @@ import ResetPassword from "./pages/ResetPassword";
 // Main pages
 import Dashboard from "./pages/Dashboard";
 import NotificationsPage from "./pages/Notifications";
-import LeadsPage from "./pages/placeholder/LeadsPage";
+import LeadsPage from "./pages/leads/LeadsPage";
 import RestaurantsPage from "./pages/placeholder/RestaurantsPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import RestaurantEditPage from "./pages/RestaurantEditPage";
@@ -29,7 +29,6 @@ import SettingsPage from "./pages/SettingsPage";
 
 // Lead management pages
 import AssignedLeadsPage from "./pages/leads/AssignedLeadsPage";
-import CallLogPage from "./pages/leads/CallLogPage";
 import MeetingsPage from "./pages/leads/MeetingsPage";
 import NewLeadPage from "./pages/leads/NewLeadPage";
 
@@ -132,14 +131,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AssignedLeadsPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/leads/calls" 
-                element={
-                  <ProtectedRoute>
-                    <CallLogPage />
                   </ProtectedRoute>
                 } 
               />
