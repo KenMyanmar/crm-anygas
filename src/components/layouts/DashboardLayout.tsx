@@ -2,7 +2,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
 import NavMenu from './NavMenu';
 import Header from './Header';
@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayoutContent = ({ children }: DashboardLayoutProps) => {
   const { profile, isLoading } = useAuth();
   const navigate = useNavigate();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -80,6 +80,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </main>
       </div>
     </div>
+  );
+};
+
+const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+  return (
+    <SidebarProvider>
+      <DashboardLayoutContent>
+        {children}
+      </DashboardLayoutContent>
+    </SidebarProvider>
   );
 };
 
