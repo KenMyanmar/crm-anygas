@@ -30,10 +30,17 @@ const ConvertToOrderButton = ({ leadId, restaurantId, restaurantName, isWonLead 
     setIsConverting(true);
     
     try {
+      // Get the current authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('You must be logged in to convert leads to orders');
+      }
+
       // Generate order number
       const orderNumber = `ORD-${Date.now()}`;
       
-      // Create the order
+      // Create the order with the required created_by_user_id field
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
@@ -42,18 +49,22 @@ const ConvertToOrderButton = ({ leadId, restaurantId, restaurantName, isWonLead 
           lead_id: leadId,
           status: 'PENDING_CONFIRMATION',
           total_amount_kyats: 0,
+          created_by_user_id: user.id, // This was missing and causing the RLS error
           notes: `Converted from lead for ${restaurantName}`
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Order creation error:', error);
+        throw new Error(`Failed to create order: ${error.message}`);
+      }
 
       // Log the activity
       await supabase
         .from('activity_logs')
         .insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: user.id,
           target_id: leadId,
           target_type: 'LEAD',
           activity_message: `Lead converted to order ${orderNumber}`
@@ -70,7 +81,7 @@ const ConvertToOrderButton = ({ leadId, restaurantId, restaurantName, isWonLead 
       console.error('Error converting lead to order:', error);
       toast({
         title: "Error",
-        description: "Failed to convert lead to order",
+        description: error.message || "Failed to convert lead to order",
         variant: "destructive",
       });
     } finally {
