@@ -19,11 +19,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 const LEAD_STATUSES = [
-  { value: 'CONTACT_STAGE', label: 'Contact Stage', color: 'bg-blue-100 text-blue-800' },
-  { value: 'TRIAL', label: 'Trial', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'NEGOTIATION', label: 'Negotiation', color: 'bg-purple-100 text-purple-800' },
-  { value: 'WON', label: 'Won', color: 'bg-green-100 text-green-800' },
-  { value: 'LOST', label: 'Lost', color: 'bg-red-100 text-red-800' },
+  { value: 'CONTACT_STAGE', label: 'Initial Contact', color: 'bg-blue-100 text-blue-800' },
+  { value: 'MEETING_STAGE', label: 'Meeting Scheduled', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'PRESENTATION_NEGOTIATION', label: 'Proposal/Negotiation', color: 'bg-purple-100 text-purple-800' },
+  { value: 'CLOSED_WON', label: 'Closed Won', color: 'bg-green-100 text-green-800' },
+  { value: 'CLOSED_LOST', label: 'Closed Lost', color: 'bg-red-100 text-red-800' },
 ];
 
 interface LeadStatusSelectProps {

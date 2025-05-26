@@ -17,21 +17,23 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import LeadStatusSelect from '@/components/leads/LeadStatusSelect';
+import LeadAssignmentSelect from '@/components/leads/LeadAssignmentSelect';
+import ConvertToOrderButton from '@/components/leads/ConvertToOrderButton';
 import { Plus, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
 const LEAD_STATUSES = [
-  { value: 'CONTACT_STAGE', label: 'Contact Stage', color: 'bg-blue-100 text-blue-800' },
-  { value: 'TRIAL', label: 'Trial', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'NEGOTIATION', label: 'Negotiation', color: 'bg-purple-100 text-purple-800' },
-  { value: 'WON', label: 'Won', color: 'bg-green-100 text-green-800' },
-  { value: 'LOST', label: 'Lost', color: 'bg-red-100 text-red-800' },
+  { value: 'CONTACT_STAGE', label: 'Initial Contact', color: 'bg-blue-100 text-blue-800' },
+  { value: 'MEETING_STAGE', label: 'Meeting Scheduled', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'PRESENTATION_NEGOTIATION', label: 'Proposal/Negotiation', color: 'bg-purple-100 text-purple-800' },
+  { value: 'CLOSED_WON', label: 'Closed Won', color: 'bg-green-100 text-green-800' },
+  { value: 'CLOSED_LOST', label: 'Closed Lost', color: 'bg-red-100 text-red-800' },
 ];
 
 const LeadsPage = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { leads, isLoading, error, updateLeadStatus } = useLeads();
+  const { leads, isLoading, error, updateLeadStatus, updateLeadAssignment } = useLeads();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -157,18 +159,35 @@ const LeadsPage = () => {
                       <TableCell>{lead.restaurant.name}</TableCell>
                       <TableCell>{lead.restaurant.township || 'N/A'}</TableCell>
                       <TableCell>{getStatusBadge(lead.status)}</TableCell>
-                      <TableCell>{lead.assigned_user.full_name}</TableCell>
+                      <TableCell>
+                        <LeadAssignmentSelect
+                          currentAssignedUserId={lead.assigned_to_user_id}
+                          currentAssignedUserName={lead.assigned_user.full_name}
+                          onAssignmentUpdate={(newUserId) => 
+                            updateLeadAssignment(lead.id, newUserId)
+                          }
+                          leadName={lead.name}
+                        />
+                      </TableCell>
                       <TableCell>
                         {format(new Date(lead.created_at), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <LeadStatusSelect
-                          currentStatus={lead.status}
-                          onStatusUpdate={(newStatus, notes) => 
-                            updateLeadStatus(lead.id, newStatus, notes)
-                          }
-                          leadName={lead.name}
-                        />
+                        <div className="flex gap-2">
+                          <LeadStatusSelect
+                            currentStatus={lead.status}
+                            onStatusUpdate={(newStatus, notes) => 
+                              updateLeadStatus(lead.id, newStatus, notes)
+                            }
+                            leadName={lead.name}
+                          />
+                          <ConvertToOrderButton
+                            leadId={lead.id}
+                            restaurantId={lead.restaurant_id}
+                            restaurantName={lead.restaurant.name}
+                            isWonLead={lead.status === 'CLOSED_WON'}
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

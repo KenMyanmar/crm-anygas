@@ -16,15 +16,16 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import LeadStatusSelect from '@/components/leads/LeadStatusSelect';
+import ConvertToOrderButton from '@/components/leads/ConvertToOrderButton';
 import { Search, Clipboard } from 'lucide-react';
 import { format } from 'date-fns';
 
 const LEAD_STATUSES = [
-  { value: 'CONTACT_STAGE', label: 'Contact Stage', color: 'bg-blue-100 text-blue-800' },
-  { value: 'TRIAL', label: 'Trial', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'NEGOTIATION', label: 'Negotiation', color: 'bg-purple-100 text-purple-800' },
-  { value: 'WON', label: 'Won', color: 'bg-green-100 text-green-800' },
-  { value: 'LOST', label: 'Lost', color: 'bg-red-100 text-red-800' },
+  { value: 'CONTACT_STAGE', label: 'Initial Contact', color: 'bg-blue-100 text-blue-800' },
+  { value: 'MEETING_STAGE', label: 'Meeting Scheduled', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'PRESENTATION_NEGOTIATION', label: 'Proposal/Negotiation', color: 'bg-purple-100 text-purple-800' },
+  { value: 'CLOSED_WON', label: 'Closed Won', color: 'bg-green-100 text-green-800' },
+  { value: 'CLOSED_LOST', label: 'Closed Lost', color: 'bg-red-100 text-red-800' },
 ];
 
 const AssignedLeadsPage = () => {
@@ -176,13 +177,21 @@ const AssignedLeadsPage = () => {
                         {format(new Date(lead.created_at), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <LeadStatusSelect
-                          currentStatus={lead.status}
-                          onStatusUpdate={(newStatus, notes) => 
-                            updateLeadStatus(lead.id, newStatus, notes)
-                          }
-                          leadName={lead.name}
-                        />
+                        <div className="flex gap-2">
+                          <LeadStatusSelect
+                            currentStatus={lead.status}
+                            onStatusUpdate={(newStatus, notes) => 
+                              updateLeadStatus(lead.id, newStatus, notes)
+                            }
+                            leadName={lead.name}
+                          />
+                          <ConvertToOrderButton
+                            leadId={lead.id}
+                            restaurantId={lead.restaurant_id}
+                            restaurantName={lead.restaurant.name}
+                            isWonLead={lead.status === 'CLOSED_WON'}
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

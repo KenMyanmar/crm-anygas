@@ -106,11 +106,60 @@ export const useLeads = (assignedOnly = false) => {
 
       if (error) throw error;
 
+      // Log the activity
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: profile?.id,
+          target_id: leadId,
+          target_type: 'LEAD',
+          activity_message: `Lead status updated to ${newStatus}${notes ? ` - ${notes}` : ''}`
+        });
+
       // Refresh the leads data
       await fetchLeads();
       return true;
     } catch (err: any) {
       console.error('Error updating lead status:', err);
+      setError(err.message);
+      return false;
+    }
+  };
+
+  const updateLeadAssignment = async (leadId: string, newUserId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ 
+          assigned_to_user_id: newUserId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      // Get the new user's name for the activity log
+      const { data: userData } = await supabase
+        .from('users')
+        .select('full_name')
+        .eq('id', newUserId)
+        .single();
+
+      // Log the activity
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: profile?.id,
+          target_id: leadId,
+          target_type: 'LEAD',
+          activity_message: `Lead reassigned to ${userData?.full_name || 'Unknown User'}`
+        });
+
+      // Refresh the leads data
+      await fetchLeads();
+      return true;
+    } catch (err: any) {
+      console.error('Error updating lead assignment:', err);
       setError(err.message);
       return false;
     }
@@ -122,6 +171,7 @@ export const useLeads = (assignedOnly = false) => {
     error,
     refetch: fetchLeads,
     updateLeadStatus,
+    updateLeadAssignment,
   };
 };
 
