@@ -178,20 +178,37 @@ export const useLeads = (assignedOnly = false) => {
 export const useUsers = () => {
   const [users, setUsers] = useState<{ id: string; full_name: string; role: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        setIsLoading(true);
+        console.log('Fetching users...');
+        
         const { data, error } = await supabase
           .from('users')
-          .select('id, full_name, role')
+          .select('id, full_name, role, is_active')
           .eq('is_active', true)
           .order('full_name');
 
-        if (error) throw error;
-        setUsers(data || []);
-      } catch (err) {
-        console.error('Error fetching users:', err);
+        console.log('Users query result:', { data, error });
+
+        if (error) {
+          console.error('Error fetching users:', error);
+          throw error;
+        }
+
+        // Filter out users with empty full_name and log the data
+        const validUsers = (data || []).filter(user => user.full_name && user.full_name.trim() !== '');
+        console.log('Valid users after filtering:', validUsers);
+        
+        setUsers(validUsers);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error in fetchUsers:', err);
+        setError(err.message);
+        setUsers([]);
       } finally {
         setIsLoading(false);
       }
@@ -200,5 +217,5 @@ export const useUsers = () => {
     fetchUsers();
   }, []);
 
-  return { users, isLoading };
+  return { users, isLoading, error };
 };
