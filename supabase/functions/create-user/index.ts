@@ -90,7 +90,7 @@ serve(async (req) => {
 
     console.log('User created successfully:', authData.user.id);
 
-    // Insert user profile
+    // Insert user profile with must_reset_pw set to true
     const { error: profileError } = await supabaseAdmin
       .from('users')
       .insert({
@@ -99,6 +99,7 @@ serve(async (req) => {
         full_name: full_name.trim(),
         role: role,
         is_active: true,
+        must_reset_pw: true, // New users must reset password on first login
       });
 
     if (profileError) {
