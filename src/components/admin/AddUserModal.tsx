@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +7,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
-import { Copy, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface AddUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUserCreated: () => void;
+}
+
+interface ExistingUserInfo {
+  hasAuthUser: boolean;
+  hasProfile: boolean;
+  profileData?: any;
+  authUserId?: string;
 }
 
 // Service Role Key for direct admin operations
@@ -37,9 +43,11 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     password: '',
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [existingUserInfo, setExistingUserInfo] = useState<ExistingUserInfo | null>(null);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
   const { toast } = useToast();
 
   const generatePassword = () => {
@@ -60,7 +68,144 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     return password;
   };
 
-  const createUser = async (isRetry = false) => {
+  const checkExistingUser = async (email: string): Promise<ExistingUserInfo> => {
+    console.log('=== CHECKING EXISTING USER ===');
+    console.log('Email:', email);
+
+    try {
+      // Check if auth user exists
+      const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error checking auth users:', authError);
+        throw new Error(`Failed to check existing auth users: ${authError.message}`);
+      }
+
+      const existingAuthUser = authUsers.users.find(user => user.email?.toLowerCase() === email.toLowerCase());
+      
+      // Check if profile exists in users table
+      const { data: profileData, error: profileError } = await adminClient
+        .from('users')
+        .select('*')
+        .ilike('email', email)
+        .maybeSingle();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error checking profile:', profileError);
+        throw new Error(`Failed to check existing profile: ${profileError.message}`);
+      }
+
+      const result: ExistingUserInfo = {
+        hasAuthUser: !!existingAuthUser,
+        hasProfile: !!profileData,
+        profileData: profileData,
+        authUserId: existingAuthUser?.id
+      };
+
+      console.log('Existing user check result:', result);
+      return result;
+
+    } catch (error: any) {
+      console.error('Error in checkExistingUser:', error);
+      throw error;
+    }
+  };
+
+  const cleanupOrphanedProfile = async (email: string) => {
+    console.log('=== CLEANING UP ORPHANED PROFILE ===');
+    console.log('Email:', email);
+
+    try {
+      const { error } = await adminClient
+        .from('users')
+        .delete()
+        .ilike('email', email);
+
+      if (error) {
+        console.error('Error cleaning up orphaned profile:', error);
+        throw new Error(`Failed to cleanup orphaned profile: ${error.message}`);
+      }
+
+      console.log('Orphaned profile cleaned up successfully');
+      
+      toast({
+        description: "Orphaned profile cleaned up successfully",
+      });
+
+    } catch (error: any) {
+      console.error('Error in cleanupOrphanedProfile:', error);
+      toast({
+        title: "Cleanup failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const restoreAuthUser = async (email: string, fullName: string, role: UserRole, password: string): Promise<boolean> => {
+    console.log('=== RESTORING AUTH USER ===');
+    console.log('Email:', email);
+
+    try {
+      // Create auth user for existing profile
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+        email: email.trim(),
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName.trim(),
+          role: role
+        }
+      });
+
+      if (authError) {
+        console.error('Auth user restoration error:', authError);
+        throw new Error(`Failed to restore auth user: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('Auth user restoration failed - no user data returned');
+      }
+
+      console.log('Auth user restored successfully:', authData.user.id);
+
+      // Update the profile with the new auth user ID
+      const { error: updateError } = await adminClient
+        .from('users')
+        .update({ 
+          id: authData.user.id,
+          full_name: fullName.trim(),
+          role: role,
+          is_active: true,
+          must_reset_pw: true
+        })
+        .ilike('email', email);
+
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        
+        // Cleanup the auth user if profile update fails
+        try {
+          await adminClient.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user after profile update failure:', cleanupError);
+        }
+        
+        throw new Error(`Failed to update profile: ${updateError.message}`);
+      }
+
+      console.log('=== USER RESTORATION SUCCESSFUL ===');
+      return true;
+
+    } catch (error: any) {
+      console.error('=== USER RESTORATION FAILED ===');
+      console.error('Error:', error);
+      throw error;
+    }
+  };
+
+  const createUser = async (): Promise<boolean> => {
     if (!formData.email || !formData.full_name) {
       toast({
         title: "Validation Error",
@@ -76,8 +221,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         email: formData.email,
         full_name: formData.full_name,
         role: formData.role,
-        hasPassword: !!formData.password,
-        isRetry
+        hasPassword: !!formData.password
       });
 
       const userPassword = formData.password || generateRandomPassword();
@@ -87,7 +231,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
         email: formData.email.trim(),
         password: userPassword,
-        email_confirm: true, // Auto-confirm email
+        email_confirm: true,
         user_metadata: {
           full_name: formData.full_name.trim(),
           role: formData.role
@@ -97,7 +241,6 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       if (authError) {
         console.error('Auth user creation error:', authError);
         
-        // Handle specific auth errors
         if (authError.message.includes('already registered')) {
           throw new Error('A user with this email already exists');
         } else if (authError.message.includes('invalid email')) {
@@ -129,7 +272,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       if (profileError) {
         console.error('Profile creation error:', profileError);
         
-        // If profile creation fails, we should clean up the auth user
+        // Clean up the auth user if profile creation fails
         console.log('Cleaning up auth user due to profile creation failure...');
         try {
           await adminClient.auth.admin.deleteUser(authData.user.id);
@@ -146,8 +289,6 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       }
 
       console.log('=== USER CREATION SUCCESSFUL ===');
-      console.log('User ID:', authData.user.id);
-      console.log('Email:', authData.user.email);
 
       // Set credentials for display
       setCreatedCredentials({
@@ -160,22 +301,15 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       });
 
       onUserCreated();
-      setRetryCount(0);
       return true;
       
     } catch (error: any) {
       console.error('=== USER CREATION FAILED ===');
       console.error('Error:', error);
       
-      let errorMessage = 'Failed to create user';
-      
-      if (error.message) {
-        errorMessage = error.message;
-      }
-
       toast({
         title: "Failed to create user",
-        description: errorMessage,
+        description: error.message || 'An unexpected error occurred',
         variant: "destructive",
       });
       
@@ -185,22 +319,112 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
     
-    const success = await createUser();
-    
-    setIsCreating(false);
+    if (!formData.email || !formData.full_name) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsValidating(true);
+
+    try {
+      // First, check if user already exists
+      const existingInfo = await checkExistingUser(formData.email);
+      setExistingUserInfo(existingInfo);
+
+      if (existingInfo.hasAuthUser && existingInfo.hasProfile) {
+        // User completely exists - show error
+        toast({
+          title: "User already exists",
+          description: "A user with this email already exists in the system",
+          variant: "destructive",
+        });
+        setIsValidating(false);
+        return;
+      }
+
+      if (existingInfo.hasProfile && !existingInfo.hasAuthUser) {
+        // Orphaned profile - show conflict dialog
+        setShowConflictDialog(true);
+        setIsValidating(false);
+        return;
+      }
+
+      if (existingInfo.hasAuthUser && !existingInfo.hasProfile) {
+        // Auth user exists but no profile - unusual case
+        toast({
+          title: "Incomplete user found",
+          description: "Auth user exists but profile is missing. Please contact administrator.",
+          variant: "destructive",
+        });
+        setIsValidating(false);
+        return;
+      }
+
+      // No conflicts - proceed with creation
+      setIsValidating(false);
+      setIsCreating(true);
+      const success = await createUser();
+      setIsCreating(false);
+
+    } catch (error: any) {
+      console.error('Error in handleSubmit:', error);
+      setIsValidating(false);
+      toast({
+        title: "Validation failed",
+        description: error.message || 'Failed to validate user information',
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRetry = async () => {
+  const handleCleanupAndCreate = async () => {
+    setShowConflictDialog(false);
     setIsCreating(true);
-    setRetryCount(prev => prev + 1);
-    
-    console.log(`=== RETRY ATTEMPT ${retryCount + 1} ===`);
-    
-    const success = await createUser(true);
-    
-    setIsCreating(false);
+
+    try {
+      await cleanupOrphanedProfile(formData.email);
+      const success = await createUser();
+      setIsCreating(false);
+    } catch (error) {
+      setIsCreating(false);
+    }
+  };
+
+  const handleRestoreUser = async () => {
+    setShowConflictDialog(false);
+    setIsCreating(true);
+
+    try {
+      const userPassword = formData.password || generateRandomPassword();
+      const success = await restoreAuthUser(formData.email, formData.full_name, formData.role, userPassword);
+      
+      if (success) {
+        setCreatedCredentials({
+          email: formData.email.trim(),
+          password: userPassword,
+        });
+        
+        toast({
+          description: `User ${formData.full_name} restored successfully`,
+        });
+        
+        onUserCreated();
+      }
+      
+      setIsCreating(false);
+    } catch (error: any) {
+      setIsCreating(false);
+      toast({
+        title: "Failed to restore user",
+        description: error.message || 'An unexpected error occurred',
+        variant: "destructive",
+      });
+    }
   };
 
   const copyCredentials = async () => {
@@ -231,11 +455,76 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       password: '',
     });
     setCreatedCredentials(null);
+    setExistingUserInfo(null);
+    setShowConflictDialog(false);
     setShowPassword(false);
-    setRetryCount(0);
     onOpenChange(false);
   };
 
+  // Conflict resolution dialog
+  if (showConflictDialog && existingUserInfo) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              User Data Conflict Detected
+            </DialogTitle>
+            <DialogDescription>
+              A user profile exists for "{formData.email}" but the authentication account is missing. 
+              This typically happens when data gets corrupted or partially deleted.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-orange-50 rounded-md border border-orange-200">
+              <h4 className="font-medium text-orange-800 mb-2">Existing Profile Information:</h4>
+              <div className="text-sm text-orange-700 space-y-1">
+                <p><strong>Name:</strong> {existingUserInfo.profileData?.full_name}</p>
+                <p><strong>Role:</strong> {existingUserInfo.profileData?.role}</p>
+                <p><strong>Active:</strong> {existingUserInfo.profileData?.is_active ? 'Yes' : 'No'}</p>
+                <p><strong>Created:</strong> {existingUserInfo.profileData?.created_at ? new Date(existingUserInfo.profileData.created_at).toLocaleDateString() : 'Unknown'}</p>
+              </div>
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              <p><strong>Choose an action:</strong></p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li><strong>Restore User:</strong> Create a new authentication account and link it to the existing profile</li>
+                <li><strong>Clean & Create:</strong> Delete the orphaned profile and create a completely new user</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleCleanupAndCreate}
+              disabled={isCreating}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clean & Create New
+            </Button>
+            <Button 
+              onClick={handleRestoreUser}
+              disabled={isCreating}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Restore User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Success dialog for created credentials
   if (createdCredentials) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
@@ -277,6 +566,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     );
   }
 
+  // Main create user dialog
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -359,14 +649,8 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            {retryCount > 0 && !isCreating && (
-              <Button type="button" variant="secondary" onClick={handleRetry}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Retry ({retryCount})
-              </Button>
-            )}
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? 'Creating User...' : 'Create User'}
+            <Button type="submit" disabled={isCreating || isValidating}>
+              {isValidating ? 'Validating...' : isCreating ? 'Creating User...' : 'Create User'}
             </Button>
           </DialogFooter>
         </form>
