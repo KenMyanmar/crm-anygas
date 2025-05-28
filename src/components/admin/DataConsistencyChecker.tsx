@@ -6,14 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
-import { AlertTriangle, CheckCircle, RefreshCw, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle, RefreshCw, Trash2, Shield } from 'lucide-react';
 
 interface DataInconsistency {
-  type: 'ORPHANED_AUTH' | 'ORPHANED_PROFILE';
+  type: 'ORPHANED_AUTH' | 'ORPHANED_PROFILE' | 'UUID_COLLISION' | 'EMAIL_MISMATCH';
   email: string;
   authUserId?: string;
   profileId?: string;
   details: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
 const SUPABASE_URL = 'https://fblcilccdjicyosmuome.supabase.co';
@@ -35,7 +36,7 @@ const DataConsistencyChecker = () => {
 
   const scanForInconsistencies = async () => {
     setIsScanning(true);
-    console.log('=== SCANNING FOR DATA INCONSISTENCIES ===');
+    console.log('=== ENHANCED CONSISTENCY SCAN ===');
 
     try {
       const found: DataInconsistency[] = [];
@@ -57,36 +58,87 @@ const DataConsistencyChecker = () => {
       console.log('Auth users found:', authUsers.users.length);
       console.log('Profiles found:', profiles?.length || 0);
 
-      // Check for orphaned auth users (auth exists but no profile)
+      // Check for orphaned auth users (auth exists but no profile with matching UUID)
       for (const authUser of authUsers.users) {
         if (!authUser.email) continue;
         
-        const hasProfile = profiles?.some(profile => 
-          profile.email.toLowerCase() === authUser.email?.toLowerCase()
+        const hasMatchingProfile = profiles?.some(profile => 
+          profile.id === authUser.id
         );
         
-        if (!hasProfile) {
-          found.push({
-            type: 'ORPHANED_AUTH',
-            email: authUser.email,
-            authUserId: authUser.id,
-            details: `Auth user exists without corresponding profile`
-          });
+        if (!hasMatchingProfile) {
+          // Check if there's a profile with same email but different UUID
+          const emailProfile = profiles?.find(profile => 
+            profile.email.toLowerCase() === authUser.email?.toLowerCase()
+          );
+          
+          if (emailProfile) {
+            found.push({
+              type: 'UUID_COLLISION',
+              email: authUser.email,
+              authUserId: authUser.id,
+              profileId: emailProfile.id,
+              details: `Auth user UUID ${authUser.id} doesn't match profile UUID ${emailProfile.id} for same email`,
+              severity: 'critical'
+            });
+          } else {
+            found.push({
+              type: 'ORPHANED_AUTH',
+              email: authUser.email,
+              authUserId: authUser.id,
+              details: `Auth user exists without any corresponding profile`,
+              severity: 'high'
+            });
+          }
         }
       }
 
-      // Check for orphaned profiles (profile exists but no auth)
+      // Check for orphaned profiles (profile exists but no auth with matching UUID)
       for (const profile of profiles || []) {
-        const hasAuthUser = authUsers.users.some(authUser => 
-          authUser.email?.toLowerCase() === profile.email.toLowerCase()
+        const hasMatchingAuthUser = authUsers.users.some(authUser => 
+          authUser.id === profile.id
         );
         
-        if (!hasAuthUser) {
+        if (!hasMatchingAuthUser) {
+          // Check if there's an auth user with same email but different UUID
+          const emailAuthUser = authUsers.users.find(authUser => 
+            authUser.email?.toLowerCase() === profile.email.toLowerCase()
+          );
+          
+          if (emailAuthUser) {
+            found.push({
+              type: 'UUID_COLLISION',
+              email: profile.email,
+              authUserId: emailAuthUser.id,
+              profileId: profile.id,
+              details: `Profile UUID ${profile.id} doesn't match auth user UUID ${emailAuthUser.id} for same email`,
+              severity: 'critical'
+            });
+          } else {
+            found.push({
+              type: 'ORPHANED_PROFILE',
+              email: profile.email,
+              profileId: profile.id,
+              details: `Profile exists without any corresponding auth user`,
+              severity: 'medium'
+            });
+          }
+        }
+      }
+
+      // Check for email mismatches (same UUID but different emails)
+      for (const authUser of authUsers.users) {
+        if (!authUser.email) continue;
+        
+        const matchingProfile = profiles?.find(profile => profile.id === authUser.id);
+        if (matchingProfile && matchingProfile.email.toLowerCase() !== authUser.email.toLowerCase()) {
           found.push({
-            type: 'ORPHANED_PROFILE',
-            email: profile.email,
-            profileId: profile.id,
-            details: `Profile exists without corresponding auth user`
+            type: 'EMAIL_MISMATCH',
+            email: authUser.email,
+            authUserId: authUser.id,
+            profileId: matchingProfile.id,
+            details: `Auth email "${authUser.email}" doesn't match profile email "${matchingProfile.email}" for UUID ${authUser.id}`,
+            severity: 'high'
           });
         }
       }
@@ -94,16 +146,23 @@ const DataConsistencyChecker = () => {
       setInconsistencies(found);
       setLastScanTime(new Date());
 
-      console.log('Inconsistencies found:', found.length);
+      console.log('Enhanced scan results:', {
+        total: found.length,
+        critical: found.filter(i => i.severity === 'critical').length,
+        high: found.filter(i => i.severity === 'high').length,
+        medium: found.filter(i => i.severity === 'medium').length,
+        low: found.filter(i => i.severity === 'low').length
+      });
 
       if (found.length === 0) {
         toast({
           description: "No data inconsistencies found. System is healthy!",
         });
       } else {
+        const criticalCount = found.filter(i => i.severity === 'critical').length;
         toast({
           title: "Data inconsistencies detected",
-          description: `Found ${found.length} issue(s) that need attention`,
+          description: `Found ${found.length} issue(s) including ${criticalCount} critical problem(s)`,
           variant: "destructive",
         });
       }
@@ -126,35 +185,77 @@ const DataConsistencyChecker = () => {
     console.log('Email:', inconsistency.email);
 
     try {
-      if (inconsistency.type === 'ORPHANED_AUTH') {
-        // Delete orphaned auth user
-        if (inconsistency.authUserId) {
-          const { error } = await adminClient.auth.admin.deleteUser(inconsistency.authUserId);
-          if (error) {
-            throw new Error(`Failed to delete auth user: ${error.message}`);
+      switch (inconsistency.type) {
+        case 'ORPHANED_AUTH':
+          // Delete orphaned auth user
+          if (inconsistency.authUserId) {
+            const { error } = await adminClient.auth.admin.deleteUser(inconsistency.authUserId);
+            if (error) {
+              throw new Error(`Failed to delete auth user: ${error.message}`);
+            }
+            console.log('Orphaned auth user deleted');
           }
-          console.log('Orphaned auth user deleted');
-        }
-      } else if (inconsistency.type === 'ORPHANED_PROFILE') {
-        // Delete orphaned profile
-        const { error } = await adminClient
-          .from('users')
-          .delete()
-          .eq('email', inconsistency.email);
-        
-        if (error) {
-          throw new Error(`Failed to delete profile: ${error.message}`);
-        }
-        console.log('Orphaned profile deleted');
+          break;
+
+        case 'ORPHANED_PROFILE':
+          // Delete orphaned profile
+          const { error: profileDeleteError } = await adminClient
+            .from('users')
+            .delete()
+            .eq('email', inconsistency.email);
+          
+          if (profileDeleteError) {
+            throw new Error(`Failed to delete profile: ${profileDeleteError.message}`);
+          }
+          console.log('Orphaned profile deleted');
+          break;
+
+        case 'UUID_COLLISION':
+          // For UUID collisions, we need to do a complete cleanup
+          console.log('Performing nuclear cleanup for UUID collision...');
+          
+          // Delete all profiles with this email
+          await adminClient
+            .from('users')
+            .delete()
+            .ilike('email', inconsistency.email);
+          
+          // Delete all auth users with this email
+          const { data: authUsers } = await adminClient.auth.admin.listUsers();
+          const matchingAuthUsers = authUsers.users.filter(user => 
+            user.email?.toLowerCase() === inconsistency.email.toLowerCase()
+          );
+          
+          for (const authUser of matchingAuthUsers) {
+            await adminClient.auth.admin.deleteUser(authUser.id);
+          }
+          
+          console.log('UUID collision resolved with nuclear cleanup');
+          break;
+
+        case 'EMAIL_MISMATCH':
+          // Update profile email to match auth user email
+          if (inconsistency.authUserId) {
+            const { error: updateError } = await adminClient
+              .from('users')
+              .update({ email: inconsistency.email })
+              .eq('id', inconsistency.authUserId);
+            
+            if (updateError) {
+              throw new Error(`Failed to update profile email: ${updateError.message}`);
+            }
+            console.log('Profile email updated to match auth user');
+          }
+          break;
       }
 
       // Remove from inconsistencies list
       setInconsistencies(prev => prev.filter(item => 
-        item.email !== inconsistency.email || item.type !== inconsistency.type
+        !(item.email === inconsistency.email && item.type === inconsistency.type)
       ));
 
       toast({
-        description: `Fixed inconsistency for ${inconsistency.email}`,
+        description: `Fixed ${inconsistency.type.toLowerCase().replace('_', ' ')} for ${inconsistency.email}`,
       });
 
     } catch (error: any) {
@@ -171,7 +272,13 @@ const DataConsistencyChecker = () => {
     setIsFixing(true);
     
     try {
-      for (const inconsistency of inconsistencies) {
+      // Sort by severity (critical first)
+      const sortedInconsistencies = [...inconsistencies].sort((a, b) => {
+        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        return severityOrder[b.severity] - severityOrder[a.severity];
+      });
+
+      for (const inconsistency of sortedInconsistencies) {
         await fixInconsistency(inconsistency);
         // Small delay between fixes
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -192,14 +299,20 @@ const DataConsistencyChecker = () => {
     }
   };
 
-  const getInconsistencyBadgeVariant = (type: DataInconsistency['type']) => {
-    switch (type) {
-      case 'ORPHANED_AUTH':
-        return 'destructive' as const;
-      case 'ORPHANED_PROFILE':
-        return 'secondary' as const;
-      default:
-        return 'outline' as const;
+  const getInconsistencyBadgeVariant = (type: DataInconsistency['type'], severity: DataInconsistency['severity']) => {
+    if (severity === 'critical') return 'destructive' as const;
+    if (severity === 'high') return 'destructive' as const;
+    if (severity === 'medium') return 'secondary' as const;
+    return 'outline' as const;
+  };
+
+  const getSeverityColor = (severity: DataInconsistency['severity']) => {
+    switch (severity) {
+      case 'critical': return 'text-red-600';
+      case 'high': return 'text-orange-600';
+      case 'medium': return 'text-yellow-600';
+      case 'low': return 'text-blue-600';
+      default: return 'text-gray-600';
     }
   };
 
@@ -208,10 +321,10 @@ const DataConsistencyChecker = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" />
-          Data Consistency Checker
+          Enhanced Data Consistency Checker
         </CardTitle>
         <CardDescription>
-          Scan for and resolve data inconsistencies between auth users and profiles.
+          Comprehensive scan for data inconsistencies including UUID collisions, orphaned records, and email mismatches.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -222,7 +335,7 @@ const DataConsistencyChecker = () => {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
-            {isScanning ? 'Scanning...' : 'Scan for Issues'}
+            {isScanning ? 'Scanning...' : 'Enhanced Scan'}
           </Button>
           
           {inconsistencies.length > 0 && (
@@ -232,7 +345,7 @@ const DataConsistencyChecker = () => {
               disabled={isFixing}
               className="flex items-center gap-2"
             >
-              <Trash2 className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               {isFixing ? 'Fixing...' : 'Fix All Issues'}
             </Button>
           )}
@@ -263,9 +376,12 @@ const DataConsistencyChecker = () => {
               <div key={index} className="p-3 border rounded-md space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant={getInconsistencyBadgeVariant(inconsistency.type)}>
+                    <Badge variant={getInconsistencyBadgeVariant(inconsistency.type, inconsistency.severity)}>
                       {inconsistency.type.replace('_', ' ')}
                     </Badge>
+                    <span className={`text-xs font-medium uppercase ${getSeverityColor(inconsistency.severity)}`}>
+                      {inconsistency.severity}
+                    </span>
                     <span className="font-medium">{inconsistency.email}</span>
                   </div>
                   <Button
@@ -281,6 +397,16 @@ const DataConsistencyChecker = () => {
                 <div className="text-sm text-muted-foreground">
                   {inconsistency.details}
                 </div>
+                {inconsistency.authUserId && (
+                  <div className="text-xs text-muted-foreground">
+                    Auth ID: {inconsistency.authUserId}
+                  </div>
+                )}
+                {inconsistency.profileId && (
+                  <div className="text-xs text-muted-foreground">
+                    Profile ID: {inconsistency.profileId}
+                  </div>
+                )}
               </div>
             ))}
           </div>
