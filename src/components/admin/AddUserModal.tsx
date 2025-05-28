@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
 import { Copy, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
@@ -14,6 +15,19 @@ interface AddUserModalProps {
   onOpenChange: (open: boolean) => void;
   onUserCreated: () => void;
 }
+
+// Service Role Key for direct admin operations
+// WARNING: This is exposed in the frontend and should only be used by trusted administrators
+const SUPABASE_URL = 'https://fblcilccdjicyosmuome.supabase.co';
+const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibGNpbGNjZGppY3lvc211b21lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Njk3NzMzMywiZXhwIjoyMDYyNTUzMzMzfQ.CaTkwECtJrGNvSFcM00Y8WZvDvqHNw6CsdJF2LB3qM8';
+
+// Create admin client for user management
+const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) => {
   const [formData, setFormData] = useState({
@@ -37,6 +51,15 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     setFormData(prev => ({ ...prev, password }));
   };
 
+  const generateRandomPassword = (): string => {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  };
+
   const createUser = async (isRetry = false) => {
     if (!formData.email || !formData.full_name) {
       toast({
@@ -48,7 +71,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     }
 
     try {
-      console.log('=== FRONTEND USER CREATION START ===');
+      console.log('=== DIRECT USER CREATION START ===');
       console.log('Form data:', {
         email: formData.email,
         full_name: formData.full_name,
@@ -59,41 +82,77 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
 
       const userPassword = formData.password || generateRandomPassword();
       
-      // Call the edge function
-      console.log('Calling edge function...');
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
+      // Step 1: Create auth user using admin client
+      console.log('Creating auth user...');
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+        email: formData.email.trim(),
+        password: userPassword,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          full_name: formData.full_name.trim(),
+          role: formData.role
+        }
+      });
+
+      if (authError) {
+        console.error('Auth user creation error:', authError);
+        
+        // Handle specific auth errors
+        if (authError.message.includes('already registered')) {
+          throw new Error('A user with this email already exists');
+        } else if (authError.message.includes('invalid email')) {
+          throw new Error('Please provide a valid email address');
+        } else {
+          throw new Error(`Failed to create user account: ${authError.message}`);
+        }
+      }
+
+      if (!authData.user) {
+        throw new Error('Auth user creation failed - no user data returned');
+      }
+
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // Step 2: Create user profile in users table
+      console.log('Creating user profile...');
+      const { error: profileError } = await adminClient
+        .from('users')
+        .insert({
+          id: authData.user.id,
           email: formData.email.trim(),
           full_name: formData.full_name.trim(),
           role: formData.role,
-          password: userPassword,
-        },
-      });
+          is_active: true,
+          must_reset_pw: true
+        });
 
-      console.log('Edge function response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Edge function error: ${error.message}`);
-      }
-
-      if (!data) {
-        throw new Error('No response data from edge function');
-      }
-
-      if (!data.success) {
-        console.error('Edge function returned failure:', data);
-        throw new Error(data.error || 'User creation failed');
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        
+        // If profile creation fails, we should clean up the auth user
+        console.log('Cleaning up auth user due to profile creation failure...');
+        try {
+          await adminClient.auth.admin.deleteUser(authData.user.id);
+          console.log('Auth user cleanup successful');
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError);
+        }
+        
+        if (profileError.message.includes('duplicate key')) {
+          throw new Error('User profile already exists in the system');
+        } else {
+          throw new Error(`Failed to create user profile: ${profileError.message}`);
+        }
       }
 
       console.log('=== USER CREATION SUCCESSFUL ===');
-      console.log('User ID:', data.user?.id);
-      console.log('Has credentials:', !!data.credentials);
+      console.log('User ID:', authData.user.id);
+      console.log('Email:', authData.user.email);
 
       // Set credentials for display
       setCreatedCredentials({
-        email: data.credentials.email,
-        password: data.credentials.password,
+        email: formData.email.trim(),
+        password: userPassword,
       });
 
       toast({
@@ -111,15 +170,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       let errorMessage = 'Failed to create user';
       
       if (error.message) {
-        if (error.message.includes('duplicate key') || error.message.includes('already exists')) {
-          errorMessage = 'User already exists in the system';
-        } else if (error.message.includes('invalid API key')) {
-          errorMessage = 'Configuration error: Invalid API key. Please contact your administrator.';
-        } else if (error.message.includes('environment variables')) {
-          errorMessage = 'Server configuration error. Please contact your administrator.';
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
 
       toast({
@@ -130,15 +181,6 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       
       return false;
     }
-  };
-
-  const generateRandomPassword = (): string => {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    return password;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -241,7 +283,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
           <DialogDescription>
-            Create a new user account. If a user with this email already exists, it will be replaced.
+            Create a new user account. This creates both an authentication account and user profile.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
