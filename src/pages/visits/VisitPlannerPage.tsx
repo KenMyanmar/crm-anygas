@@ -1,0 +1,184 @@
+
+import { useState } from 'react';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import { useVisitPlans } from '@/hooks/useVisitPlans';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Plus, MapPin, Users, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+
+const VisitPlannerPage = () => {
+  const navigate = useNavigate();
+  const { plans, isLoading, createVisitPlan } = useVisitPlans();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    plan_date: '',
+    remarks: ''
+  });
+
+  const handleCreatePlan = async () => {
+    try {
+      const newPlan = await createVisitPlan(formData);
+      setIsCreateDialogOpen(false);
+      setFormData({ title: '', plan_date: '', remarks: '' });
+      navigate(`/visits/plans/${newPlan.id}`);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading visit plans...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Visit Planner</h1>
+            <p className="text-muted-foreground">
+              Plan and manage your field visits efficiently
+            </p>
+          </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Visit Plan
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Visit Plan</DialogTitle>
+                <DialogDescription>
+                  Set up a new visit plan for your field activities.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., Downtown Restaurant Visits"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="plan_date">Plan Date</Label>
+                  <Input
+                    id="plan_date"
+                    type="date"
+                    value={formData.plan_date}
+                    onChange={(e) => setFormData({ ...formData, plan_date: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="remarks">Remarks (Optional)</Label>
+                  <Textarea
+                    id="remarks"
+                    value={formData.remarks}
+                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                    placeholder="Any additional notes for this visit plan..."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreatePlan}
+                  disabled={!formData.title || !formData.plan_date}
+                >
+                  Create Plan
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {plans.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No visit plans yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first visit plan to start organizing your field activities.
+              </p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Plan
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {plans.map((plan) => (
+              <Card 
+                key={plan.id}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => navigate(`/visits/plans/${plan.id}`)}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{plan.title}</CardTitle>
+                    <Badge variant="outline">
+                      {format(new Date(plan.plan_date), 'MMM dd')}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {format(new Date(plan.plan_date), 'EEEE, MMMM dd, yyyy')}
+                    </div>
+                    {plan.remarks && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {plan.remarks}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4 mr-1" />
+                        Created {format(new Date(plan.created_at), 'MMM dd')}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default VisitPlannerPage;

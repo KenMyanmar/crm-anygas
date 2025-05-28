@@ -211,6 +211,44 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          author_uid: string
+          body: string
+          created_at: string | null
+          id: string
+          target_id: string
+          target_type: Database["public"]["Enums"]["note_target_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          author_uid: string
+          body: string
+          created_at?: string | null
+          id?: string
+          target_id: string
+          target_type: Database["public"]["Enums"]["note_target_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          author_uid?: string
+          body?: string
+          created_at?: string | null
+          id?: string
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["note_target_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_author_uid_fkey"
+            columns: ["author_uid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -299,7 +337,7 @@ export type Database = {
           order_date: string | null
           order_number: string
           restaurant_id: string
-          status: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
           total_amount_kyats: number | null
           updated_at: string | null
         }
@@ -314,7 +352,7 @@ export type Database = {
           order_date?: string | null
           order_number: string
           restaurant_id: string
-          status?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
           total_amount_kyats?: number | null
           updated_at?: string | null
         }
@@ -329,7 +367,7 @@ export type Database = {
           order_date?: string | null
           order_number?: string
           restaurant_id?: string
-          status?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
           total_amount_kyats?: number | null
           updated_at?: string | null
         }
@@ -424,6 +462,61 @@ export type Database = {
             columns: ["salesperson_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_outcomes: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          lead_status: Database["public"]["Enums"]["lead_status"] | null
+          next_action: string | null
+          next_action_date: string | null
+          order_id: string | null
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          lead_status?: Database["public"]["Enums"]["lead_status"] | null
+          next_action?: string | null
+          next_action_date?: string | null
+          order_id?: string | null
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          lead_status?: Database["public"]["Enums"]["lead_status"] | null
+          next_action?: string | null
+          next_action_date?: string | null
+          order_id?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_outcomes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_outcomes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_outcomes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "visit_tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -538,6 +631,153 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          plan_date: string
+          remarks: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          plan_date: string
+          remarks?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          plan_date?: string
+          remarks?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_tasks: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          plan_id: string
+          restaurant_id: string
+          salesperson_uid: string
+          status: Database["public"]["Enums"]["visit_task_status"] | null
+          updated_at: string | null
+          visit_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          plan_id: string
+          restaurant_id: string
+          salesperson_uid: string
+          status?: Database["public"]["Enums"]["visit_task_status"] | null
+          updated_at?: string | null
+          visit_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          plan_id?: string
+          restaurant_id?: string
+          salesperson_uid?: string
+          status?: Database["public"]["Enums"]["visit_task_status"] | null
+          updated_at?: string | null
+          visit_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_tasks_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "visit_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_salesperson_uid_fkey"
+            columns: ["salesperson_uid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_notes: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          duration_sec: number | null
+          file_url: string
+          id: string
+          linked_id: string | null
+          linked_type: Database["public"]["Enums"]["voice_linked_type"] | null
+          restaurant_id: string
+          transcript: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          duration_sec?: number | null
+          file_url: string
+          id?: string
+          linked_id?: string | null
+          linked_type?: Database["public"]["Enums"]["voice_linked_type"] | null
+          restaurant_id: string
+          transcript?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          duration_sec?: number | null
+          file_url?: string
+          id?: string
+          linked_id?: string | null
+          linked_type?: Database["public"]["Enums"]["voice_linked_type"] | null
+          restaurant_id?: string
+          transcript?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_notes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -567,7 +807,22 @@ export type Database = {
         | "PRESENTATION_NEGOTIATION"
         | "CLOSED_WON"
         | "CLOSED_LOST"
+      note_target_type:
+        | "lead"
+        | "order"
+        | "visit"
+        | "meeting"
+        | "restaurant"
+        | "generic"
+      order_status:
+        | "PENDING_APPROVAL"
+        | "APPROVED"
+        | "IN_DELIVERY"
+        | "DELIVERED"
+        | "CANCELED"
       user_role: "admin" | "salesperson" | "staff" | "manager" | "viewer"
+      visit_task_status: "PLANNED" | "VISITED" | "RESCHEDULED" | "CANCELED"
+      voice_linked_type: "lead" | "order" | "visit" | "meeting" | "generic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -690,7 +945,24 @@ export const Constants = {
         "CLOSED_WON",
         "CLOSED_LOST",
       ],
+      note_target_type: [
+        "lead",
+        "order",
+        "visit",
+        "meeting",
+        "restaurant",
+        "generic",
+      ],
+      order_status: [
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "IN_DELIVERY",
+        "DELIVERED",
+        "CANCELED",
+      ],
       user_role: ["admin", "salesperson", "staff", "manager", "viewer"],
+      visit_task_status: ["PLANNED", "VISITED", "RESCHEDULED", "CANCELED"],
+      voice_linked_type: ["lead", "order", "visit", "meeting", "generic"],
     },
   },
 } as const
