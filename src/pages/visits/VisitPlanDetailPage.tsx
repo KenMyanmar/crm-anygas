@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
@@ -32,7 +31,7 @@ import { VisitTask } from '@/types/visits';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const VisitPlanDetailPage = () => {
-  const { planId } = useParams<{ planId: string }>();
+  const { id: planId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { plans, updateVisitPlan } = useVisitPlans();
@@ -42,6 +41,14 @@ const VisitPlanDetailPage = () => {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
 
   const currentPlan = plans.find(plan => plan.id === planId);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('VisitPlanDetailPage loaded');
+    console.log('Plan ID from params:', planId);
+    console.log('Current plan:', currentPlan);
+    console.log('Tasks:', tasks);
+  }, [planId, currentPlan, tasks]);
 
   // Show bulk selector dialog immediately if plan has no restaurants
   useEffect(() => {

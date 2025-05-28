@@ -43,12 +43,20 @@ const VisitPlannerPage = () => {
   const handleCreatePlan = async () => {
     try {
       const newPlan = await createVisitPlan(formData);
+      console.log('Created plan:', newPlan);
       setIsCreateDialogOpen(false);
       setFormData({ title: '', plan_date: '', remarks: '' });
+      console.log('Navigating to:', `/visits/plans/${newPlan.id}`);
       navigate(`/visits/plans/${newPlan.id}`);
     } catch (error) {
-      // Error handled in hook
+      console.error('Error creating plan:', error);
     }
+  };
+
+  const handleNavigateToDetail = (planId: string) => {
+    console.log('Navigating to plan detail:', planId);
+    console.log('Navigation URL:', `/visits/plans/${planId}`);
+    navigate(`/visits/plans/${planId}`);
   };
 
   if (isLoading) {
@@ -162,7 +170,7 @@ const VisitPlannerPage = () => {
               <Card 
                 key={plan.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(`/visits/plans/${plan.id}`)}
+                onClick={() => handleNavigateToDetail(plan.id)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -194,7 +202,7 @@ const VisitPlannerPage = () => {
                         className="text-primary hover:text-primary/80"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/visits/plans/${plan.id}`);
+                          handleNavigateToDetail(plan.id);
                         }}
                       >
                         Add Restaurants <ArrowRight className="ml-1 h-3 w-3" />
