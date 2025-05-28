@@ -1,6 +1,7 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
+import DashboardLayout from './layouts/DashboardLayout';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -43,7 +44,13 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  // Special case: set-new-password page should not have dashboard layout
+  if (location.pathname === '/set-new-password') {
+    return <>{children}</>;
+  }
+
+  // All other authenticated pages get the dashboard layout
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 export default AuthWrapper;
