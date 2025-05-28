@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 import { AlertTriangle, CheckCircle, RefreshCw, Trash2, Shield } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface DataInconsistency {
   type: 'ORPHANED_AUTH' | 'ORPHANED_PROFILE' | 'UUID_COLLISION' | 'EMAIL_MISMATCH';
@@ -32,7 +32,103 @@ const DataConsistencyChecker = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
+  const [emergencyEmail, setEmergencyEmail] = useState('');
+  const [isEmergencyCleanup, setIsEmergencyCleanup] = useState(false);
   const { toast } = useToast();
+
+  // Emergency cleanup function for specific email
+  const emergencyCleanupByEmail = async (email: string) => {
+    console.log('=== EMERGENCY CLEANUP ===');
+    console.log('Target email:', email);
+
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      
+      if (!cleanEmail) {
+        throw new Error('Email is required');
+      }
+
+      // Step 1: Get ALL auth users with this email
+      const { data: authUsers } = await adminClient.auth.admin.listUsers();
+      const matchingAuthUsers = authUsers.users.filter(user => 
+        user.email?.toLowerCase() === cleanEmail
+      );
+
+      // Step 2: Get ALL profiles with this email or matching UUIDs
+      const uuidsToClean = new Set<string>();
+      matchingAuthUsers.forEach(user => uuidsToClean.add(user.id));
+
+      const { data: emailProfiles } = await adminClient
+        .from('users')
+        .select('*')
+        .ilike('email', cleanEmail);
+
+      emailProfiles?.forEach(profile => uuidsToClean.add(profile.id));
+
+      console.log('Found to delete:', {
+        authUsers: matchingAuthUsers.length,
+        profiles: emailProfiles?.length || 0,
+        totalUUIDs: uuidsToClean.size
+      });
+
+      // Step 3: Delete ALL profiles (multiple approaches)
+      for (const uuid of uuidsToClean) {
+        await adminClient.from('users').delete().eq('id', uuid);
+      }
+      
+      // Also delete by email pattern
+      await adminClient.from('users').delete().ilike('email', cleanEmail);
+
+      // Step 4: Delete ALL auth users
+      for (const authUser of matchingAuthUsers) {
+        const { error } = await adminClient.auth.admin.deleteUser(authUser.id);
+        if (error) {
+          console.error('Auth deletion error:', error);
+        }
+      }
+
+      // Step 5: Wait and verify
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Verification
+      const { data: verifyAuth } = await adminClient.auth.admin.listUsers();
+      const remainingAuth = verifyAuth.users.filter(user => 
+        user.email?.toLowerCase() === cleanEmail
+      );
+
+      const { data: verifyProfiles } = await adminClient
+        .from('users')
+        .select('*')
+        .ilike('email', cleanEmail);
+
+      console.log('Cleanup results:', {
+        deletedAuthUsers: matchingAuthUsers.length,
+        deletedProfiles: emailProfiles?.length || 0,
+        remainingAuth: remainingAuth.length,
+        remainingProfiles: verifyProfiles?.length || 0
+      });
+
+      if (remainingAuth.length === 0 && (!verifyProfiles || verifyProfiles.length === 0)) {
+        toast({
+          description: `Emergency cleanup successful for ${email}`,
+        });
+      } else {
+        toast({
+          title: "Partial cleanup",
+          description: `Some records may still exist: ${remainingAuth.length} auth, ${verifyProfiles?.length || 0} profiles`,
+          variant: "destructive",
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Emergency cleanup failed:', error);
+      toast({
+        title: "Emergency cleanup failed",
+        description: error.message || 'Failed to cleanup user data',
+        variant: "destructive",
+      });
+    }
+  };
 
   const scanForInconsistencies = async () => {
     setIsScanning(true);
@@ -349,6 +445,40 @@ const DataConsistencyChecker = () => {
               {isFixing ? 'Fixing...' : 'Fix All Issues'}
             </Button>
           )}
+        </div>
+
+        {/* Emergency Cleanup Section */}
+        <div className="p-4 border border-red-200 rounded-md bg-red-50">
+          <h4 className="font-semibold text-red-800 mb-2 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Emergency Manual Cleanup
+          </h4>
+          <p className="text-sm text-red-700 mb-3">
+            Use this to forcefully remove ALL traces of a user by email when UUID collisions persist.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter email to cleanup"
+              value={emergencyEmail}
+              onChange={(e) => setEmergencyEmail(e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setIsEmergencyCleanup(true);
+                emergencyCleanupByEmail(emergencyEmail).finally(() => {
+                  setIsEmergencyCleanup(false);
+                  setEmergencyEmail('');
+                });
+              }}
+              disabled={isEmergencyCleanup || !emergencyEmail.trim()}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              {isEmergencyCleanup ? 'Cleaning...' : 'Emergency Cleanup'}
+            </Button>
+          </div>
         </div>
 
         {lastScanTime && (

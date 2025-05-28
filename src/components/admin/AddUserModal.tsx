@@ -8,22 +8,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
-import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, Trash2, UserPlus, Shield } from 'lucide-react';
+import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, UserPlus, Shield } from 'lucide-react';
 
 interface AddUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUserCreated: () => void;
-}
-
-interface ConflictInfo {
-  hasAuthUser: boolean;
-  hasProfile: boolean;
-  authUserId?: string;
-  authUserEmail?: string;
-  profileData?: any;
-  conflictType: 'COMPLETE_DUPLICATE' | 'ORPHANED_PROFILE' | 'ORPHANED_AUTH' | 'UUID_COLLISION' | 'NONE';
-  description: string;
 }
 
 const SUPABASE_URL = 'https://fblcilccdjicyosmuome.supabase.co';
@@ -46,8 +36,6 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
-  const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
-  const [showConflictDialog, setShowConflictDialog] = useState(false);
   const { toast } = useToast();
 
   const generateRandomPassword = (): string => {
@@ -64,295 +52,214 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     setFormData(prev => ({ ...prev, password }));
   };
 
-  // Comprehensive conflict detection with UUID collision prevention
-  const detectAllConflicts = async (email: string): Promise<ConflictInfo> => {
-    console.log('=== COMPREHENSIVE CONFLICT DETECTION ===');
-    console.log('Email (case-insensitive):', email.toLowerCase());
-
-    try {
-      const cleanEmail = email.trim().toLowerCase();
-
-      // Get all auth users
-      const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
-      if (authError) {
-        throw new Error(`Failed to check auth users: ${authError.message}`);
-      }
-
-      // Find auth user by email (case-insensitive)
-      const existingAuthUser = authUsers.users.find(user => 
-        user.email?.toLowerCase() === cleanEmail
-      );
-
-      // Get all profiles that match the email (case-insensitive)
-      const { data: emailProfiles, error: emailProfileError } = await adminClient
-        .from('users')
-        .select('*')
-        .ilike('email', cleanEmail);
-
-      if (emailProfileError) {
-        console.error('Error checking profiles by email:', emailProfileError);
-        throw new Error(`Failed to check profiles by email: ${emailProfileError.message}`);
-      }
-
-      // If we have an auth user, also check for profiles with that UUID
-      let uuidProfile = null;
-      if (existingAuthUser) {
-        const { data: uuidProfileData, error: uuidProfileError } = await adminClient
-          .from('users')
-          .select('*')
-          .eq('id', existingAuthUser.id)
-          .maybeSingle();
-
-        if (uuidProfileError && uuidProfileError.code !== 'PGRST116') {
-          console.error('Error checking profile by UUID:', uuidProfileError);
-          throw new Error(`Failed to check profile by UUID: ${uuidProfileError.message}`);
-        }
-
-        uuidProfile = uuidProfileData;
-      }
-
-      console.log('Detection results:', {
-        authUser: !!existingAuthUser,
-        emailProfiles: emailProfiles?.length || 0,
-        uuidProfile: !!uuidProfile
-      });
-
-      // Determine conflict type and description
-      let conflictType: ConflictInfo['conflictType'] = 'NONE';
-      let description = '';
-
-      if (existingAuthUser && uuidProfile && emailProfiles && emailProfiles.length > 0) {
-        conflictType = 'COMPLETE_DUPLICATE';
-        description = 'Both auth user and profile exist with matching email and UUID';
-      } else if (existingAuthUser && !uuidProfile && emailProfiles && emailProfiles.length > 0) {
-        conflictType = 'UUID_COLLISION';
-        description = 'Auth user exists, but profile with different UUID has same email';
-      } else if (existingAuthUser && uuidProfile && (!emailProfiles || emailProfiles.length === 0)) {
-        conflictType = 'ORPHANED_AUTH';
-        description = 'Auth user and UUID-matched profile exist, but email doesn\'t match';
-      } else if (existingAuthUser && !uuidProfile) {
-        conflictType = 'ORPHANED_AUTH';
-        description = 'Auth user exists but no corresponding profile found';
-      } else if (!existingAuthUser && emailProfiles && emailProfiles.length > 0) {
-        conflictType = 'ORPHANED_PROFILE';
-        description = 'Profile exists but no corresponding auth user found';
-      }
-
-      const result: ConflictInfo = {
-        hasAuthUser: !!existingAuthUser,
-        hasProfile: !!(uuidProfile || (emailProfiles && emailProfiles.length > 0)),
-        authUserId: existingAuthUser?.id,
-        authUserEmail: existingAuthUser?.email,
-        profileData: uuidProfile || emailProfiles?.[0],
-        conflictType,
-        description
-      };
-
-      console.log('Final conflict info:', result);
-      return result;
-
-    } catch (error: any) {
-      console.error('Error in detectAllConflicts:', error);
-      throw error;
-    }
-  };
-
-  // Nuclear cleanup - removes ALL traces of a user by email
-  const nuclearCleanup = async (email: string): Promise<void> => {
-    console.log('=== NUCLEAR CLEANUP INITIATED ===');
+  // CRITICAL: Complete nuclear cleanup - removes ALL traces by email with verification
+  const completeNuclearCleanup = async (email: string): Promise<void> => {
+    console.log('=== COMPLETE NUCLEAR CLEANUP ===');
     console.log('Target email:', email);
 
     try {
       const cleanEmail = email.trim().toLowerCase();
 
-      // Step 1: Get all auth users with this email
+      // Step 1: Get ALL auth users with this email (case-insensitive)
       const { data: authUsers } = await adminClient.auth.admin.listUsers();
       const matchingAuthUsers = authUsers.users.filter(user => 
         user.email?.toLowerCase() === cleanEmail
       );
 
-      // Step 2: Delete all profiles with this email (case-insensitive)
-      console.log('Deleting all profiles with email:', cleanEmail);
-      const { error: profileDeleteError } = await adminClient
+      console.log('Found auth users to delete:', matchingAuthUsers.length);
+
+      // Step 2: Collect ALL UUIDs that might have profiles
+      const uuidsToClean = new Set<string>();
+      
+      // Add UUIDs from auth users
+      matchingAuthUsers.forEach(user => uuidsToClean.add(user.id));
+
+      // Step 3: Find profiles by email (case-insensitive)
+      const { data: emailProfiles } = await adminClient
         .from('users')
-        .delete()
+        .select('id, email')
         .ilike('email', cleanEmail);
 
-      if (profileDeleteError) {
-        console.log('Profile deletion note:', profileDeleteError.message);
-      } else {
-        console.log('Successfully deleted profiles by email');
+      console.log('Found profiles by email:', emailProfiles?.length || 0);
+      
+      // Add UUIDs from email profiles
+      emailProfiles?.forEach(profile => uuidsToClean.add(profile.id));
+
+      console.log('Total UUIDs to clean:', uuidsToClean.size);
+
+      // Step 4: Delete ALL profiles by UUID (multiple approaches for safety)
+      for (const uuid of uuidsToClean) {
+        console.log('Deleting profile by UUID:', uuid);
+        
+        // Try multiple delete approaches
+        await adminClient.from('users').delete().eq('id', uuid);
+        await adminClient.from('users').delete().ilike('email', cleanEmail);
       }
 
-      // Step 3: Delete all auth users with this email
+      // Step 5: Delete ALL auth users
       for (const authUser of matchingAuthUsers) {
         console.log('Deleting auth user:', authUser.id);
-        
-        // Also delete any profile with this UUID (belt and suspenders)
-        const { error: uuidProfileDeleteError } = await adminClient
-          .from('users')
-          .delete()
-          .eq('id', authUser.id);
-
-        if (uuidProfileDeleteError) {
-          console.log('UUID profile deletion note:', uuidProfileDeleteError.message);
-        }
-
-        // Delete the auth user
-        const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(authUser.id);
-        if (authDeleteError) {
-          console.error('Auth user deletion error:', authDeleteError);
-          throw new Error(`Failed to delete auth user ${authUser.id}: ${authDeleteError.message}`);
+        const { error } = await adminClient.auth.admin.deleteUser(authUser.id);
+        if (error) {
+          console.error('Auth deletion error for', authUser.id, ':', error);
         }
       }
 
-      // Step 4: Wait for propagation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      console.log('=== NUCLEAR CLEANUP COMPLETED ===');
+      // Step 6: VERIFICATION - ensure cleanup was complete
+      console.log('=== CLEANUP VERIFICATION ===');
       
+      // Wait for deletion to propagate
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Verify no auth users remain
+      const { data: remainingAuthUsers } = await adminClient.auth.admin.listUsers();
+      const stillExistingAuth = remainingAuthUsers.users.filter(user => 
+        user.email?.toLowerCase() === cleanEmail
+      );
+
+      // Verify no profiles remain
+      const { data: remainingProfiles } = await adminClient
+        .from('users')
+        .select('id, email')
+        .or(`email.ilike.${cleanEmail},${Array.from(uuidsToClean).map(uuid => `id.eq.${uuid}`).join(',')}`);
+
+      if (stillExistingAuth.length > 0 || (remainingProfiles && remainingProfiles.length > 0)) {
+        console.error('CLEANUP FAILED - REMAINING RECORDS:');
+        console.error('Auth users:', stillExistingAuth.length);
+        console.error('Profiles:', remainingProfiles?.length || 0);
+        throw new Error(`Cleanup verification failed: ${stillExistingAuth.length} auth users and ${remainingProfiles?.length || 0} profiles still exist`);
+      }
+
+      console.log('=== CLEANUP VERIFICATION PASSED ===');
+
     } catch (error: any) {
-      console.error('Error in nuclearCleanup:', error);
+      console.error('Complete nuclear cleanup failed:', error);
       throw error;
     }
   };
 
-  // Atomic user creation with enhanced error handling
-  const createUserWithRetry = async (maxRetries = 3): Promise<boolean> => {
+  // CRITICAL: Pre-flight check with aggressive cleanup
+  const preFlightCleanupAndCheck = async (email: string): Promise<boolean> => {
+    console.log('=== PRE-FLIGHT CLEANUP AND CHECK ===');
+    const cleanEmail = email.trim().toLowerCase();
+
+    try {
+      // Perform complete nuclear cleanup first
+      await completeNuclearCleanup(cleanEmail);
+
+      // Double-check that everything is clean
+      const { data: authUsers } = await adminClient.auth.admin.listUsers();
+      const existingAuth = authUsers.users.find(user => 
+        user.email?.toLowerCase() === cleanEmail
+      );
+
+      const { data: existingProfiles } = await adminClient
+        .from('users')
+        .select('*')
+        .ilike('email', cleanEmail);
+
+      if (existingAuth || (existingProfiles && existingProfiles.length > 0)) {
+        console.error('PRE-FLIGHT CHECK FAILED - RECORDS STILL EXIST');
+        throw new Error('Unable to clean existing records completely');
+      }
+
+      console.log('PRE-FLIGHT CHECK PASSED - ALL CLEAN');
+      return true;
+
+    } catch (error: any) {
+      console.error('Pre-flight cleanup failed:', error);
+      throw error;
+    }
+  };
+
+  // CRITICAL: Simplified atomic user creation - no retry loops
+  const createUserAtomic = async (): Promise<boolean> => {
     const userPassword = formData.password || generateRandomPassword();
     const cleanEmail = formData.email.trim().toLowerCase();
     const cleanFullName = formData.full_name.trim();
 
-    console.log('=== ATOMIC USER CREATION WITH RETRY ===');
+    console.log('=== ATOMIC USER CREATION ===');
+    console.log('Email:', cleanEmail);
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      console.log(`Attempt ${attempt}/${maxRetries}`);
+    try {
+      // STEP 1: Pre-flight cleanup - ensure no conflicts exist
+      await preFlightCleanupAndCheck(cleanEmail);
 
-      try {
-        // Pre-creation verification
-        console.log('Pre-creation verification...');
-        const preCheck = await detectAllConflicts(cleanEmail);
-        
-        if (preCheck.conflictType !== 'NONE') {
-          console.log('Pre-creation conflict detected:', preCheck.conflictType);
-          throw new Error(`Pre-creation conflict: ${preCheck.description}`);
+      // STEP 2: Create auth user
+      console.log('Creating auth user...');
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+        email: cleanEmail,
+        password: userPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: cleanFullName,
+          role: formData.role
         }
+      });
 
-        // Step 1: Create auth user
-        console.log('Creating auth user...');
-        const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-          email: cleanEmail,
-          password: userPassword,
-          email_confirm: true,
-          user_metadata: {
-            full_name: cleanFullName,
-            role: formData.role
-          }
-        });
-
-        if (authError) {
-          console.error('Auth user creation failed:', authError);
-          throw new Error(`Auth creation failed: ${authError.message}`);
-        }
-
-        if (!authData.user) {
-          throw new Error('Auth user creation returned no data');
-        }
-
-        console.log('Auth user created:', authData.user.id);
-
-        // Step 2: Verify no UUID collision before profile creation
-        console.log('Checking for UUID collision...');
-        const { data: existingUuidProfile } = await adminClient
-          .from('users')
-          .select('*')
-          .eq('id', authData.user.id)
-          .maybeSingle();
-
-        if (existingUuidProfile) {
-          console.error('UUID collision detected! Cleaning up...');
-          
-          // Delete the auth user we just created
-          await adminClient.auth.admin.deleteUser(authData.user.id);
-          
-          // Delete the conflicting profile
-          await adminClient
-            .from('users')
-            .delete()
-            .eq('id', authData.user.id);
-          
-          throw new Error('UUID collision detected and cleaned up. Retrying...');
-        }
-
-        // Step 3: Create profile
-        console.log('Creating user profile...');
-        const { error: profileError } = await adminClient
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: cleanEmail,
-            full_name: cleanFullName,
-            role: formData.role,
-            is_active: true,
-            must_reset_pw: true
-          });
-
-        if (profileError) {
-          console.error('Profile creation failed, rolling back...');
-          
-          // Enhanced rollback
-          try {
-            await adminClient.auth.admin.deleteUser(authData.user.id);
-            
-            // Also clean up any profile that might have been created
-            await adminClient
-              .from('users')
-              .delete()
-              .eq('id', authData.user.id);
-              
-            console.log('Rollback completed');
-          } catch (rollbackError) {
-            console.error('CRITICAL: Rollback failed:', rollbackError);
-          }
-          
-          throw new Error(`Profile creation failed: ${profileError.message}`);
-        }
-
-        console.log('=== USER CREATION SUCCESSFUL ===');
-
-        // Set credentials for display
-        setCreatedCredentials({
-          email: cleanEmail,
-          password: userPassword,
-        });
-
-        toast({
-          description: `User ${formData.full_name} created successfully`,
-        });
-
-        onUserCreated();
-        return true;
-
-      } catch (error: any) {
-        console.error(`Attempt ${attempt} failed:`, error);
-        
-        if (attempt === maxRetries) {
-          console.error('=== ALL ATTEMPTS FAILED ===');
-          toast({
-            title: "Failed to create user",
-            description: error.message || 'All retry attempts failed',
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        // Wait before retry
-        console.log('Waiting before retry...');
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      if (authError) {
+        console.error('Auth creation failed:', authError);
+        throw new Error(`Auth creation failed: ${authError.message}`);
       }
-    }
 
-    return false;
+      if (!authData.user) {
+        throw new Error('Auth user creation returned no data');
+      }
+
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // STEP 3: Create profile (with enhanced error handling)
+      console.log('Creating user profile...');
+      const { error: profileError } = await adminClient
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: cleanEmail,
+          full_name: cleanFullName,
+          role: formData.role,
+          is_active: true,
+          must_reset_pw: true
+        });
+
+      if (profileError) {
+        console.error('Profile creation failed:', profileError);
+        
+        // ENHANCED ROLLBACK - clean up auth user
+        console.log('Rolling back auth user...');
+        try {
+          await adminClient.auth.admin.deleteUser(authData.user.id);
+          console.log('Auth user rollback successful');
+        } catch (rollbackError) {
+          console.error('CRITICAL: Auth user rollback failed:', rollbackError);
+        }
+        
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+      }
+
+      console.log('=== USER CREATION SUCCESSFUL ===');
+
+      // Set credentials for display
+      setCreatedCredentials({
+        email: cleanEmail,
+        password: userPassword,
+      });
+
+      toast({
+        description: `User ${formData.full_name} created successfully`,
+      });
+
+      onUserCreated();
+      return true;
+
+    } catch (error: any) {
+      console.error('Atomic user creation failed:', error);
+      toast({
+        title: "User creation failed",
+        description: error.message || 'Failed to create user',
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -370,49 +277,13 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     setIsProcessing(true);
 
     try {
-      // Comprehensive conflict detection
-      const conflicts = await detectAllConflicts(formData.email);
-      setConflictInfo(conflicts);
-
-      if (conflicts.conflictType === 'NONE') {
-        // No conflicts, proceed with creation
-        await createUserWithRetry();
-      } else {
-        // Show conflict resolution dialog
-        setShowConflictDialog(true);
-      }
-
+      // Direct atomic creation - no conflict detection loops
+      await createUserAtomic();
     } catch (error: any) {
       console.error('Error during user creation process:', error);
       toast({
-        title: "Process failed",
-        description: error.message || 'Failed to process user creation',
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Handle nuclear cleanup and create
-  const handleNuclearCleanupAndCreate = async () => {
-    setShowConflictDialog(false);
-    setIsProcessing(true);
-
-    try {
-      await nuclearCleanup(formData.email);
-      const success = await createUserWithRetry();
-      if (!success) {
-        toast({
-          title: "Creation failed after cleanup",
-          description: "User was cleaned up but recreation failed",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Nuclear cleanup failed",
-        description: error.message || 'Failed to cleanup and recreate user',
+        title: "User creation failed",
+        description: error.message || 'Failed to create user',
         variant: "destructive",
       });
     } finally {
@@ -448,84 +319,9 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       password: '',
     });
     setCreatedCredentials(null);
-    setConflictInfo(null);
-    setShowConflictDialog(false);
     setShowPassword(false);
     onOpenChange(false);
   };
-
-  // Conflict resolution dialog
-  if (showConflictDialog && conflictInfo) {
-    const getConflictIcon = () => {
-      switch (conflictInfo.conflictType) {
-        case 'COMPLETE_DUPLICATE':
-          return <AlertTriangle className="w-5 h-5 text-red-500" />;
-        case 'UUID_COLLISION':
-          return <AlertTriangle className="w-5 h-5 text-purple-500" />;
-        case 'ORPHANED_PROFILE':
-          return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-        case 'ORPHANED_AUTH':
-          return <AlertTriangle className="w-5 h-5 text-blue-500" />;
-        default:
-          return <AlertTriangle className="w-5 h-5 text-gray-500" />;
-      }
-    };
-
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {getConflictIcon()}
-              Data Conflict Detected
-            </DialogTitle>
-            <DialogDescription>
-              {conflictInfo.description}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="p-4 bg-muted rounded-md border">
-              <h4 className="font-medium mb-2">Conflict Details:</h4>
-              <div className="text-sm space-y-1">
-                <p><strong>Email:</strong> {formData.email}</p>
-                <p><strong>Type:</strong> {conflictInfo.conflictType.replace('_', ' ')}</p>
-                <p><strong>Auth User:</strong> {conflictInfo.hasAuthUser ? 'Exists' : 'Missing'}</p>
-                <p><strong>Profile:</strong> {conflictInfo.hasProfile ? 'Exists' : 'Missing'}</p>
-                {conflictInfo.profileData && (
-                  <>
-                    <p><strong>Existing Name:</strong> {conflictInfo.profileData.full_name}</p>
-                    <p><strong>Existing Role:</strong> {conflictInfo.profileData.role}</p>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              <p><strong>Solution:</strong></p>
-              <p>The <strong>Nuclear Cleanup</strong> option will completely remove all existing data for this email address (both auth user and profile records) and then create a fresh user account.</p>
-            </div>
-          </div>
-
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={handleClose} disabled={isProcessing}>
-              Cancel
-            </Button>
-            
-            <Button 
-              variant="destructive" 
-              onClick={handleNuclearCleanupAndCreate}
-              disabled={isProcessing}
-              className="flex items-center gap-2"
-            >
-              <Shield className="w-4 h-4" />
-              {isProcessing ? 'Processing...' : 'Nuclear Cleanup & Create'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   // Success dialog for created credentials
   if (createdCredentials) {
@@ -576,7 +372,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
           <DialogDescription>
-            Create a new user account with enhanced conflict detection and resolution.
+            Create a new user account with enhanced cleanup to prevent UUID collisions.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -653,7 +449,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
               Cancel
             </Button>
             <Button type="submit" disabled={isProcessing}>
-              {isProcessing ? 'Processing...' : 'Create User'}
+              {isProcessing ? 'Creating User...' : 'Create User'}
             </Button>
           </DialogFooter>
         </form>
