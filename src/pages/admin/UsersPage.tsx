@@ -8,8 +8,8 @@ import { User, UserRole } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import AddUserModal from '@/components/admin/AddUserModal';
-import DataConsistencyChecker from '@/components/admin/DataConsistencyChecker';
+import AddUserModal from '@/components/admin/user-creation/AddUserModal';
+import DataConsistencyChecker from '@/components/admin/data-consistency/DataConsistencyChecker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const UsersPage = () => {
