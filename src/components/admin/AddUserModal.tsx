@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,59 +48,34 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       return;
     }
 
-    const password = formData.password || (() => {
-      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-      let pwd = '';
-      for (let i = 0; i < 10; i++) {
-        pwd += charset.charAt(Math.floor(Math.random() * charset.length));
-      }
-      return pwd;
-    })();
-
     try {
       setIsCreating(true);
       
-      // Create user using Supabase admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email.trim(),
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          must_reset_pw: true,
-          full_name: formData.full_name.trim(),
-        },
-      });
-
-      if (authError) {
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error('Failed to create user');
-      }
-
-      // Insert user profile
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
+      console.log('Calling create-user edge function...');
+      
+      // Call the edge function to create user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
           email: formData.email.trim(),
           full_name: formData.full_name.trim(),
           role: formData.role,
-          must_reset_pw: true,
-          is_active: true,
-        });
+          password: formData.password || undefined,
+        },
+      });
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // Don't throw here as the auth user was created successfully
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to create user');
+      }
+
+      console.log('User created successfully:', data);
+
       // Set credentials for display
-      setCreatedCredentials({
-        email: formData.email.trim(),
-        password: password,
-      });
+      setCreatedCredentials(data.credentials);
 
       toast({
         description: `User ${formData.full_name} created successfully`,
