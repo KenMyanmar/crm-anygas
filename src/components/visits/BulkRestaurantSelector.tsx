@@ -52,11 +52,16 @@ const BulkRestaurantSelector = ({
 
   // Merge restaurants with lead data
   useEffect(() => {
-    const restaurantsWithLeads = restaurants.map(restaurant => {
+    const restaurantsWithLeads: RestaurantWithLead[] = restaurants.map(restaurant => {
       const lead = leads.find(l => l.restaurant_id === restaurant.id);
       return {
-        ...restaurant,
-        lead_status: lead?.status,
+        id: restaurant.id,
+        name: restaurant.name,
+        township: restaurant.township,
+        address: restaurant.address,
+        contact_person: restaurant.contact_person,
+        phone: restaurant.phone,
+        lead_status: lead?.status as 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST' | undefined,
         assigned_user: lead?.assigned_user?.full_name,
         next_action_date: lead?.next_action_date,
       };
