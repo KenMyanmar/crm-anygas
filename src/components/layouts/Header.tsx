@@ -1,3 +1,4 @@
+
 import { FC, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -5,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -84,8 +86,12 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
 
   return (
     <header className="h-16 border-b px-6 flex items-center justify-between bg-background">
-      <div className="flex-1">
-        <Button variant="ghost" size="icon" className="md:hidden">
+      <div className="flex items-center flex-1">
+        {/* Mobile Sidebar Trigger - only visible on mobile */}
+        <SidebarTrigger className="md:hidden mr-3" />
+        
+        {/* Desktop Search - hidden on mobile */}
+        <Button variant="ghost" size="icon" className="hidden md:flex">
           <Search className="h-5 w-5" />
         </Button>
       </div>
