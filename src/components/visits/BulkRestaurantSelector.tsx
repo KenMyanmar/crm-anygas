@@ -2,14 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useRestaurants } from '@/hooks/useRestaurants';
 import { useLeads } from '@/hooks/useLeads';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { RestaurantWithLead } from '@/types/visits';
-import RestaurantFilters from './bulk-selector/RestaurantFilters';
-import SelectAllControl from './bulk-selector/SelectAllControl';
-import RestaurantList from './bulk-selector/RestaurantList';
-import BulkPagination from './bulk-selector/BulkPagination';
-import BulkActions from './bulk-selector/BulkActions';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+import ProfessionalHeader from './bulk-selector/ProfessionalHeader';
+import EnhancedFilters from './bulk-selector/EnhancedFilters';
+import RestaurantDataTable from './bulk-selector/RestaurantDataTable';
+import ProfessionalActionBar from './bulk-selector/ProfessionalActionBar';
 
 interface BulkRestaurantSelectorProps {
   selectedRestaurants: string[];
@@ -18,24 +18,24 @@ interface BulkRestaurantSelectorProps {
   onCancel: () => void;
 }
 
-const ITEMS_PER_PAGE = 50;
-
 const BulkRestaurantSelector = ({
   selectedRestaurants,
   onSelectionChange,
   onConfirm,
   onCancel
 }: BulkRestaurantSelectorProps) => {
-  const { restaurants } = useRestaurants();
-  const { leads } = useLeads();
+  const { restaurants, isLoading: restaurantsLoading } = useRestaurants();
+  const { leads, isLoading: leadsLoading } = useLeads();
   
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTownship, setSelectedTownship] = useState<string>('all');
   const [selectedLeadStatus, setSelectedLeadStatus] = useState<string>('all');
   const [filteredRestaurants, setFilteredRestaurants] = useState<RestaurantWithLead[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Merge restaurants with lead data
+  const isLoading = restaurantsLoading || leadsLoading;
+
+  // Merge restaurants with lead data and apply filters
   useEffect(() => {
     const restaurantsWithLeads: RestaurantWithLead[] = restaurants.map(restaurant => {
       const lead = leads.find(l => l.restaurant_id === restaurant.id);
@@ -54,7 +54,7 @@ const BulkRestaurantSelector = ({
 
     let filtered = restaurantsWithLeads;
 
-    // Filter by search term
+    // Apply filters
     if (searchTerm) {
       filtered = filtered.filter(r => 
         r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,33 +63,27 @@ const BulkRestaurantSelector = ({
       );
     }
 
-    // Filter by township
     if (selectedTownship !== 'all') {
       filtered = filtered.filter(r => r.township === selectedTownship);
     }
 
-    // Filter by lead status
     if (selectedLeadStatus !== 'all') {
       filtered = filtered.filter(r => r.lead_status === selectedLeadStatus);
     }
 
     setFilteredRestaurants(filtered);
-    setCurrentPage(1);
   }, [restaurants, leads, searchTerm, selectedTownship, selectedLeadStatus]);
 
   const townships = [...new Set(restaurants.map(r => r.township).filter(Boolean))].sort();
-  const totalPages = Math.ceil(filteredRestaurants.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedRestaurants = filteredRestaurants.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const currentPageIds = paginatedRestaurants.map(r => r.id);
-      const newSelection = [...new Set([...selectedRestaurants, ...currentPageIds])];
+      const allFilteredIds = filteredRestaurants.map(r => r.id);
+      const newSelection = [...new Set([...selectedRestaurants, ...allFilteredIds])];
       onSelectionChange(newSelection);
     } else {
-      const currentPageIds = new Set(paginatedRestaurants.map(r => r.id));
-      const newSelection = selectedRestaurants.filter(id => !currentPageIds.has(id));
+      const filteredIds = new Set(filteredRestaurants.map(r => r.id));
+      const newSelection = selectedRestaurants.filter(id => !filteredIds.has(id));
       onSelectionChange(newSelection);
     }
   };
@@ -102,21 +96,63 @@ const BulkRestaurantSelector = ({
     }
   };
 
-  const allCurrentPageSelected = paginatedRestaurants.length > 0 && 
-    paginatedRestaurants.every(r => selectedRestaurants.includes(r.id));
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedTownship('all');
+    setSelectedLeadStatus('all');
+  };
+
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      await onConfirm();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const allCurrentPageSelected = filteredRestaurants.length > 0 && 
+    filteredRestaurants.every(r => selectedRestaurants.includes(r.id));
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (restaurants.length === 0) {
+    return (
+      <div className="w-full max-w-6xl mx-auto p-6">
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            No restaurants found. Please add restaurants to your database first.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <Card className="w-full max-w-6xl">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Select Restaurants for Visit Plan</span>
-          <Badge variant="outline">
-            {selectedRestaurants.length} selected
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <RestaurantFilters
+    <div className="w-full max-w-6xl mx-auto flex flex-col h-[80vh]">
+      <div className="p-6 space-y-6 flex-1 overflow-hidden">
+        <ProfessionalHeader
+          selectedCount={selectedRestaurants.length}
+          totalCount={restaurants.length}
+          filteredCount={filteredRestaurants.length}
+        />
+
+        <EnhancedFilters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           selectedTownship={selectedTownship}
@@ -125,37 +161,37 @@ const BulkRestaurantSelector = ({
           onLeadStatusChange={setSelectedLeadStatus}
           townships={townships}
           resultCount={filteredRestaurants.length}
+          onClearFilters={handleClearFilters}
         />
 
-        <SelectAllControl
-          isAllSelected={allCurrentPageSelected}
-          onSelectAll={handleSelectAll}
-          currentPageCount={paginatedRestaurants.length}
-        />
+        <div className="flex-1 overflow-auto">
+          {filteredRestaurants.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertTriangle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No restaurants match your filters</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search terms or clearing the filters.
+              </p>
+            </div>
+          ) : (
+            <RestaurantDataTable
+              restaurants={filteredRestaurants}
+              selectedRestaurants={selectedRestaurants}
+              onRestaurantToggle={handleRestaurantToggle}
+              onSelectAll={handleSelectAll}
+              isAllSelected={allCurrentPageSelected}
+            />
+          )}
+        </div>
+      </div>
 
-        <RestaurantList
-          restaurants={paginatedRestaurants}
-          selectedRestaurants={selectedRestaurants}
-          onRestaurantToggle={handleRestaurantToggle}
-        />
-
-        <BulkPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          startIndex={startIndex}
-          endIndex={startIndex + ITEMS_PER_PAGE}
-          totalItems={filteredRestaurants.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-        />
-
-        <BulkActions
-          selectedCount={selectedRestaurants.length}
-          onConfirm={onConfirm}
-          onCancel={onCancel}
-        />
-      </CardContent>
-    </Card>
+      <ProfessionalActionBar
+        selectedCount={selectedRestaurants.length}
+        onConfirm={handleConfirm}
+        onCancel={onCancel}
+        isLoading={isSubmitting}
+      />
+    </div>
   );
 };
 

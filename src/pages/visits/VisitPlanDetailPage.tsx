@@ -317,14 +317,7 @@ const VisitPlanDetailPage = () => {
           open={isAddRestaurantsDialogOpen} 
           onOpenChange={setIsAddRestaurantsDialogOpen}
         >
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Bulk Restaurant Selector</DialogTitle>
-              <DialogDescription>
-                Select multiple restaurants at once with advanced filtering options.
-                You can filter by township, lead status, and search by name or contact person.
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
             <BulkRestaurantSelector
               selectedRestaurants={selectedRestaurants}
               onSelectionChange={setSelectedRestaurants}
