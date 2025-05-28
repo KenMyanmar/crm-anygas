@@ -83,7 +83,21 @@ export const useDeliveredOrders = () => {
         return;
       }
 
-      setOrders(data || []);
+      // Transform the data to match our interface
+      const transformedData: DeliveredOrder[] = (data || []).map((order: any) => ({
+        id: order.id,
+        order_number: order.order_number,
+        order_date: order.order_date,
+        delivery_date_scheduled: order.delivery_date_scheduled,
+        delivery_date_actual: order.delivery_date_actual,
+        total_amount_kyats: order.total_amount_kyats,
+        notes: order.notes,
+        restaurant: Array.isArray(order.restaurant) ? order.restaurant[0] : order.restaurant,
+        created_by_user: Array.isArray(order.created_by_user) ? order.created_by_user[0] : order.created_by_user,
+        order_items: order.order_items || []
+      }));
+
+      setOrders(transformedData);
     } catch (error) {
       console.error('Error in fetchDeliveredOrders:', error);
       toast({
