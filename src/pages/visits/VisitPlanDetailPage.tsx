@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
@@ -14,7 +13,8 @@ import {
   Calendar,
   Clock,
   Users,
-  MapPin
+  MapPin,
+  ListFilter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -27,6 +27,7 @@ import {
 import BulkRestaurantSelector from '@/components/visits/BulkRestaurantSelector';
 import VisitTasksTable from '@/components/visits/VisitTasksTable';
 import { VisitTask } from '@/types/visits';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const VisitPlanDetailPage = () => {
   const { planId } = useParams<{ planId: string }>();
@@ -39,6 +40,18 @@ const VisitPlanDetailPage = () => {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
 
   const currentPlan = plans.find(plan => plan.id === planId);
+
+  // Show bulk selector dialog immediately if plan has no restaurants
+  useEffect(() => {
+    if (currentPlan && tasks.length === 0) {
+      // Small timeout to ensure UI is rendered first
+      const timer = setTimeout(() => {
+        setIsAddRestaurantsDialogOpen(true);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlan, tasks.length]);
 
   const handleBulkAddRestaurants = async () => {
     try {
@@ -144,10 +157,25 @@ const VisitPlanDetailPage = () => {
                 Team Visible
               </Badge>
             )}
-            <Button onClick={() => setIsAddRestaurantsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Restaurants
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={() => setIsAddRestaurantsDialogOpen(true)}
+                    className="relative"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Restaurants
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground animate-pulse">
+                      <ListFilter className="h-3 w-3" />
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Add multiple restaurants with advanced filtering options</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -248,10 +276,17 @@ const VisitPlanDetailPage = () => {
               <p className="text-muted-foreground mb-6">
                 Start by adding restaurants to visit for this plan.
               </p>
-              <Button onClick={() => setIsAddRestaurantsDialogOpen(true)}>
+              <Button 
+                onClick={() => setIsAddRestaurantsDialogOpen(true)}
+                className="animate-pulse"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Restaurants
               </Button>
+              <p className="text-xs text-muted-foreground mt-4">
+                Our bulk restaurant selector allows you to add multiple restaurants at once,
+                with filtering by township and lead status.
+              </p>
             </CardContent>
           </Card>
         ) : (
@@ -264,12 +299,16 @@ const VisitPlanDetailPage = () => {
         )}
 
         {/* Bulk Restaurant Selector Dialog */}
-        <Dialog open={isAddRestaurantsDialogOpen} onOpenChange={setIsAddRestaurantsDialogOpen}>
+        <Dialog 
+          open={isAddRestaurantsDialogOpen} 
+          onOpenChange={setIsAddRestaurantsDialogOpen}
+        >
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
-              <DialogTitle>Add Restaurants to Visit Plan</DialogTitle>
+              <DialogTitle>Bulk Restaurant Selector</DialogTitle>
               <DialogDescription>
-                Select restaurants to add to your visit plan. You can filter by township and other criteria.
+                Select multiple restaurants at once with advanced filtering options.
+                You can filter by township, lead status, and search by name or contact person.
               </DialogDescription>
             </DialogHeader>
             <BulkRestaurantSelector

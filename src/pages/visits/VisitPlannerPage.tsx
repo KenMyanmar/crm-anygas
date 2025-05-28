@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, MapPin, Users, Clock } from 'lucide-react';
+import { 
+  Calendar, 
+  Plus, 
+  MapPin, 
+  Users, 
+  Clock,
+  ArrowRight,
+  Info
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +28,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const VisitPlannerPage = () => {
   const navigate = useNavigate();
@@ -123,18 +132,28 @@ const VisitPlannerPage = () => {
           </Dialog>
         </div>
 
+        {/* How it works info */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>How to add restaurants:</strong> Create a visit plan, then click on it to open the plan details where you can use our bulk restaurant selector to add multiple restaurants at once with filtering options.
+          </AlertDescription>
+        </Alert>
+
         {plans.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-8">
-              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <CardContent className="text-center py-12">
+              <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No visit plans yet</h3>
               <p className="text-muted-foreground mb-4">
                 Create your first visit plan to start organizing your field activities.
               </p>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Plan
-              </Button>
+              <div className="space-y-4">
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Plan
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -169,6 +188,17 @@ const VisitPlannerPage = () => {
                         <Clock className="h-4 w-4 mr-1" />
                         Created {format(new Date(plan.created_at), 'MMM dd')}
                       </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-primary hover:text-primary/80"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/visits/plans/${plan.id}`);
+                        }}
+                      >
+                        Add Restaurants <ArrowRight className="ml-1 h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
