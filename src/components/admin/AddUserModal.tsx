@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
 import { Copy, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
@@ -29,6 +29,18 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
   const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
 
+  // Create admin client with service role key
+  const supabaseAdmin = createClient(
+    'https://fblcilccdjicyosmuome.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibGNpbGNjZGppY3lvc211b21lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Njk3NzMzMywiZXhwIjoyMDYyNTUzMzMzfQ.BXFHbNjOEb0L9n6Y6nUvQW1BX1TQhepE8_jQM3YjCDw',
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
+
   const generatePassword = () => {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let password = '';
@@ -49,7 +61,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     }
 
     try {
-      console.log('=== FRONTEND: Starting user creation ===');
+      console.log('=== DIRECT USER CREATION START ===');
       console.log('Form data:', {
         email: formData.email,
         full_name: formData.full_name,
@@ -57,37 +69,97 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         hasPassword: !!formData.password,
         isRetry
       });
+
+      const userPassword = formData.password || generateRandomPassword();
       
-      // Call the edge function to create user
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email: formData.email.trim(),
+      // Step 1: Check if user already exists
+      console.log('Checking for existing user...');
+      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      
+      if (listError) {
+        console.error('Error listing users:', listError);
+        throw new Error(`Failed to check existing users: ${listError.message}`);
+      }
+
+      const existingUser = existingUsers.users.find(user => user.email === formData.email.trim());
+      
+      if (existingUser) {
+        console.log('Existing user found, deleting...');
+        
+        // Delete from users table first
+        const { error: deleteProfileError } = await supabaseAdmin
+          .from('users')
+          .delete()
+          .eq('id', existingUser.id);
+
+        if (deleteProfileError) {
+          console.log('Profile deletion error (may not exist):', deleteProfileError.message);
+        }
+
+        // Delete from auth
+        const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+        
+        if (deleteAuthError) {
+          console.error('Error deleting existing auth user:', deleteAuthError);
+          throw new Error(`Failed to delete existing user: ${deleteAuthError.message}`);
+        }
+        
+        console.log('Existing user deleted successfully');
+      }
+
+      // Step 2: Create new auth user
+      console.log('Creating new auth user...');
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: formData.email.trim(),
+        password: userPassword,
+        email_confirm: true,
+        user_metadata: {
           full_name: formData.full_name.trim(),
-          role: formData.role,
-          password: formData.password || undefined,
         },
       });
 
-      console.log('=== FRONTEND: Edge function response ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Edge function error: ${error.message}`);
+      if (authError) {
+        console.error('Auth creation error:', authError);
+        throw new Error(`Failed to create auth user: ${authError.message}`);
       }
 
-      if (!data?.success) {
-        console.error('Edge function returned failure:', data);
-        throw new Error(data?.error || 'Unknown error from edge function');
+      if (!authData.user) {
+        throw new Error('Auth user creation returned no user data');
       }
 
-      console.log('=== FRONTEND: User created successfully ===');
-      console.log('User data:', data.user);
-      console.log('Credentials:', data.credentials);
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // Step 3: Create user profile
+      console.log('Creating user profile...');
+      const profileData = {
+        id: authData.user.id,
+        email: formData.email.trim(),
+        full_name: formData.full_name.trim(),
+        role: formData.role,
+        is_active: true,
+        must_reset_pw: false,
+      };
+      
+      const { error: profileError } = await supabaseAdmin
+        .from('users')
+        .insert(profileData);
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        
+        // Don't delete the auth user - let admin handle it manually
+        console.log('Auth user created but profile failed. User ID:', authData.user.id);
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+      }
+
+      console.log('=== USER CREATION SUCCESSFUL ===');
+      console.log('User ID:', authData.user.id);
 
       // Set credentials for display
-      setCreatedCredentials(data.credentials);
+      setCreatedCredentials({
+        email: formData.email.trim(),
+        password: userPassword,
+      });
 
       toast({
         description: `User ${formData.full_name} created successfully`,
@@ -98,20 +170,14 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       return true;
       
     } catch (error: any) {
-      console.error('=== FRONTEND: User creation failed ===');
+      console.error('=== USER CREATION FAILED ===');
       console.error('Error:', error);
-      console.error('Error message:', error.message);
       
       let errorMessage = 'Failed to create user';
       
-      // Parse different types of errors
       if (error.message) {
-        if (error.message.includes('Profile creation failed')) {
-          errorMessage = 'Database error: Could not create user profile. Please check user table permissions.';
-        } else if (error.message.includes('duplicate key')) {
+        if (error.message.includes('duplicate key')) {
           errorMessage = 'User already exists in the system';
-        } else if (error.message.includes('Edge function error')) {
-          errorMessage = error.message;
         } else {
           errorMessage = error.message;
         }
@@ -125,6 +191,15 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       
       return false;
     }
+  };
+
+  const generateRandomPassword = (): string => {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
