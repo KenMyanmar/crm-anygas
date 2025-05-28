@@ -1,0 +1,289 @@
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
+import { UserRole } from '@/types';
+import { Copy, Eye, EyeOff } from 'lucide-react';
+
+interface AddUserModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUserCreated: () => void;
+}
+
+const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) => {
+  const [formData, setFormData] = useState({
+    email: '',
+    full_name: '',
+    role: 'salesperson' as UserRole,
+    password: '',
+  });
+  const [isCreating, setIsCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
+  const { toast } = useToast();
+
+  const generatePassword = () => {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 10; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    setFormData(prev => ({ ...prev, password }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.email || !formData.full_name) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const password = formData.password || (() => {
+      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+      let pwd = '';
+      for (let i = 0; i < 10; i++) {
+        pwd += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      return pwd;
+    })();
+
+    try {
+      setIsCreating(true);
+      
+      // Create user using Supabase admin API
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: formData.email.trim(),
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          must_reset_pw: true,
+          full_name: formData.full_name.trim(),
+        },
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to create user');
+      }
+
+      // Insert user profile
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: formData.email.trim(),
+          full_name: formData.full_name.trim(),
+          role: formData.role,
+          must_reset_pw: true,
+          is_active: true,
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Don't throw here as the auth user was created successfully
+      }
+
+      // Set credentials for display
+      setCreatedCredentials({
+        email: formData.email.trim(),
+        password: password,
+      });
+
+      toast({
+        description: `User ${formData.full_name} created successfully`,
+      });
+
+      onUserCreated();
+      
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Failed to create user",
+        description: error?.message || "An error occurred while creating the user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const copyCredentials = async () => {
+    if (!createdCredentials) return;
+    
+    const credentials = `Email: ${createdCredentials.email}\nPassword: ${createdCredentials.password}`;
+    
+    try {
+      await navigator.clipboard.writeText(credentials);
+      toast({
+        description: "Credentials copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast({
+        title: "Copy failed",
+        description: "Please copy the credentials manually",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      email: '',
+      full_name: '',
+      role: 'salesperson',
+      password: '',
+    });
+    setCreatedCredentials(null);
+    setShowPassword(false);
+    onOpenChange(false);
+  };
+
+  if (createdCredentials) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>User Created Successfully</DialogTitle>
+            <DialogDescription>
+              Copy these credentials and share them securely with the new user.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <div className="p-3 bg-muted rounded-md font-mono text-sm">
+                {createdCredentials.email}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Temporary Password</Label>
+              <div className="p-3 bg-muted rounded-md font-mono text-sm">
+                {createdCredentials.password}
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              The user will be required to change their password on first login.
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button onClick={copyCredentials} className="flex-1">
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Credentials
+            </Button>
+            <Button variant="outline" onClick={handleClose}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add New User</DialogTitle>
+          <DialogDescription>
+            Create a new user account. No email invitation will be sent.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name *</Label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                placeholder="John Doe"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value: UserRole) => setFormData(prev => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="salesperson">Salesperson</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Initial Password</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Leave blank to auto-generate"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <Button type="button" variant="outline" onClick={generatePassword}>
+                  Generate
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                If left blank, a 10-character random password will be generated
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? 'Creating User...' : 'Create User'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddUserModal;

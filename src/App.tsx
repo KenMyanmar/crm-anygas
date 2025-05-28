@@ -1,116 +1,231 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/context/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import AuthWrapper from './components/AuthWrapper';
 
-// Auth pages
-import Login from '@/pages/Login';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
+// Auth pages (no auth required)
+import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import SetNewPassword from './pages/SetNewPassword';
 
-// Main pages
-import Dashboard from '@/pages/Dashboard';
-import ProfilePage from '@/pages/ProfilePage';
-import Notifications from '@/pages/Notifications';
-import SettingsPage from '@/pages/SettingsPage';
+// Protected pages
+import Dashboard from './pages/Dashboard';
+import ProfilePage from './pages/ProfilePage';
+import NotFound from './pages/NotFound';
+import Notifications from './pages/Notifications';
+import SettingsPage from './pages/SettingsPage';
 
 // Leads pages
-import LeadsPage from '@/pages/leads/LeadsPage';
-import AssignedLeadsPage from '@/pages/leads/AssignedLeadsPage';
-import MeetingsPage from '@/pages/leads/MeetingsPage';
-import NewLeadPage from '@/pages/leads/NewLeadPage';
-
-// Restaurant pages
-import RestaurantsPage from '@/pages/placeholder/RestaurantsPage';
-import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
-import RestaurantEditPage from '@/pages/RestaurantEditPage';
-import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
-
-// Orders pages
-import OrdersPage from '@/pages/orders/OrdersPage';
-import PendingOrdersPage from '@/pages/orders/PendingOrdersPage';
-import DeliveredOrdersPage from '@/pages/orders/DeliveredOrdersPage';
-import NewOrderPage from '@/pages/orders/NewOrderPage';
-import OrderDetailPage from '@/pages/orders/OrderDetailPage';
-
-// Reports pages
-import ReportsPage from '@/pages/placeholder/ReportsPage';
-import LeadReportsPage from '@/pages/reports/LeadReportsPage';
-import PerformancePage from '@/pages/reports/PerformancePage';
+import LeadsPage from './pages/leads/LeadsPage';
+import AssignedLeadsPage from './pages/leads/AssignedLeadsPage';
+import NewLeadPage from './pages/leads/NewLeadPage';
+import MeetingsPage from './pages/leads/MeetingsPage';
 
 // Admin pages
-import UsersPage from '@/pages/admin/UsersPage';
-import ProductsPage from '@/pages/admin/ProductsPage';
-import ImportPage from '@/pages/admin/ImportPage';
-import AdminSettingsPage from '@/pages/admin/SettingsPage';
+import UsersPage from './pages/admin/UsersPage';
+import ProductsPage from './pages/admin/ProductsPage';
+import ImportPage from './pages/admin/ImportPage';
+import AdminSettingsPage from './pages/admin/SettingsPage';
 
-import NotFound from '@/pages/NotFound';
+// Orders pages
+import OrdersPage from './pages/orders/OrdersPage';
+import PendingOrdersPage from './pages/orders/PendingOrdersPage';
+import DeliveredOrdersPage from './pages/orders/DeliveredOrdersPage';
+import NewOrderPage from './pages/orders/NewOrderPage';
+import OrderDetailPage from './pages/orders/OrderDetailPage';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Restaurants pages
+import NewRestaurantPage from './pages/restaurants/NewRestaurantPage';
+import RestaurantDetailPage from './pages/RestaurantDetailPage';
+import RestaurantEditPage from './pages/RestaurantEditPage';
+
+// Reports pages
+import LeadReportsPage from './pages/reports/LeadReportsPage';
+import PerformancePage from './pages/reports/PerformancePage';
+
+// Placeholder pages
+import RestaurantsPage from './pages/placeholder/RestaurantsPage';
+import ReportsPage from './pages/placeholder/ReportsPage';
+
+import './App.css';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <Router>
       <AuthProvider>
-        <Router>
+        <div className="min-h-screen bg-background">
           <Routes>
-            {/* Auth routes */}
+            {/* Public routes - no auth required */}
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             
+            {/* First-time password setup route */}
+            <Route path="/set-new-password" element={
+              <AuthWrapper>
+                <SetNewPassword />
+              </AuthWrapper>
+            } />
+
             {/* Protected routes */}
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/" element={
+              <AuthWrapper>
+                <Dashboard />
+              </AuthWrapper>
+            } />
             
+            <Route path="/profile" element={
+              <AuthWrapper>
+                <ProfilePage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/notifications" element={
+              <AuthWrapper>
+                <Notifications />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/settings" element={
+              <AuthWrapper>
+                <SettingsPage />
+              </AuthWrapper>
+            } />
+
             {/* Leads routes */}
-            <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
-            <Route path="/leads/new" element={<ProtectedRoute><NewLeadPage /></ProtectedRoute>} />
-            <Route path="/leads/assigned" element={<ProtectedRoute><AssignedLeadsPage /></ProtectedRoute>} />
-            <Route path="/leads/meetings" element={<ProtectedRoute><MeetingsPage /></ProtectedRoute>} />
+            <Route path="/leads" element={
+              <AuthWrapper>
+                <LeadsPage />
+              </AuthWrapper>
+            } />
             
-            {/* Restaurant routes */}
-            <Route path="/restaurants" element={<ProtectedRoute><RestaurantsPage /></ProtectedRoute>} />
-            <Route path="/restaurants/new" element={<ProtectedRoute><NewRestaurantPage /></ProtectedRoute>} />
-            <Route path="/restaurants/:id" element={<ProtectedRoute><RestaurantDetailPage /></ProtectedRoute>} />
-            <Route path="/restaurants/:id/edit" element={<ProtectedRoute><RestaurantEditPage /></ProtectedRoute>} />
+            <Route path="/leads/assigned" element={
+              <AuthWrapper>
+                <AssignedLeadsPage />
+              </AuthWrapper>
+            } />
             
-            {/* Orders routes */}
-            <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-            <Route path="/orders/new" element={<ProtectedRoute><NewOrderPage /></ProtectedRoute>} />
-            <Route path="/orders/pending" element={<ProtectedRoute><PendingOrdersPage /></ProtectedRoute>} />
-            <Route path="/orders/delivered" element={<ProtectedRoute><DeliveredOrdersPage /></ProtectedRoute>} />
-            <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+            <Route path="/leads/new" element={
+              <AuthWrapper>
+                <NewLeadPage />
+              </AuthWrapper>
+            } />
             
-            {/* Reports routes */}
-            <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-            <Route path="/reports/leads" element={<ProtectedRoute><LeadReportsPage /></ProtectedRoute>} />
-            <Route path="/reports/performance" element={<ProtectedRoute><PerformancePage /></ProtectedRoute>} />
-            
+            <Route path="/leads/meetings" element={
+              <AuthWrapper>
+                <MeetingsPage />
+              </AuthWrapper>
+            } />
+
             {/* Admin routes */}
-            <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-            <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-            <Route path="/admin/import" element={<ProtectedRoute><ImportPage /></ProtectedRoute>} />
-            <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
+            <Route path="/admin/users" element={
+              <AuthWrapper>
+                <UsersPage />
+              </AuthWrapper>
+            } />
             
+            <Route path="/admin/products" element={
+              <AuthWrapper>
+                <ProductsPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/admin/import" element={
+              <AuthWrapper>
+                <ImportPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/admin/settings" element={
+              <AuthWrapper>
+                <AdminSettingsPage />
+              </AuthWrapper>
+            } />
+
+            {/* Orders routes */}
+            <Route path="/orders" element={
+              <AuthWrapper>
+                <OrdersPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/orders/pending" element={
+              <AuthWrapper>
+                <PendingOrdersPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/orders/delivered" element={
+              <AuthWrapper>
+                <DeliveredOrdersPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/orders/new" element={
+              <AuthWrapper>
+                <NewOrderPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/orders/:id" element={
+              <AuthWrapper>
+                <OrderDetailPage />
+              </AuthWrapper>
+            } />
+
+            {/* Restaurants routes */}
+            <Route path="/restaurants" element={
+              <AuthWrapper>
+                <RestaurantsPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/restaurants/new" element={
+              <AuthWrapper>
+                <NewRestaurantPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/restaurants/:id" element={
+              <AuthWrapper>
+                <RestaurantDetailPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/restaurants/:id/edit" element={
+              <AuthWrapper>
+                <RestaurantEditPage />
+              </AuthWrapper>
+            } />
+
+            {/* Reports routes */}
+            <Route path="/reports" element={
+              <AuthWrapper>
+                <ReportsPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/reports/leads" element={
+              <AuthWrapper>
+                <LeadReportsPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/reports/performance" element={
+              <AuthWrapper>
+                <PerformancePage />
+              </AuthWrapper>
+            } />
+
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
+        </div>
         <Toaster />
       </AuthProvider>
-    </QueryClientProvider>
+    </Router>
   );
 }
 

@@ -1,11 +1,10 @@
-
 import { FC, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -128,6 +127,7 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="flex items-center">
               <Avatar className="h-8 w-8 mr-2">
+                <AvatarImage src={profile?.profile_pic_url} />
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   {initials}
                 </AvatarFallback>
@@ -149,7 +149,7 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/profile')}>
               <User className="w-4 h-4 mr-2" />
-              Profile
+              My Profile
             </DropdownMenuItem>
             {profile?.role === 'admin' && (
               <DropdownMenuItem onClick={() => navigate('/admin/users')}>

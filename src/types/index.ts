@@ -1,5 +1,5 @@
 
-export type UserRole = 'admin' | 'salesperson' | 'staff' | 'manager';
+export type UserRole = 'admin' | 'salesperson' | 'staff';
 
 export interface User {
   id: string;
@@ -9,6 +9,8 @@ export interface User {
   created_at: string;
   updated_at: string;
   is_active: boolean;
+  profile_pic_url?: string;
+  must_reset_pw?: boolean;
 }
 
 export interface Restaurant {
@@ -24,28 +26,12 @@ export interface Restaurant {
   created_at: string;
   updated_at: string;
   created_by_user_id?: string;
-  // Adding this alias to make the Restaurant compatible with both old and new interfaces
-  phone?: string;
 }
-
-export type LeadStatus = 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
-
-// Status mapping for backward compatibility
-export const legacyStatusToNew: Record<string, LeadStatus> = {
-  'NEW': 'CONTACT_STAGE',
-  'CONTACTED': 'CONTACT_STAGE',
-  'NEEDS_FOLLOW_UP': 'CONTACT_STAGE',
-  'TRIAL': 'MEETING_STAGE',
-  'NEGOTIATION': 'PRESENTATION_NEGOTIATION',
-  'WON': 'CLOSED_WON',
-  'LOST': 'CLOSED_LOST',
-  'ON_HOLD': 'CONTACT_STAGE'
-};
 
 export interface Lead {
   id: string;
   restaurant_id: string;
-  status: LeadStatus;
+  status: 'NEW' | 'CONTACTED' | 'NEEDS_FOLLOW_UP' | 'TRIAL' | 'NEGOTIATION' | 'WON' | 'LOST' | 'ON_HOLD';
   lost_reason?: string;
   next_action_description?: string;
   next_action_date?: string;
@@ -53,9 +39,8 @@ export interface Lead {
   created_at: string;
   updated_at: string;
   created_by_user_id?: string;
-  restaurant?: Restaurant; // Join field, not in DB schema
-  stage_notes?: string;
-  stage_entered_at?: string;
+  restaurant?: Restaurant;
+  assigned_user?: User;
 }
 
 export interface Product {
@@ -70,37 +55,35 @@ export interface Product {
   updated_at: string;
 }
 
-export type OrderStatus = 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
-
 export interface Order {
   id: string;
-  order_number: string;
   restaurant_id: string;
   lead_id?: string;
   order_date: string;
   delivery_date_scheduled?: string;
   delivery_date_actual?: string;
-  status: OrderStatus;
+  status: 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
   total_amount_kyats: number;
   notes?: string;
   created_by_user_id: string;
   created_at: string;
   updated_at: string;
-  restaurant?: Restaurant; // Join field, not in DB schema
-  items?: OrderItem[]; // Related items, not in DB schema
+  restaurant?: Restaurant;
+  lead?: Lead;
+  created_by_user?: User;
+  order_items?: OrderItem[];
 }
 
 export interface OrderItem {
   id: string;
   order_id: string;
-  product_name: string;
+  product_id: string;
   quantity: number;
   unit_price_kyats: number;
   sub_total_kyats: number;
   created_at: string;
+  product?: Product;
 }
-
-export type CallType = 'OUTBOUND' | 'INBOUND';
 
 export interface CallLog {
   id: string;
@@ -108,24 +91,23 @@ export interface CallLog {
   restaurant_id?: string;
   logged_by_user_id: string;
   call_timestamp: string;
-  call_type: CallType;
+  call_type: 'OUTBOUND' | 'INBOUND';
   call_outcome?: string;
   notes?: string;
   created_at: string;
-  restaurant?: Restaurant; // Join field, not in DB schema
-  lead?: Lead; // Join field, not in DB schema
+  lead?: Lead;
+  restaurant?: Restaurant;
+  logged_by_user?: User;
 }
-
-export type ActivityTargetType = 'LEAD' | 'ORDER' | 'RESTAURANT' | 'USER' | 'CALL_LOG' | 'NOTIFICATION' | 'SYSTEM';
 
 export interface ActivityLog {
   id: string;
   user_id?: string;
   target_id?: string;
-  target_type?: ActivityTargetType;
+  target_type?: 'LEAD' | 'ORDER' | 'RESTAURANT' | 'USER' | 'CALL_LOG' | 'SYSTEM';
   activity_message: string;
   created_at: string;
-  user?: User; // Join field, not in DB schema
+  user?: User;
 }
 
 export interface UserNotification {
@@ -139,17 +121,33 @@ export interface UserNotification {
 }
 
 export interface DashboardData {
-  leadSummary: {
-    status: LeadStatus;
+  lead_summary: Array<{
+    status: string;
     count: number;
-  }[];
-  upcomingActions: {
+  }>;
+  upcoming_actions: Array<{
     id: string;
     restaurant_name: string;
     next_action_description: string;
     next_action_date: string;
-    status: LeadStatus;
-  }[];
-  recentActivity: ActivityLog[];
+    status: string;
+  }>;
+  recent_activity: ActivityLog[];
   notifications: UserNotification[];
+}
+
+export interface Meeting {
+  id: string;
+  lead_id: string;
+  scheduled_by_user_id: string;
+  meeting_date: string;
+  meeting_time: string;
+  location?: string;
+  agenda?: string;
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  lead?: Lead;
+  scheduled_by_user?: User;
 }
