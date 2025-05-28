@@ -22,6 +22,10 @@ import AssignedLeadsPage from './pages/leads/AssignedLeadsPage';
 import NewLeadPage from './pages/leads/NewLeadPage';
 import MeetingsPage from './pages/leads/MeetingsPage';
 
+// Visits pages
+import VisitPlannerPage from './pages/visits/VisitPlannerPage';
+import VisitPlanDetailPage from './pages/visits/VisitPlanDetailPage';
+
 // Admin pages
 import UsersPage from './pages/admin/UsersPage';
 import ProductsPage from './pages/admin/ProductsPage';
@@ -110,6 +114,25 @@ function App() {
                 <MeetingsPage />
               </AuthWrapper>
             } />
+
+            {/* Visits routes */}
+            <Route path="/visits" element={
+              <AuthWrapper>
+                <VisitPlannerPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/visits/plans/:id" element={
+              <AuthWrapper>
+                <VisitPlanDetailPage />
+              </AuthWrapper>
+            } />
+            
+            {/* Redirect /visits/new to the main planner page where they can create new plans */}
+            <Route path="/visits/new" element={<Navigate to="/visits" replace />} />
+            
+            {/* Redirect /visits/today to the main planner for now - can be a filtered view later */}
+            <Route path="/visits/today" element={<Navigate to="/visits" replace />} />
 
             {/* Admin routes */}
             <Route path="/admin/users" element={

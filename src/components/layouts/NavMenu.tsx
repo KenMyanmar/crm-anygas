@@ -1,3 +1,4 @@
+
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -21,7 +22,10 @@ import {
   Clipboard,
   CalendarDays,
   Bell,
-  Plus
+  Plus,
+  MapPin,
+  Route,
+  Calendar
 } from 'lucide-react';
 
 interface MenuLinkProps {
@@ -68,6 +72,7 @@ const NavMenu: FC = () => {
   // Control open states manually instead of using defaultOpen
   const [leadsGroupOpen, setLeadsGroupOpen] = useState(false);
   const [ordersGroupOpen, setOrdersGroupOpen] = useState(false);
+  const [visitsGroupOpen, setVisitsGroupOpen] = useState(false);
   const [reportsGroupOpen, setReportsGroupOpen] = useState(false);
   const [adminGroupOpen, setAdminGroupOpen] = useState(false);
   const [restaurantsGroupOpen, setRestaurantsGroupOpen] = useState(false);
@@ -76,12 +81,14 @@ const NavMenu: FC = () => {
   useEffect(() => {
     const isLeadsActive = location.pathname.includes('/leads');
     const isOrdersActive = location.pathname.includes('/orders');
+    const isVisitsActive = location.pathname.includes('/visits');
     const isReportsActive = location.pathname.includes('/reports');
     const isSettingsActive = location.pathname.includes('/admin');
     const isRestaurantsActive = location.pathname.includes('/restaurants');
     
     setLeadsGroupOpen(isLeadsActive);
     setOrdersGroupOpen(isOrdersActive);
+    setVisitsGroupOpen(isVisitsActive);
     setReportsGroupOpen(isReportsActive);
     setAdminGroupOpen(isSettingsActive);
     setRestaurantsGroupOpen(isRestaurantsActive);
@@ -120,6 +127,21 @@ const NavMenu: FC = () => {
               <MenuLink to="/leads" icon={FileText} label="All Leads" />
               <MenuLink to="/leads/assigned" icon={Clipboard} label="Assigned to Me" />
               <MenuLink to="/leads/meetings" icon={CalendarDays} label="Meetings" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
+      </SidebarGroup>
+
+      <SidebarGroup>
+        <div onClick={() => setVisitsGroupOpen(!visitsGroupOpen)} className="cursor-pointer">
+          <SidebarGroupLabel>Visits</SidebarGroupLabel>
+        </div>
+        {visitsGroupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <MenuLink to="/visits" icon={Calendar} label="Visit Planner" />
+              <MenuLink to="/visits/today" icon={MapPin} label="Today's Visits" />
+              <MenuLink to="/visits/new" icon={Plus} label="New Visit Plan" />
             </SidebarMenu>
           </SidebarGroupContent>
         )}
