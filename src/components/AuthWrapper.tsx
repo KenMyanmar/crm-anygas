@@ -34,22 +34,7 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
     );
   }
 
-  // Check if user needs to reset password (but not if already on the reset page)
-  if (profile.must_reset_pw && location.pathname !== '/set-new-password') {
-    return <Navigate to="/set-new-password" replace />;
-  }
-
-  // If user is on set-new-password page but doesn't need to reset password
-  if (!profile.must_reset_pw && location.pathname === '/set-new-password') {
-    return <Navigate to="/" replace />;
-  }
-
-  // Special case: set-new-password page should not have dashboard layout
-  if (location.pathname === '/set-new-password') {
-    return <>{children}</>;
-  }
-
-  // All other authenticated pages get the dashboard layout
+  // All authenticated pages get the dashboard layout
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 

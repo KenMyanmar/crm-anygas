@@ -8,7 +8,6 @@ import AuthWrapper from './components/AuthWrapper';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import SetNewPassword from './pages/SetNewPassword';
 
 // Protected pages
 import Dashboard from './pages/Dashboard';
@@ -61,13 +60,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            
-            {/* First-time password setup route */}
-            <Route path="/set-new-password" element={
-              <AuthWrapper>
-                <SetNewPassword />
-              </AuthWrapper>
-            } />
 
             {/* Protected routes */}
             <Route path="/" element={
