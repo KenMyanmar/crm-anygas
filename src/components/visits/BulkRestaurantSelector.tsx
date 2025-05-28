@@ -144,8 +144,8 @@ const BulkRestaurantSelector = ({
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col h-[80vh]">
-      <div className="p-6 space-y-6 flex-1 overflow-hidden">
+    <div className="w-full max-w-6xl mx-auto flex flex-col h-[85vh]">
+      <div className="p-6 pb-4 space-y-6 flex-shrink-0">
         <ProfessionalHeader
           selectedCount={selectedRestaurants.length}
           totalCount={restaurants.length}
@@ -163,26 +163,26 @@ const BulkRestaurantSelector = ({
           resultCount={filteredRestaurants.length}
           onClearFilters={handleClearFilters}
         />
+      </div>
 
-        <div className="flex-1 overflow-auto">
-          {filteredRestaurants.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertTriangle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No restaurants match your filters</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search terms or clearing the filters.
-              </p>
-            </div>
-          ) : (
-            <RestaurantDataTable
-              restaurants={filteredRestaurants}
-              selectedRestaurants={selectedRestaurants}
-              onRestaurantToggle={handleRestaurantToggle}
-              onSelectAll={handleSelectAll}
-              isAllSelected={allCurrentPageSelected}
-            />
-          )}
-        </div>
+      <div className="flex-1 px-6 min-h-0">
+        {filteredRestaurants.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertTriangle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No restaurants match your filters</h3>
+            <p className="text-muted-foreground">
+              Try adjusting your search terms or clearing the filters.
+            </p>
+          </div>
+        ) : (
+          <RestaurantDataTable
+            restaurants={filteredRestaurants}
+            selectedRestaurants={selectedRestaurants}
+            onRestaurantToggle={handleRestaurantToggle}
+            onSelectAll={handleSelectAll}
+            isAllSelected={allCurrentPageSelected}
+          />
+        )}
       </div>
 
       <ProfessionalActionBar

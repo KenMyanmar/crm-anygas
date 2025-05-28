@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { MapPin, Phone, User, Calendar, ArrowUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -90,94 +91,101 @@ const RestaurantDataTable = ({
   );
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="w-12">
-              <Checkbox
-                checked={isAllSelected}
-                onCheckedChange={onSelectAll}
-                aria-label="Select all restaurants"
-              />
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="name">Restaurant Name</SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="township">Location</SortableHeader>
-            </TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>
-              <SortableHeader field="lead_status">Lead Status</SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="next_action_date">Next Action</SortableHeader>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedRestaurants.map((restaurant) => (
-            <TableRow 
-              key={restaurant.id}
-              className="hover:bg-muted/30 transition-colors cursor-pointer"
-              onClick={() => onRestaurantToggle(restaurant.id, !selectedRestaurants.includes(restaurant.id))}
-            >
-              <TableCell>
+    <div className="border rounded-lg bg-white">
+      <div className="border-b bg-muted/50">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
                 <Checkbox
-                  checked={selectedRestaurants.includes(restaurant.id)}
-                  onCheckedChange={(checked) => onRestaurantToggle(restaurant.id, !!checked)}
-                  onClick={(e) => e.stopPropagation()}
+                  checked={isAllSelected}
+                  onCheckedChange={onSelectAll}
+                  aria-label="Select all restaurants"
                 />
-              </TableCell>
-              <TableCell>
-                <div className="font-medium">{restaurant.name}</div>
-                {restaurant.address && (
-                  <div className="text-sm text-muted-foreground flex items-center mt-1">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {restaurant.address}
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center text-sm">
-                  <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                  {restaurant.township || 'Not specified'}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="space-y-1">
-                  {restaurant.contact_person && (
-                    <div className="flex items-center text-sm">
-                      <User className="h-3 w-3 mr-1 text-muted-foreground" />
-                      {restaurant.contact_person}
-                    </div>
-                  )}
-                  {restaurant.phone && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Phone className="h-3 w-3 mr-1" />
-                      {restaurant.phone}
-                    </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {getLeadStatusBadge(restaurant.lead_status)}
-              </TableCell>
-              <TableCell>
-                {restaurant.next_action_date ? (
-                  <div className="flex items-center text-sm">
-                    <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
-                    {format(new Date(restaurant.next_action_date), 'MMM dd, yyyy')}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm">No date set</span>
-                )}
-              </TableCell>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="name">Restaurant Name</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="township">Location</SortableHeader>
+              </TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>
+                <SortableHeader field="lead_status">Lead Status</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="next_action_date">Next Action</SortableHeader>
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+        </Table>
+      </div>
+      
+      <ScrollArea className="h-96">
+        <Table>
+          <TableBody>
+            {sortedRestaurants.map((restaurant) => (
+              <TableRow 
+                key={restaurant.id}
+                className="hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => onRestaurantToggle(restaurant.id, !selectedRestaurants.includes(restaurant.id))}
+              >
+                <TableCell className="w-12">
+                  <Checkbox
+                    checked={selectedRestaurants.includes(restaurant.id)}
+                    onCheckedChange={(checked) => onRestaurantToggle(restaurant.id, !!checked)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="font-medium">{restaurant.name}</div>
+                  {restaurant.address && (
+                    <div className="text-sm text-muted-foreground flex items-center mt-1">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {restaurant.address}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center text-sm">
+                    <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                    {restaurant.township || 'Not specified'}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    {restaurant.contact_person && (
+                      <div className="flex items-center text-sm">
+                        <User className="h-3 w-3 mr-1 text-muted-foreground" />
+                        {restaurant.contact_person}
+                      </div>
+                    )}
+                    {restaurant.phone && (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Phone className="h-3 w-3 mr-1" />
+                        {restaurant.phone}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {getLeadStatusBadge(restaurant.lead_status)}
+                </TableCell>
+                <TableCell>
+                  {restaurant.next_action_date ? (
+                    <div className="flex items-center text-sm">
+                      <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                      {format(new Date(restaurant.next_action_date), 'MMM dd, yyyy')}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">No date set</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </div>
   );
 };
