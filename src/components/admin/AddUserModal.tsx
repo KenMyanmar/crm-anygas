@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types';
-import { Copy, Eye, EyeOff } from 'lucide-react';
+import { Copy, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 interface AddUserModalProps {
   open: boolean;
@@ -26,35 +26,39 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
   const [isCreating, setIsCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
 
   const generatePassword = () => {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let password = '';
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 12; i++) {
       password += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     setFormData(prev => ({ ...prev, password }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const createUser = async (isRetry = false) => {
     if (!formData.email || !formData.full_name) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     try {
-      setIsCreating(true);
+      console.log('=== FRONTEND: Starting user creation ===');
+      console.log('Form data:', {
+        email: formData.email,
+        full_name: formData.full_name,
+        role: formData.role,
+        hasPassword: !!formData.password,
+        isRetry
+      });
       
-      console.log('Calling create-user edge function...');
-      
-      // Call the edge function to create user (will handle deletion if user exists)
+      // Call the edge function to create user
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: formData.email.trim(),
@@ -64,16 +68,23 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         },
       });
 
+      console.log('=== FRONTEND: Edge function response ===');
+      console.log('Data:', data);
+      console.log('Error:', error);
+
       if (error) {
         console.error('Edge function error:', error);
-        throw error;
+        throw new Error(`Edge function error: ${error.message}`);
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || 'Failed to create user');
+        console.error('Edge function returned failure:', data);
+        throw new Error(data?.error || 'Unknown error from edge function');
       }
 
-      console.log('User created successfully:', data);
+      console.log('=== FRONTEND: User created successfully ===');
+      console.log('User data:', data.user);
+      console.log('Credentials:', data.credentials);
 
       // Set credentials for display
       setCreatedCredentials(data.credentials);
@@ -83,17 +94,57 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       });
 
       onUserCreated();
+      setRetryCount(0);
+      return true;
       
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('=== FRONTEND: User creation failed ===');
+      console.error('Error:', error);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'Failed to create user';
+      
+      // Parse different types of errors
+      if (error.message) {
+        if (error.message.includes('Profile creation failed')) {
+          errorMessage = 'Database error: Could not create user profile. Please check user table permissions.';
+        } else if (error.message.includes('duplicate key')) {
+          errorMessage = 'User already exists in the system';
+        } else if (error.message.includes('Edge function error')) {
+          errorMessage = error.message;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast({
         title: "Failed to create user",
-        description: error?.message || "An error occurred while creating the user",
+        description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsCreating(false);
+      
+      return false;
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreating(true);
+    
+    const success = await createUser();
+    
+    setIsCreating(false);
+  };
+
+  const handleRetry = async () => {
+    setIsCreating(true);
+    setRetryCount(prev => prev + 1);
+    
+    console.log(`=== RETRY ATTEMPT ${retryCount + 1} ===`);
+    
+    const success = await createUser(true);
+    
+    setIsCreating(false);
   };
 
   const copyCredentials = async () => {
@@ -125,6 +176,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     });
     setCreatedCredentials(null);
     setShowPassword(false);
+    setRetryCount(0);
     onOpenChange(false);
   };
 
@@ -146,13 +198,13 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Temporary Password</Label>
+              <Label>Password</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm">
                 {createdCredentials.password}
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              The user will be required to change their password on first login.
+              The user can change their password and email in their profile settings.
             </div>
           </div>
           <DialogFooter className="flex gap-2">
@@ -243,14 +295,20 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                If left blank, a 10-character random password will be generated
+                If left blank, a 12-character random password will be generated
               </p>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex gap-2">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
+            {retryCount > 0 && !isCreating && (
+              <Button type="button" variant="secondary" onClick={handleRetry}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry ({retryCount})
+              </Button>
+            )}
             <Button type="submit" disabled={isCreating}>
               {isCreating ? 'Creating User...' : 'Create User'}
             </Button>

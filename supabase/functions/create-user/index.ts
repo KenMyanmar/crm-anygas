@@ -15,9 +15,29 @@ serve(async (req) => {
   }
 
   try {
-    const { email, full_name, role, password } = await req.json();
+    const requestBody = await req.json();
+    const { email, full_name, role, password } = requestBody;
 
-    console.log('Creating user with:', { email, full_name, role });
+    console.log('=== USER CREATION REQUEST ===');
+    console.log('Email:', email);
+    console.log('Full Name:', full_name);
+    console.log('Role:', role);
+    console.log('Has Password:', !!password);
+
+    // Validate required fields
+    if (!email || !full_name || !role) {
+      console.error('Missing required fields:', { email: !!email, full_name: !!full_name, role: !!role });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Missing required fields: email, full_name, and role are required',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Create Supabase admin client using service role key
     const supabaseAdmin = createClient(
@@ -33,43 +53,53 @@ serve(async (req) => {
 
     // Generate password if not provided
     const userPassword = password || generateRandomPassword();
+    console.log('Generated/Using password length:', userPassword.length);
 
-    // Check if user already exists
+    // Check if user already exists in auth.users
+    console.log('=== CHECKING EXISTING USER ===');
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
       console.error('Error listing users:', listError);
-      throw new Error('Failed to check existing users');
+      throw new Error(`Failed to check existing users: ${listError.message}`);
     }
 
     const existingUser = existingUsers.users.find(user => user.email === email.trim());
     
     if (existingUser) {
-      console.log('User already exists, deleting existing user:', existingUser.id);
+      console.log('=== EXISTING USER FOUND ===');
+      console.log('Existing user ID:', existingUser.id);
       
-      // Delete from custom users table first
+      // Delete from custom users table first (if exists)
+      console.log('Deleting existing user profile...');
       const { error: deleteProfileError } = await supabaseAdmin
         .from('users')
         .delete()
         .eq('id', existingUser.id);
 
       if (deleteProfileError) {
-        console.error('Error deleting user profile:', deleteProfileError);
+        console.log('Note: Could not delete existing profile (may not exist):', deleteProfileError.message);
         // Continue anyway as the profile might not exist
+      } else {
+        console.log('Successfully deleted existing user profile');
       }
 
       // Delete from auth.users
+      console.log('Deleting existing auth user...');
       const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
       
       if (deleteAuthError) {
         console.error('Error deleting auth user:', deleteAuthError);
-        throw new Error('Failed to delete existing user');
+        throw new Error(`Failed to delete existing user: ${deleteAuthError.message}`);
       }
       
-      console.log('Successfully deleted existing user');
+      console.log('Successfully deleted existing auth user');
+    } else {
+      console.log('No existing user found, proceeding with creation');
     }
 
     // Create user using admin client
+    console.log('=== CREATING NEW USER ===');
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email.trim(),
       password: userPassword,
@@ -80,34 +110,47 @@ serve(async (req) => {
     });
 
     if (authError) {
-      console.error('Auth error:', authError);
-      throw authError;
+      console.error('Auth creation error:', authError);
+      throw new Error(`Failed to create auth user: ${authError.message}`);
     }
 
     if (!authData.user) {
-      throw new Error('Failed to create user');
+      throw new Error('Auth user creation returned no user data');
     }
 
-    console.log('User created successfully:', authData.user.id);
+    console.log('Auth user created successfully:', authData.user.id);
 
-    // Insert user profile - users can access system immediately without forced password reset
+    // Insert user profile - DON'T DELETE AUTH USER IF THIS FAILS
+    console.log('=== CREATING USER PROFILE ===');
+    const profileData = {
+      id: authData.user.id,
+      email: email.trim(),
+      full_name: full_name.trim(),
+      role: role,
+      is_active: true,
+      must_reset_pw: false,
+    };
+    
+    console.log('Profile data to insert:', profileData);
+    
     const { error: profileError } = await supabaseAdmin
       .from('users')
-      .insert({
-        id: authData.user.id,
-        email: email.trim(),
-        full_name: full_name.trim(),
-        role: role,
-        is_active: true,
-        must_reset_pw: false, // Users can access system immediately
-      });
+      .insert(profileData);
 
     if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // If profile creation fails, we should clean up the auth user
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      throw new Error('Failed to create user profile');
+      console.error('=== PROFILE CREATION FAILED ===');
+      console.error('Profile error details:', profileError);
+      
+      // Log the error but DON'T delete the auth user - let admin handle it
+      console.log('Auth user was created but profile failed. Auth user ID:', authData.user.id);
+      
+      // Return specific error information
+      throw new Error(`Profile creation failed: ${profileError.message}. Code: ${profileError.code}`);
     }
+
+    console.log('=== USER CREATION SUCCESSFUL ===');
+    console.log('User ID:', authData.user.id);
+    console.log('Email:', email.trim());
 
     return new Response(
       JSON.stringify({
@@ -124,11 +167,16 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('Error in create-user function:', error);
+    console.error('=== USER CREATION FAILED ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message || 'Failed to create user',
+        details: error.details || null,
       }),
       {
         status: 500,
@@ -141,7 +189,7 @@ serve(async (req) => {
 function generateRandomPassword(): string {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
   let password = '';
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     password += charset.charAt(Math.floor(Math.random() * charset.length));
   }
   return password;

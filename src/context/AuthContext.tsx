@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
@@ -25,13 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthProvider: Setting up auth state listener");
+    console.log("=== AuthProvider: Setting up auth state listener ===");
     setIsLoading(true);
     
     // First set up auth state change listener to ensure we don't miss events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('=== Auth state changed ===');
+        console.log('Event:', event);
+        console.log('Session user ID:', session?.user?.id);
+        console.log('Session expires at:', session?.expires_at);
+        
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -41,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fetchUserProfile(session.user!.id);
           }, 0);
         } else {
+          console.log('No session, clearing profile');
           setProfile(null);
           setIsLoading(false);
         }
@@ -49,7 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Then check the current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.id);
+      console.log('=== Initial session check ===');
+      console.log('Initial session user ID:', session?.user?.id);
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -61,13 +67,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      console.log('=== AuthProvider: Cleaning up auth listener ===');
       subscription.unsubscribe();
     };
   }, []);
 
   async function fetchUserProfile(userId: string) {
     try {
-      console.log('Fetching user profile for:', userId);
+      console.log('=== Fetching user profile ===');
+      console.log('User ID:', userId);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -75,24 +84,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
+        console.error('=== Profile fetch error ===');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        
         // If the user profile doesn't exist yet, we'll create a default one
         if (error.code === 'PGRST116') {
-          console.log('User profile not found, this is expected for new users');
+          console.log('User profile not found - this may be expected for new users');
         } else {
-          console.error('Error fetching profile:', error);
+          console.error('Unexpected error fetching profile:', error);
           throw error;
         }
+        setProfile(null);
+      } else {
+        console.log('=== User profile fetched successfully ===');
+        console.log('Profile data:', data);
+        setProfile(data);
       }
-
-      console.log('User profile fetched:', data);
-      setProfile(data);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('=== Error in fetchUserProfile ===');
+      console.error('Error:', error);
       toast({
         title: "Error",
         description: "Failed to load user profile",
         variant: "destructive",
       });
+      setProfile(null);
     } finally {
       setIsLoading(false);
     }
