@@ -10,7 +10,7 @@ export const completeNuclearCleanup = async (email: string): Promise<void> => {
 
     // Step 1: Get ALL auth users with this email (case-insensitive)
     const { data: authUsers } = await adminClient.auth.admin.listUsers();
-    const matchingAuthUsers = authUsers.users.filter(user => 
+    const matchingAuthUsers = authUsers.users.filter((user: any) => 
       user.email?.toLowerCase() === cleanEmail
     );
 
@@ -20,7 +20,7 @@ export const completeNuclearCleanup = async (email: string): Promise<void> => {
     const uuidsToClean = new Set<string>();
     
     // Add UUIDs from auth users
-    matchingAuthUsers.forEach(user => uuidsToClean.add(user.id));
+    matchingAuthUsers.forEach((user: any) => uuidsToClean.add(user.id));
 
     // Step 3: Find profiles by email (case-insensitive)
     const { data: emailProfiles } = await adminClient
@@ -61,7 +61,7 @@ export const completeNuclearCleanup = async (email: string): Promise<void> => {
 
     // Verify no auth users remain
     const { data: remainingAuthUsers } = await adminClient.auth.admin.listUsers();
-    const stillExistingAuth = remainingAuthUsers.users.filter(user => 
+    const stillExistingAuth = remainingAuthUsers.users.filter((user: any) => 
       user.email?.toLowerCase() === cleanEmail
     );
 
@@ -96,7 +96,7 @@ export const preFlightCleanupAndCheck = async (email: string): Promise<boolean> 
 
     // Double-check that everything is clean
     const { data: authUsers } = await adminClient.auth.admin.listUsers();
-    const existingAuth = authUsers.users.find(user => 
+    const existingAuth = authUsers.users.find((user: any) => 
       user.email?.toLowerCase() === cleanEmail
     );
 

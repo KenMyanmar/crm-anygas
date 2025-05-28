@@ -45,7 +45,7 @@ export const fixInconsistency = async (inconsistency: DataInconsistency): Promis
         
         // Delete all auth users with this email
         const { data: authUsers } = await adminClient.auth.admin.listUsers();
-        const matchingAuthUsers = authUsers.users.filter(user => 
+        const matchingAuthUsers = authUsers.users.filter((user: any) => 
           user.email?.toLowerCase() === inconsistency.email.toLowerCase()
         );
         

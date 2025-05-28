@@ -22,12 +22,13 @@ export const useEmergencyCleanup = () => {
       await completeNuclearCleanup(cleanEmail);
 
       // Verification
-      const { data: verifyAuth } = await (await import('../../services/supabaseAdmin')).adminClient.auth.admin.listUsers();
-      const remainingAuth = verifyAuth.users.filter(user => 
+      const { adminClient } = await import('../../services/supabaseAdmin');
+      const { data: verifyAuth } = await adminClient.auth.admin.listUsers();
+      const remainingAuth = verifyAuth.users.filter((user: any) => 
         user.email?.toLowerCase() === cleanEmail
       );
 
-      const { data: verifyProfiles } = await (await import('../../services/supabaseAdmin')).adminClient
+      const { data: verifyProfiles } = await adminClient
         .from('users')
         .select('*')
         .ilike('email', cleanEmail);

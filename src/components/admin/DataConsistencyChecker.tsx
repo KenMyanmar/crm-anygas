@@ -50,13 +50,13 @@ const DataConsistencyChecker = () => {
 
       // Step 1: Get ALL auth users with this email
       const { data: authUsers } = await adminClient.auth.admin.listUsers();
-      const matchingAuthUsers = authUsers.users.filter(user => 
+      const matchingAuthUsers = authUsers.users.filter((user: any) => 
         user.email?.toLowerCase() === cleanEmail
       );
 
       // Step 2: Get ALL profiles with this email or matching UUIDs
       const uuidsToClean = new Set<string>();
-      matchingAuthUsers.forEach(user => uuidsToClean.add(user.id));
+      matchingAuthUsers.forEach((user: any) => uuidsToClean.add(user.id));
 
       const { data: emailProfiles } = await adminClient
         .from('users')
@@ -92,7 +92,7 @@ const DataConsistencyChecker = () => {
 
       // Verification
       const { data: verifyAuth } = await adminClient.auth.admin.listUsers();
-      const remainingAuth = verifyAuth.users.filter(user => 
+      const remainingAuth = verifyAuth.users.filter((user: any) => 
         user.email?.toLowerCase() === cleanEmail
       );
 
@@ -197,7 +197,7 @@ const DataConsistencyChecker = () => {
         
         if (!hasMatchingAuthUser) {
           // Check if there's an auth user with same email but different UUID
-          const emailAuthUser = authUsers.users.find(authUser => 
+          const emailAuthUser = authUsers.users.find((authUser: any) => 
             authUser.email?.toLowerCase() === profile.email.toLowerCase()
           );
           
@@ -318,7 +318,7 @@ const DataConsistencyChecker = () => {
           
           // Delete all auth users with this email
           const { data: authUsers } = await adminClient.auth.admin.listUsers();
-          const matchingAuthUsers = authUsers.users.filter(user => 
+          const matchingAuthUsers = authUsers.users.filter((user: any) => 
             user.email?.toLowerCase() === inconsistency.email.toLowerCase()
           );
           
