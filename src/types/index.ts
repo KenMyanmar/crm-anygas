@@ -1,6 +1,8 @@
 
 export type UserRole = 'admin' | 'salesperson' | 'staff';
 
+export type LeadStatus = 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
+
 export interface User {
   id: string;
   email: string;
@@ -31,7 +33,7 @@ export interface Restaurant {
 export interface Lead {
   id: string;
   restaurant_id: string;
-  status: 'NEW' | 'CONTACTED' | 'NEEDS_FOLLOW_UP' | 'TRIAL' | 'NEGOTIATION' | 'WON' | 'LOST' | 'ON_HOLD';
+  status: LeadStatus;
   lost_reason?: string;
   next_action_description?: string;
   next_action_date?: string;
@@ -68,6 +70,7 @@ export interface Order {
   created_by_user_id: string;
   created_at: string;
   updated_at: string;
+  order_number: string;
   restaurant?: Restaurant;
   lead?: Lead;
   created_by_user?: User;
@@ -82,6 +85,7 @@ export interface OrderItem {
   unit_price_kyats: number;
   sub_total_kyats: number;
   created_at: string;
+  product_name: string;
   product?: Product;
 }
 
@@ -122,7 +126,7 @@ export interface UserNotification {
 
 export interface DashboardData {
   lead_summary: Array<{
-    status: string;
+    status: LeadStatus;
     count: number;
   }>;
   upcoming_actions: Array<{
@@ -130,7 +134,7 @@ export interface DashboardData {
     restaurant_name: string;
     next_action_description: string;
     next_action_date: string;
-    status: string;
+    status: LeadStatus;
   }>;
   recent_activity: ActivityLog[];
   notifications: UserNotification[];
@@ -151,3 +155,24 @@ export interface Meeting {
   lead?: Lead;
   scheduled_by_user?: User;
 }
+
+// Legacy status mapping utility (for backward compatibility)
+export const legacyStatusToNew = (legacyStatus: string): LeadStatus => {
+  switch (legacyStatus) {
+    case 'NEW':
+    case 'CONTACTED':
+      return 'CONTACT_STAGE';
+    case 'NEEDS_FOLLOW_UP':
+    case 'TRIAL':
+      return 'MEETING_STAGE';
+    case 'NEGOTIATION':
+      return 'PRESENTATION_NEGOTIATION';
+    case 'WON':
+      return 'CLOSED_WON';
+    case 'LOST':
+    case 'ON_HOLD':
+      return 'CLOSED_LOST';
+    default:
+      return 'CONTACT_STAGE';
+  }
+};

@@ -27,9 +27,9 @@ const Dashboard = () => {
       hasData: !!dashboardData,
       isLoading,
       error,
-      leadSummaryLength: dashboardData?.leadSummary?.length,
-      upcomingActionsLength: dashboardData?.upcomingActions?.length,
-      activitiesLength: dashboardData?.recentActivity?.length,
+      leadSummaryLength: dashboardData?.lead_summary?.length,
+      upcomingActionsLength: dashboardData?.upcoming_actions?.length,
+      activitiesLength: dashboardData?.recent_activity?.length,
       notificationsLength: dashboardData?.notifications?.length
     });
   }, [dashboardData, isLoading, error]);
@@ -77,9 +77,9 @@ const Dashboard = () => {
 
   // Handle empty data state
   const isEmpty = 
-    (!dashboardData?.leadSummary || dashboardData.leadSummary.length === 0) &&
-    (!dashboardData?.upcomingActions || dashboardData.upcomingActions.length === 0) &&
-    (!dashboardData?.recentActivity || dashboardData.recentActivity.length === 0) &&
+    (!dashboardData?.lead_summary || dashboardData.lead_summary.length === 0) &&
+    (!dashboardData?.upcoming_actions || dashboardData.upcoming_actions.length === 0) &&
+    (!dashboardData?.recent_activity || dashboardData.recent_activity.length === 0) &&
     (!dashboardData?.notifications || dashboardData.notifications.length === 0);
 
   // If we have no data but also no error, show empty state
@@ -117,16 +117,16 @@ const Dashboard = () => {
         
         <TabsContent value="overview" className="space-y-6">
           {/* Stats Summary Cards */}
-          {dashboardData?.leadSummary && dashboardData.leadSummary.length > 0 && (
-            <StatsSummary statusCounts={dashboardData.leadSummary} />
+          {dashboardData?.lead_summary && dashboardData.lead_summary.length > 0 && (
+            <StatsSummary statusCounts={dashboardData.lead_summary} />
           )}
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Tasks Panel */}
             <div className="lg:col-span-5">
-              {dashboardData?.upcomingActions && dashboardData.upcomingActions.length > 0 ? (
+              {dashboardData?.upcoming_actions && dashboardData.upcoming_actions.length > 0 ? (
                 <TaskList 
-                  tasks={dashboardData.upcomingActions} 
+                  tasks={dashboardData.upcoming_actions} 
                   onTaskClick={(leadId) => navigate(`/leads/${leadId}`)}
                 />
               ) : (
@@ -142,8 +142,8 @@ const Dashboard = () => {
             
             {/* Recent Activity Panel */}
             <div className="lg:col-span-4">
-              {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
-                <ActivityTable activities={dashboardData.recentActivity} />
+              {dashboardData?.recent_activity && dashboardData.recent_activity.length > 0 ? (
+                <ActivityTable activities={dashboardData.recent_activity} />
               ) : (
                 <Alert>
                   <InfoIcon className="h-4 w-4" />
@@ -176,15 +176,15 @@ const Dashboard = () => {
         </TabsContent>
         
         <TabsContent value="leads">
-          {dashboardData?.leadSummary && (
-            <LeadTable upcomingActions={dashboardData.upcomingActions || []} />
+          {dashboardData?.lead_summary && (
+            <LeadTable upcomingActions={dashboardData.upcoming_actions || []} />
           )}
         </TabsContent>
         
         <TabsContent value="tasks">
-          {dashboardData?.upcomingActions && dashboardData.upcomingActions.length > 0 ? (
+          {dashboardData?.upcoming_actions && dashboardData.upcoming_actions.length > 0 ? (
             <TaskList 
-              tasks={dashboardData.upcomingActions} 
+              tasks={dashboardData.upcoming_actions} 
               onTaskClick={(leadId) => navigate(`/leads/${leadId}`)}
               showFilters={true}
             />
@@ -200,9 +200,9 @@ const Dashboard = () => {
         </TabsContent>
         
         <TabsContent value="activity">
-          {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
+          {dashboardData?.recent_activity && dashboardData.recent_activity.length > 0 ? (
             <ActivityTable 
-              activities={dashboardData.recentActivity} 
+              activities={dashboardData.recent_activity} 
               showFilters={true}
             />
           ) : (

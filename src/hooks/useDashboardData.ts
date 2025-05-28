@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { DashboardData, LeadStatus, legacyStatusToNew } from '@/types';
+import { DashboardData, LeadStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { toast as sonnerToast } from 'sonner';
 
@@ -35,9 +35,9 @@ export const useDashboardData = () => {
         console.warn('No dashboard data returned from the RPC function');
         // Show empty state instead of error
         setDashboardData({
-          leadSummary: [],
-          upcomingActions: [],
-          recentActivity: [],
+          lead_summary: [],
+          upcoming_actions: [],
+          recent_activity: [],
           notifications: []
         });
         return;
@@ -45,18 +45,18 @@ export const useDashboardData = () => {
       
       // Transform the data to match our interface
       const transformedData: DashboardData = {
-        leadSummary: Array.isArray(data.leads_by_status) ? data.leads_by_status.map((item: any) => ({
+        lead_summary: Array.isArray(data.leads_by_status) ? data.leads_by_status.map((item: any) => ({
           status: item.status as LeadStatus,
           count: item.count
         })) : [],
-        upcomingActions: Array.isArray(data.upcoming_followups) ? data.upcoming_followups.map((item: any) => ({
+        upcoming_actions: Array.isArray(data.upcoming_followups) ? data.upcoming_followups.map((item: any) => ({
           id: item.id,
           restaurant_name: item.restaurant_name,
           next_action_description: item.next_action_description,
           next_action_date: item.next_action_date,
           status: item.status as LeadStatus
         })) : [],
-        recentActivity: Array.isArray(data.recent_activities) ? data.recent_activities.map((item: any) => ({
+        recent_activity: Array.isArray(data.recent_activities) ? data.recent_activities.map((item: any) => ({
           id: item.id,
           user_id: item.user_id,
           target_id: item.target_id,
@@ -93,14 +93,14 @@ export const useDashboardData = () => {
       if (import.meta.env.DEV) {
         console.log('Using mock data for development');
         setDashboardData({
-          leadSummary: [
+          lead_summary: [
             { status: 'CONTACT_STAGE', count: 12 },
             { status: 'MEETING_STAGE', count: 8 },
             { status: 'PRESENTATION_NEGOTIATION', count: 5 },
             { status: 'CLOSED_WON', count: 34 },
             { status: 'CLOSED_LOST', count: 12 }
           ],
-          upcomingActions: [
+          upcoming_actions: [
             {
               id: '1',
               restaurant_name: 'Golden Palace Restaurant',
@@ -123,7 +123,7 @@ export const useDashboardData = () => {
               status: 'PRESENTATION_NEGOTIATION'
             }
           ],
-          recentActivity: [
+          recent_activity: [
             {
               id: '1',
               activity_message: 'Added new lead for Golden Palace Restaurant',

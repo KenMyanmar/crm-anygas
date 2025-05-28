@@ -1,5 +1,4 @@
-
-import { LeadStatus, legacyStatusToNew } from '@/types';
+import { LeadStatus } from '@/types';
 import StatCard from './StatCard';
 import { FileText, AlertCircle, CheckCircle, Clock, MessageCircle, Briefcase, PauseCircle, XCircle } from 'lucide-react';
 
