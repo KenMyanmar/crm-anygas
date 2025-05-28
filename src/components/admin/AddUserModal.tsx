@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,7 +54,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       
       console.log('Calling create-user edge function...');
       
-      // Call the edge function to create user
+      // Call the edge function to create user (will handle deletion if user exists)
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: formData.email.trim(),
@@ -174,7 +175,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
           <DialogDescription>
-            Create a new user account. No email invitation will be sent.
+            Create a new user account. If a user with this email already exists, it will be replaced.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

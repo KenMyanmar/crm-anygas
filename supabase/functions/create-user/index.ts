@@ -34,13 +34,47 @@ serve(async (req) => {
     // Generate password if not provided
     const userPassword = password || generateRandomPassword();
 
+    // Check if user already exists
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error('Error listing users:', listError);
+      throw new Error('Failed to check existing users');
+    }
+
+    const existingUser = existingUsers.users.find(user => user.email === email.trim());
+    
+    if (existingUser) {
+      console.log('User already exists, deleting existing user:', existingUser.id);
+      
+      // Delete from custom users table first
+      const { error: deleteProfileError } = await supabaseAdmin
+        .from('users')
+        .delete()
+        .eq('id', existingUser.id);
+
+      if (deleteProfileError) {
+        console.error('Error deleting user profile:', deleteProfileError);
+        // Continue anyway as the profile might not exist
+      }
+
+      // Delete from auth.users
+      const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+      
+      if (deleteAuthError) {
+        console.error('Error deleting auth user:', deleteAuthError);
+        throw new Error('Failed to delete existing user');
+      }
+      
+      console.log('Successfully deleted existing user');
+    }
+
     // Create user using admin client
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email.trim(),
       password: userPassword,
       email_confirm: true,
       user_metadata: {
-        must_reset_pw: true,
         full_name: full_name.trim(),
       },
     });
@@ -64,13 +98,14 @@ serve(async (req) => {
         email: email.trim(),
         full_name: full_name.trim(),
         role: role,
-        must_reset_pw: true,
         is_active: true,
       });
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      // Don't throw here as the auth user was created successfully
+      // If profile creation fails, we should clean up the auth user
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      throw new Error('Failed to create user profile');
     }
 
     return new Response(
