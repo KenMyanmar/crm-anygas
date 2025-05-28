@@ -7,6 +7,8 @@ export interface VisitPlan {
   created_by: string;
   created_at: string;
   updated_at: string;
+  team_visible?: boolean;
+  estimated_total_duration_minutes?: number;
 }
 
 export interface VisitTask {
@@ -17,6 +19,9 @@ export interface VisitTask {
   status: 'PLANNED' | 'VISITED' | 'RESCHEDULED' | 'CANCELED';
   visit_time?: string;
   notes?: string;
+  visit_sequence?: number;
+  estimated_duration_minutes?: number;
+  priority_level?: 'HIGH' | 'MEDIUM' | 'LOW';
   created_at: string;
   updated_at: string;
   restaurant?: {
@@ -25,7 +30,12 @@ export interface VisitTask {
     township?: string;
     contact_person?: string;
     phone?: string;
+    address?: string;
   };
+  lead_status?: 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
+  next_action_date?: string;
+  lead_assigned_to?: string;
+  lead_assigned_user_name?: string;
 }
 
 export interface TaskOutcome {
@@ -62,4 +72,17 @@ export interface VoiceNote {
   transcript?: string;
   created_by: string;
   created_at: string;
+}
+
+export interface RestaurantWithLead {
+  id: string;
+  name: string;
+  township?: string;
+  address?: string;
+  contact_person?: string;
+  phone?: string;
+  lead_status?: 'CONTACT_STAGE' | 'MEETING_STAGE' | 'PRESENTATION_NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
+  assigned_user?: string;
+  next_action_date?: string;
+  last_visit_date?: string;
 }

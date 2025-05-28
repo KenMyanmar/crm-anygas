@@ -12,31 +12,46 @@ export const useVisitTasks = (planId?: string) => {
   const fetchVisitTasks = async () => {
     try {
       setIsLoading(true);
+      
+      // Use the detailed view for comprehensive data
       let query = supabase
-        .from('visit_tasks')
-        .select(`
-          *,
-          restaurant:restaurants (
-            id,
-            name,
-            township,
-            contact_person,
-            phone
-          )
-        `);
+        .from('visit_tasks_detailed')
+        .select('*');
 
       if (planId) {
         query = query.eq('plan_id', planId);
       }
 
       const { data, error } = await query
-        .order('visit_time', { ascending: true });
+        .order('visit_sequence', { ascending: true });
 
       if (error) throw error;
 
       const transformedData = (data || []).map((task: any) => ({
-        ...task,
-        restaurant: Array.isArray(task.restaurant) ? task.restaurant[0] : task.restaurant
+        id: task.id,
+        plan_id: task.plan_id,
+        restaurant_id: task.restaurant_id,
+        salesperson_uid: task.salesperson_uid,
+        status: task.status,
+        visit_time: task.visit_time,
+        notes: task.notes,
+        visit_sequence: task.visit_sequence,
+        estimated_duration_minutes: task.estimated_duration_minutes,
+        priority_level: task.priority_level,
+        created_at: task.created_at,
+        updated_at: task.updated_at,
+        restaurant: {
+          id: task.restaurant_id,
+          name: task.restaurant_name,
+          township: task.township,
+          contact_person: task.contact_person,
+          phone: task.phone,
+          address: task.address
+        },
+        lead_status: task.lead_status,
+        next_action_date: task.next_action_date,
+        lead_assigned_to: task.lead_assigned_to,
+        lead_assigned_user_name: task.lead_assigned_user_name
       }));
 
       setTasks(transformedData);
@@ -57,32 +72,20 @@ export const useVisitTasks = (planId?: string) => {
       const { data, error } = await supabase
         .from('visit_tasks')
         .insert(taskData)
-        .select(`
-          *,
-          restaurant:restaurants (
-            id,
-            name,
-            township,
-            contact_person,
-            phone
-          )
-        `)
+        .select()
         .single();
 
       if (error) throw error;
 
-      const transformedData = {
-        ...data,
-        restaurant: Array.isArray(data.restaurant) ? data.restaurant[0] : data.restaurant
-      };
+      // Refresh the tasks to get the detailed view
+      await fetchVisitTasks();
 
-      setTasks(prev => [...prev, transformedData]);
       toast({
         title: "Success",
         description: "Visit task created successfully",
       });
 
-      return transformedData;
+      return data;
     } catch (error) {
       console.error('Error creating visit task:', error);
       toast({
@@ -100,27 +103,14 @@ export const useVisitTasks = (planId?: string) => {
         .from('visit_tasks')
         .update(updates)
         .eq('id', id)
-        .select(`
-          *,
-          restaurant:restaurants (
-            id,
-            name,
-            township,
-            contact_person,
-            phone
-          )
-        `)
+        .select()
         .single();
 
       if (error) throw error;
 
-      const transformedData = {
-        ...data,
-        restaurant: Array.isArray(data.restaurant) ? data.restaurant[0] : data.restaurant
-      };
-
+      // Update local state immediately for better UX
       setTasks(prev => prev.map(task => 
-        task.id === id ? transformedData : task
+        task.id === id ? { ...task, ...updates } : task
       ));
 
       toast({
@@ -128,7 +118,7 @@ export const useVisitTasks = (planId?: string) => {
         description: "Visit task updated successfully",
       });
 
-      return transformedData;
+      return data;
     } catch (error) {
       console.error('Error updating visit task:', error);
       toast({

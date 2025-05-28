@@ -519,6 +519,13 @@ export type Database = {
             referencedRelation: "visit_tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "task_outcomes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "visit_tasks_detailed"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tasks: {
@@ -635,27 +642,33 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string
+          estimated_total_duration_minutes: number | null
           id: string
           plan_date: string
           remarks: string | null
+          team_visible: boolean | null
           title: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           created_by: string
+          estimated_total_duration_minutes?: number | null
           id?: string
           plan_date: string
           remarks?: string | null
+          team_visible?: boolean | null
           title: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           created_by?: string
+          estimated_total_duration_minutes?: number | null
           id?: string
           plan_date?: string
           remarks?: string | null
+          team_visible?: boolean | null
           title?: string
           updated_at?: string | null
         }
@@ -672,35 +685,44 @@ export type Database = {
       visit_tasks: {
         Row: {
           created_at: string | null
+          estimated_duration_minutes: number | null
           id: string
           notes: string | null
           plan_id: string
+          priority_level: string | null
           restaurant_id: string
           salesperson_uid: string
           status: Database["public"]["Enums"]["visit_task_status"] | null
           updated_at: string | null
+          visit_sequence: number | null
           visit_time: string | null
         }
         Insert: {
           created_at?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           notes?: string | null
           plan_id: string
+          priority_level?: string | null
           restaurant_id: string
           salesperson_uid: string
           status?: Database["public"]["Enums"]["visit_task_status"] | null
           updated_at?: string | null
+          visit_sequence?: number | null
           visit_time?: string | null
         }
         Update: {
           created_at?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           notes?: string | null
           plan_id?: string
+          priority_level?: string | null
           restaurant_id?: string
           salesperson_uid?: string
           status?: Database["public"]["Enums"]["visit_task_status"] | null
           updated_at?: string | null
+          visit_sequence?: number | null
           visit_time?: string | null
         }
         Relationships: [
@@ -780,7 +802,61 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      visit_tasks_detailed: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string | null
+          estimated_duration_minutes: number | null
+          id: string | null
+          lead_assigned_to: string | null
+          lead_assigned_user_name: string | null
+          lead_status: Database["public"]["Enums"]["lead_status"] | null
+          next_action_date: string | null
+          notes: string | null
+          phone: string | null
+          plan_id: string | null
+          priority_level: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          salesperson_uid: string | null
+          status: Database["public"]["Enums"]["visit_task_status"] | null
+          township: string | null
+          updated_at: string | null
+          visit_sequence: number | null
+          visit_time: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_to_user_id_fkey"
+            columns: ["lead_assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "visit_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_salesperson_uid_fkey"
+            columns: ["salesperson_uid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_order_number: {
