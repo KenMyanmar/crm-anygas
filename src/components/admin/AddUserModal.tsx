@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
-import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, Trash2 } from 'lucide-react';
+import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, Trash2, UserPlus } from 'lucide-react';
 
 interface AddUserModalProps {
   open: boolean;
@@ -20,6 +20,8 @@ interface ExistingUserInfo {
   hasProfile: boolean;
   profileData?: any;
   authUserId?: string;
+  authUserEmail?: string;
+  authUserMetadata?: any;
 }
 
 // Service Role Key for direct admin operations
@@ -99,7 +101,9 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         hasAuthUser: !!existingAuthUser,
         hasProfile: !!profileData,
         profileData: profileData,
-        authUserId: existingAuthUser?.id
+        authUserId: existingAuthUser?.id,
+        authUserEmail: existingAuthUser?.email,
+        authUserMetadata: existingAuthUser?.user_metadata
       };
 
       console.log('Existing user check result:', result);
@@ -136,6 +140,47 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       console.error('Error in cleanupOrphanedProfile:', error);
       toast({
         title: "Cleanup failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const createMissingProfile = async (authUserId: string, email: string, fullName: string, role: UserRole): Promise<boolean> => {
+    console.log('=== CREATING MISSING PROFILE ===');
+    console.log('Auth User ID:', authUserId);
+    console.log('Email:', email);
+
+    try {
+      const { error: profileError } = await adminClient
+        .from('users')
+        .insert({
+          id: authUserId,
+          email: email.trim(),
+          full_name: fullName.trim(),
+          role: role,
+          is_active: true,
+          must_reset_pw: true
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        throw new Error(`Failed to create missing profile: ${profileError.message}`);
+      }
+
+      console.log('Missing profile created successfully');
+      
+      toast({
+        description: "Missing user profile created successfully",
+      });
+
+      return true;
+
+    } catch (error: any) {
+      console.error('Error in createMissingProfile:', error);
+      toast({
+        title: "Profile creation failed",
         description: error.message,
         variant: "destructive",
       });
@@ -348,19 +393,15 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       }
 
       if (existingInfo.hasProfile && !existingInfo.hasAuthUser) {
-        // Orphaned profile - show conflict dialog
+        // Orphaned profile - show conflict dialog for cleanup/restore
         setShowConflictDialog(true);
         setIsValidating(false);
         return;
       }
 
       if (existingInfo.hasAuthUser && !existingInfo.hasProfile) {
-        // Auth user exists but no profile - unusual case
-        toast({
-          title: "Incomplete user found",
-          description: "Auth user exists but profile is missing. Please contact administrator.",
-          variant: "destructive",
-        });
+        // Auth user exists but no profile - show conflict dialog for profile creation
+        setShowConflictDialog(true);
         setIsValidating(false);
         return;
       }
@@ -427,6 +468,41 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     }
   };
 
+  const handleCreateMissingProfile = async () => {
+    setShowConflictDialog(false);
+    setIsCreating(true);
+
+    try {
+      if (!existingUserInfo?.authUserId) {
+        throw new Error('Auth user ID not found');
+      }
+
+      const success = await createMissingProfile(
+        existingUserInfo.authUserId,
+        formData.email,
+        formData.full_name,
+        formData.role
+      );
+      
+      if (success) {
+        toast({
+          description: `User profile created for ${formData.full_name}`,
+        });
+        
+        onUserCreated();
+      }
+      
+      setIsCreating(false);
+    } catch (error: any) {
+      setIsCreating(false);
+      toast({
+        title: "Failed to create profile",
+        description: error.message || 'An unexpected error occurred',
+        variant: "destructive",
+      });
+    }
+  };
+
   const copyCredentials = async () => {
     if (!createdCredentials) return;
     
@@ -463,65 +539,150 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
 
   // Conflict resolution dialog
   if (showConflictDialog && existingUserInfo) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
-              User Data Conflict Detected
-            </DialogTitle>
-            <DialogDescription>
-              A user profile exists for "{formData.email}" but the authentication account is missing. 
-              This typically happens when data gets corrupted or partially deleted.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="p-4 bg-orange-50 rounded-md border border-orange-200">
-              <h4 className="font-medium text-orange-800 mb-2">Existing Profile Information:</h4>
-              <div className="text-sm text-orange-700 space-y-1">
-                <p><strong>Name:</strong> {existingUserInfo.profileData?.full_name}</p>
-                <p><strong>Role:</strong> {existingUserInfo.profileData?.role}</p>
-                <p><strong>Active:</strong> {existingUserInfo.profileData?.is_active ? 'Yes' : 'No'}</p>
-                <p><strong>Created:</strong> {existingUserInfo.profileData?.created_at ? new Date(existingUserInfo.profileData.created_at).toLocaleDateString() : 'Unknown'}</p>
+    // Handle orphaned profile case (profile exists but no auth user)
+    if (existingUserInfo.hasProfile && !existingUserInfo.hasAuthUser) {
+      return (
+        <Dialog open={open} onOpenChange={handleClose}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                User Data Conflict Detected
+              </DialogTitle>
+              <DialogDescription>
+                A user profile exists for "{formData.email}" but the authentication account is missing. 
+                This typically happens when data gets corrupted or partially deleted.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-orange-50 rounded-md border border-orange-200">
+                <h4 className="font-medium text-orange-800 mb-2">Existing Profile Information:</h4>
+                <div className="text-sm text-orange-700 space-y-1">
+                  <p><strong>Name:</strong> {existingUserInfo.profileData?.full_name}</p>
+                  <p><strong>Role:</strong> {existingUserInfo.profileData?.role}</p>
+                  <p><strong>Active:</strong> {existingUserInfo.profileData?.is_active ? 'Yes' : 'No'}</p>
+                  <p><strong>Created:</strong> {existingUserInfo.profileData?.created_at ? new Date(existingUserInfo.profileData.created_at).toLocaleDateString() : 'Unknown'}</p>
+                </div>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                <p><strong>Choose an action:</strong></p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>Restore User:</strong> Create a new authentication account and link it to the existing profile</li>
+                  <li><strong>Clean & Create:</strong> Delete the orphaned profile and create a completely new user</li>
+                </ul>
               </div>
             </div>
-            
-            <div className="text-sm text-muted-foreground">
-              <p><strong>Choose an action:</strong></p>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li><strong>Restore User:</strong> Create a new authentication account and link it to the existing profile</li>
-                <li><strong>Clean & Create:</strong> Delete the orphaned profile and create a completely new user</li>
-              </ul>
-            </div>
-          </div>
 
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleCleanupAndCreate}
-              disabled={isCreating}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clean & Create New
-            </Button>
-            <Button 
-              onClick={handleRestoreUser}
-              disabled={isCreating}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Restore User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleCleanupAndCreate}
+                disabled={isCreating}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Clean & Create New
+              </Button>
+              <Button 
+                onClick={handleRestoreUser}
+                disabled={isCreating}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Restore User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    // Handle missing profile case (auth user exists but no profile)
+    if (existingUserInfo.hasAuthUser && !existingUserInfo.hasProfile) {
+      return (
+        <Dialog open={open} onOpenChange={handleClose}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-blue-500" />
+                Missing User Profile Detected
+              </DialogTitle>
+              <DialogDescription>
+                An authentication account exists for "{formData.email}" but the user profile is missing. 
+                This can happen if user creation was interrupted or failed partially.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
+                <h4 className="font-medium text-blue-800 mb-2">Existing Auth Information:</h4>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p><strong>Email:</strong> {existingUserInfo.authUserEmail}</p>
+                  <p><strong>Auth ID:</strong> {existingUserInfo.authUserId}</p>
+                  <p><strong>Metadata:</strong> {existingUserInfo.authUserMetadata?.full_name || 'Not set'}</p>
+                </div>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                <p><strong>Choose an action:</strong></p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>Create Profile:</strong> Create the missing user profile and link it to the existing auth account</li>
+                  <li><strong>Delete & Recreate:</strong> Delete the auth account and create a completely new user</li>
+                </ul>
+              </div>
+            </div>
+
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={async () => {
+                  setShowConflictDialog(false);
+                  setIsCreating(true);
+                  try {
+                    if (existingUserInfo.authUserId) {
+                      await adminClient.auth.admin.deleteUser(existingUserInfo.authUserId);
+                      toast({
+                        description: "Auth user deleted successfully",
+                      });
+                    }
+                    const success = await createUser();
+                    setIsCreating(false);
+                  } catch (error) {
+                    setIsCreating(false);
+                    toast({
+                      title: "Failed to delete and recreate user",
+                      description: "An error occurred during the process",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                disabled={isCreating}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete & Recreate
+              </Button>
+              <Button 
+                onClick={handleCreateMissingProfile}
+                disabled={isCreating}
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                Create Missing Profile
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
   }
 
   // Success dialog for created credentials
