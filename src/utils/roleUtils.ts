@@ -25,6 +25,18 @@ export const canApproveOrders = (role: string | null): boolean => {
   return role === 'admin' || role === 'manager';
 };
 
+export const canManageUsers = (role: string | null): boolean => {
+  return role === 'admin';
+};
+
+export const isAdminOrManager = (role: string | null): boolean => {
+  return role === 'admin' || role === 'manager';
+};
+
+export const hasAdminAccess = (role: string | null): boolean => {
+  return isAdminOrManager(role);
+};
+
 export const getUserRole = async (): Promise<string | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();

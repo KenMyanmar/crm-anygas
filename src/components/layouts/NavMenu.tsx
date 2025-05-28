@@ -1,4 +1,3 @@
-
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -67,7 +66,7 @@ const NavMenu: FC = () => {
   const { profile } = useAuth();
   const sidebar = useSidebar();
   const location = useLocation();
-  const isAdmin = profile?.role === 'admin';
+  const isAdminOrManager = profile?.role === 'admin' || profile?.role === 'manager';
   
   // Control open states manually instead of using defaultOpen
   const [leadsGroupOpen, setLeadsGroupOpen] = useState(false);
@@ -177,7 +176,7 @@ const NavMenu: FC = () => {
         )}
       </SidebarGroup>
       
-      {isAdmin && (
+      {isAdminOrManager && (
         <SidebarGroup>
           <div onClick={() => setAdminGroupOpen(!adminGroupOpen)} className="cursor-pointer">
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
@@ -185,7 +184,9 @@ const NavMenu: FC = () => {
           {adminGroupOpen && (
             <SidebarGroupContent>
               <SidebarMenu>
-                <MenuLink to="/admin/users" icon={Users} label="Users" />
+                {profile?.role === 'admin' && (
+                  <MenuLink to="/admin/users" icon={Users} label="Users" />
+                )}
                 <MenuLink to="/admin/products" icon={Package} label="Products" />
                 <MenuLink to="/admin/import" icon={FileText} label="Import Data" />
                 <MenuLink to="/admin/settings" icon={Settings} label="Settings" />

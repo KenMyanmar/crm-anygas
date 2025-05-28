@@ -2,18 +2,19 @@
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
+import { isAdminOrManager } from '@/utils/roleUtils';
 
 const SettingsPage = () => {
   const { profile } = useAuth();
 
-  if (profile?.role !== 'admin') {
+  if (!isAdminOrManager(profile?.role)) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Unauthorized Access</h1>
             <p className="text-muted-foreground">
-              You do not have permission to access this page. This area is restricted to administrators.
+              You do not have permission to access this page. This area is restricted to administrators and managers.
             </p>
           </div>
         </div>

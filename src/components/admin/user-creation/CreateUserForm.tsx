@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +68,7 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
               <SelectItem value="salesperson">Salesperson</SelectItem>
               <SelectItem value="staff">Staff</SelectItem>
             </SelectContent>

@@ -206,6 +206,7 @@ const UsersPage = () => {
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="admin">Admin</SelectItem>
+                                      <SelectItem value="manager">Manager</SelectItem>
                                       <SelectItem value="salesperson">Salesperson</SelectItem>
                                       <SelectItem value="staff">Staff</SelectItem>
                                     </SelectContent>
