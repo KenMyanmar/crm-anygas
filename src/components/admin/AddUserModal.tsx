@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
-import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, Trash2, UserPlus } from 'lucide-react';
+import { Copy, Eye, EyeOff, RefreshCw, AlertTriangle, Trash2, UserPlus, Shield } from 'lucide-react';
 
 interface AddUserModalProps {
   open: boolean;
@@ -15,21 +16,19 @@ interface AddUserModalProps {
   onUserCreated: () => void;
 }
 
-interface ExistingUserInfo {
+interface ConflictInfo {
   hasAuthUser: boolean;
   hasProfile: boolean;
-  profileData?: any;
   authUserId?: string;
   authUserEmail?: string;
-  authUserMetadata?: any;
+  profileData?: any;
+  conflictType: 'COMPLETE_DUPLICATE' | 'ORPHANED_PROFILE' | 'MISSING_PROFILE' | 'NONE';
 }
 
 // Service Role Key for direct admin operations
-// WARNING: This is exposed in the frontend and should only be used by trusted administrators
 const SUPABASE_URL = 'https://fblcilccdjicyosmuome.supabase.co';
 const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibGNpbGNjZGppY3lvc211b21lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Njk3NzMzMywiZXhwIjoyMDYyNTUzMzMzfQ.CaTkwECtJrGNvSFcM00Y8WZvDvqHNw6CsdJF2LB3qM8';
 
-// Create admin client for user management
 const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: {
     autoRefreshToken: false,
@@ -44,22 +43,12 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     role: 'salesperson' as UserRole,
     password: '',
   });
-  const [isCreating, setIsCreating] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
-  const [existingUserInfo, setExistingUserInfo] = useState<ExistingUserInfo | null>(null);
+  const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const { toast } = useToast();
-
-  const generatePassword = () => {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    setFormData(prev => ({ ...prev, password }));
-  };
 
   const generateRandomPassword = (): string => {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
@@ -70,22 +59,30 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
     return password;
   };
 
-  const checkExistingUser = async (email: string): Promise<ExistingUserInfo> => {
-    console.log('=== CHECKING EXISTING USER ===');
-    console.log('Email:', email);
+  const generatePassword = () => {
+    const password = generateRandomPassword();
+    setFormData(prev => ({ ...prev, password }));
+  };
+
+  // Enhanced detection function with case-insensitive email search
+  const detectUserConflicts = async (email: string): Promise<ConflictInfo> => {
+    console.log('=== DETECTING USER CONFLICTS ===');
+    console.log('Email (case-insensitive):', email.toLowerCase());
 
     try {
-      // Check if auth user exists
+      // Check auth users with case-insensitive search
       const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
       
       if (authError) {
         console.error('Error checking auth users:', authError);
-        throw new Error(`Failed to check existing auth users: ${authError.message}`);
+        throw new Error(`Failed to check auth users: ${authError.message}`);
       }
 
-      const existingAuthUser = authUsers.users.find(user => user.email?.toLowerCase() === email.toLowerCase());
+      const existingAuthUser = authUsers.users.find(user => 
+        user.email?.toLowerCase() === email.toLowerCase()
+      );
       
-      // Check if profile exists in users table
+      // Check profiles with case-insensitive search
       const { data: profileData, error: profileError } = await adminClient
         .from('users')
         .select('*')
@@ -94,250 +91,150 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error checking profile:', profileError);
-        throw new Error(`Failed to check existing profile: ${profileError.message}`);
+        throw new Error(`Failed to check profile: ${profileError.message}`);
       }
 
-      const result: ExistingUserInfo = {
+      // Determine conflict type
+      let conflictType: ConflictInfo['conflictType'] = 'NONE';
+      
+      if (existingAuthUser && profileData) {
+        conflictType = 'COMPLETE_DUPLICATE';
+      } else if (!existingAuthUser && profileData) {
+        conflictType = 'ORPHANED_PROFILE';
+      } else if (existingAuthUser && !profileData) {
+        conflictType = 'MISSING_PROFILE';
+      }
+
+      const result: ConflictInfo = {
         hasAuthUser: !!existingAuthUser,
         hasProfile: !!profileData,
-        profileData: profileData,
         authUserId: existingAuthUser?.id,
         authUserEmail: existingAuthUser?.email,
-        authUserMetadata: existingAuthUser?.user_metadata
+        profileData: profileData,
+        conflictType
       };
 
-      console.log('Existing user check result:', result);
+      console.log('Conflict detection result:', result);
       return result;
 
     } catch (error: any) {
-      console.error('Error in checkExistingUser:', error);
+      console.error('Error in detectUserConflicts:', error);
       throw error;
     }
   };
 
-  const cleanupOrphanedProfile = async (email: string) => {
-    console.log('=== CLEANING UP ORPHANED PROFILE ===');
+  // Nuclear option - completely remove all traces of a user
+  const forceDeleteUser = async (email: string): Promise<void> => {
+    console.log('=== FORCE DELETING USER ===');
     console.log('Email:', email);
 
     try {
-      const { error } = await adminClient
+      // Get auth user first
+      const { data: authUsers } = await adminClient.auth.admin.listUsers();
+      const authUser = authUsers.users.find(user => 
+        user.email?.toLowerCase() === email.toLowerCase()
+      );
+
+      // Delete profile first
+      const { error: profileDeleteError } = await adminClient
         .from('users')
         .delete()
         .ilike('email', email);
 
-      if (error) {
-        console.error('Error cleaning up orphaned profile:', error);
-        throw new Error(`Failed to cleanup orphaned profile: ${error.message}`);
+      if (profileDeleteError) {
+        console.log('Profile deletion note:', profileDeleteError.message);
+        // Continue anyway as profile might not exist
+      } else {
+        console.log('Profile deleted successfully');
       }
 
-      console.log('Orphaned profile cleaned up successfully');
-      
-      toast({
-        description: "Orphaned profile cleaned up successfully",
-      });
-
-    } catch (error: any) {
-      console.error('Error in cleanupOrphanedProfile:', error);
-      toast({
-        title: "Cleanup failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const createMissingProfile = async (authUserId: string, email: string, fullName: string, role: UserRole): Promise<boolean> => {
-    console.log('=== CREATING MISSING PROFILE ===');
-    console.log('Auth User ID:', authUserId);
-    console.log('Email:', email);
-
-    try {
-      const { error: profileError } = await adminClient
-        .from('users')
-        .insert({
-          id: authUserId,
-          email: email.trim(),
-          full_name: fullName.trim(),
-          role: role,
-          is_active: true,
-          must_reset_pw: true
-        });
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        throw new Error(`Failed to create missing profile: ${profileError.message}`);
-      }
-
-      console.log('Missing profile created successfully');
-      
-      toast({
-        description: "Missing user profile created successfully",
-      });
-
-      return true;
-
-    } catch (error: any) {
-      console.error('Error in createMissingProfile:', error);
-      toast({
-        title: "Profile creation failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const restoreAuthUser = async (email: string, fullName: string, role: UserRole, password: string): Promise<boolean> => {
-    console.log('=== RESTORING AUTH USER ===');
-    console.log('Email:', email);
-
-    try {
-      // Create auth user for existing profile
-      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-        email: email.trim(),
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: fullName.trim(),
-          role: role
-        }
-      });
-
-      if (authError) {
-        console.error('Auth user restoration error:', authError);
-        throw new Error(`Failed to restore auth user: ${authError.message}`);
-      }
-
-      if (!authData.user) {
-        throw new Error('Auth user restoration failed - no user data returned');
-      }
-
-      console.log('Auth user restored successfully:', authData.user.id);
-
-      // Update the profile with the new auth user ID
-      const { error: updateError } = await adminClient
-        .from('users')
-        .update({ 
-          id: authData.user.id,
-          full_name: fullName.trim(),
-          role: role,
-          is_active: true,
-          must_reset_pw: true
-        })
-        .ilike('email', email);
-
-      if (updateError) {
-        console.error('Profile update error:', updateError);
+      // Delete auth user if exists
+      if (authUser) {
+        const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(authUser.id);
         
-        // Cleanup the auth user if profile update fails
-        try {
-          await adminClient.auth.admin.deleteUser(authData.user.id);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup auth user after profile update failure:', cleanupError);
+        if (authDeleteError) {
+          console.error('Auth user deletion error:', authDeleteError);
+          throw new Error(`Failed to delete auth user: ${authDeleteError.message}`);
         }
         
-        throw new Error(`Failed to update profile: ${updateError.message}`);
+        console.log('Auth user deleted successfully');
       }
 
-      console.log('=== USER RESTORATION SUCCESSFUL ===');
-      return true;
+      // Wait for deletion to propagate
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
+      console.log('=== FORCE DELETE COMPLETED ===');
+      
     } catch (error: any) {
-      console.error('=== USER RESTORATION FAILED ===');
-      console.error('Error:', error);
+      console.error('Error in forceDeleteUser:', error);
       throw error;
     }
   };
 
-  const createUser = async (): Promise<boolean> => {
-    if (!formData.email || !formData.full_name) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return false;
-    }
+  // Atomic user creation with rollback
+  const createUserAtomic = async (): Promise<boolean> => {
+    const userPassword = formData.password || generateRandomPassword();
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanFullName = formData.full_name.trim();
+
+    console.log('=== ATOMIC USER CREATION START ===');
 
     try {
-      console.log('=== DIRECT USER CREATION START ===');
-      console.log('Form data:', {
-        email: formData.email,
-        full_name: formData.full_name,
-        role: formData.role,
-        hasPassword: !!formData.password
-      });
-
-      const userPassword = formData.password || generateRandomPassword();
-      
-      // Step 1: Create auth user using admin client
+      // Step 1: Create auth user
       console.log('Creating auth user...');
       const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-        email: formData.email.trim(),
+        email: cleanEmail,
         password: userPassword,
         email_confirm: true,
         user_metadata: {
-          full_name: formData.full_name.trim(),
+          full_name: cleanFullName,
           role: formData.role
         }
       });
 
       if (authError) {
-        console.error('Auth user creation error:', authError);
-        
-        if (authError.message.includes('already registered')) {
-          throw new Error('A user with this email already exists');
-        } else if (authError.message.includes('invalid email')) {
-          throw new Error('Please provide a valid email address');
-        } else {
-          throw new Error(`Failed to create user account: ${authError.message}`);
-        }
+        console.error('Auth user creation failed:', authError);
+        throw new Error(`Auth creation failed: ${authError.message}`);
       }
 
       if (!authData.user) {
-        throw new Error('Auth user creation failed - no user data returned');
+        throw new Error('Auth user creation returned no data');
       }
 
-      console.log('Auth user created successfully:', authData.user.id);
+      console.log('Auth user created:', authData.user.id);
 
-      // Step 2: Create user profile in users table
+      // Step 2: Create profile with rollback on failure
       console.log('Creating user profile...');
       const { error: profileError } = await adminClient
         .from('users')
         .insert({
           id: authData.user.id,
-          email: formData.email.trim(),
-          full_name: formData.full_name.trim(),
+          email: cleanEmail,
+          full_name: cleanFullName,
           role: formData.role,
           is_active: true,
           must_reset_pw: true
         });
 
       if (profileError) {
-        console.error('Profile creation error:', profileError);
+        console.error('Profile creation failed, rolling back auth user...');
         
-        // Clean up the auth user if profile creation fails
-        console.log('Cleaning up auth user due to profile creation failure...');
+        // Rollback: Delete the auth user
         try {
           await adminClient.auth.admin.deleteUser(authData.user.id);
-          console.log('Auth user cleanup successful');
-        } catch (cleanupError) {
-          console.error('Failed to cleanup auth user:', cleanupError);
+          console.log('Auth user rolled back successfully');
+        } catch (rollbackError) {
+          console.error('CRITICAL: Failed to rollback auth user:', rollbackError);
         }
         
-        if (profileError.message.includes('duplicate key')) {
-          throw new Error('User profile already exists in the system');
-        } else {
-          throw new Error(`Failed to create user profile: ${profileError.message}`);
-        }
+        throw new Error(`Profile creation failed: ${profileError.message}`);
       }
 
-      console.log('=== USER CREATION SUCCESSFUL ===');
+      console.log('=== ATOMIC USER CREATION SUCCESSFUL ===');
 
       // Set credentials for display
       setCreatedCredentials({
-        email: formData.email.trim(),
+        email: cleanEmail,
         password: userPassword,
       });
 
@@ -347,9 +244,9 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
 
       onUserCreated();
       return true;
-      
+
     } catch (error: any) {
-      console.error('=== USER CREATION FAILED ===');
+      console.error('=== ATOMIC USER CREATION FAILED ===');
       console.error('Error:', error);
       
       toast({
@@ -359,6 +256,45 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       });
       
       return false;
+    }
+  };
+
+  // Restore user by creating missing profile
+  const restoreUserProfile = async (): Promise<boolean> => {
+    if (!conflictInfo?.authUserId) {
+      throw new Error('Auth user ID not found');
+    }
+
+    console.log('=== RESTORING USER PROFILE ===');
+
+    try {
+      const { error: profileError } = await adminClient
+        .from('users')
+        .insert({
+          id: conflictInfo.authUserId,
+          email: formData.email.trim().toLowerCase(),
+          full_name: formData.full_name.trim(),
+          role: formData.role,
+          is_active: true,
+          must_reset_pw: true
+        });
+
+      if (profileError) {
+        throw new Error(`Failed to create profile: ${profileError.message}`);
+      }
+
+      console.log('Profile restored successfully');
+      
+      toast({
+        description: `User profile restored for ${formData.full_name}`,
+      });
+
+      onUserCreated();
+      return true;
+
+    } catch (error: any) {
+      console.error('Error restoring user profile:', error);
+      throw error;
     }
   };
 
@@ -374,132 +310,74 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       return;
     }
 
-    setIsValidating(true);
+    setIsProcessing(true);
 
     try {
-      // First, check if user already exists
-      const existingInfo = await checkExistingUser(formData.email);
-      setExistingUserInfo(existingInfo);
+      // Detect any conflicts
+      const conflicts = await detectUserConflicts(formData.email);
+      setConflictInfo(conflicts);
 
-      if (existingInfo.hasAuthUser && existingInfo.hasProfile) {
-        // User completely exists - show error
+      if (conflicts.conflictType === 'NONE') {
+        // No conflicts, proceed with creation
+        await createUserAtomic();
+      } else {
+        // Show conflict resolution dialog
+        setShowConflictDialog(true);
+      }
+
+    } catch (error: any) {
+      console.error('Error during user creation process:', error);
+      toast({
+        title: "Process failed",
+        description: error.message || 'Failed to process user creation',
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle force cleanup and create
+  const handleForceCleanupAndCreate = async () => {
+    setShowConflictDialog(false);
+    setIsProcessing(true);
+
+    try {
+      await forceDeleteUser(formData.email);
+      const success = await createUserAtomic();
+      if (!success) {
         toast({
-          title: "User already exists",
-          description: "A user with this email already exists in the system",
+          title: "Creation failed after cleanup",
+          description: "User was cleaned up but recreation failed",
           variant: "destructive",
         });
-        setIsValidating(false);
-        return;
       }
-
-      if (existingInfo.hasProfile && !existingInfo.hasAuthUser) {
-        // Orphaned profile - show conflict dialog for cleanup/restore
-        setShowConflictDialog(true);
-        setIsValidating(false);
-        return;
-      }
-
-      if (existingInfo.hasAuthUser && !existingInfo.hasProfile) {
-        // Auth user exists but no profile - show conflict dialog for profile creation
-        setShowConflictDialog(true);
-        setIsValidating(false);
-        return;
-      }
-
-      // No conflicts - proceed with creation
-      setIsValidating(false);
-      setIsCreating(true);
-      const success = await createUser();
-      setIsCreating(false);
-
     } catch (error: any) {
-      console.error('Error in handleSubmit:', error);
-      setIsValidating(false);
       toast({
-        title: "Validation failed",
-        description: error.message || 'Failed to validate user information',
+        title: "Force cleanup failed",
+        description: error.message || 'Failed to cleanup and recreate user',
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleCleanupAndCreate = async () => {
+  // Handle restore missing profile
+  const handleRestoreProfile = async () => {
     setShowConflictDialog(false);
-    setIsCreating(true);
+    setIsProcessing(true);
 
     try {
-      await cleanupOrphanedProfile(formData.email);
-      const success = await createUser();
-      setIsCreating(false);
-    } catch (error) {
-      setIsCreating(false);
-    }
-  };
-
-  const handleRestoreUser = async () => {
-    setShowConflictDialog(false);
-    setIsCreating(true);
-
-    try {
-      const userPassword = formData.password || generateRandomPassword();
-      const success = await restoreAuthUser(formData.email, formData.full_name, formData.role, userPassword);
-      
-      if (success) {
-        setCreatedCredentials({
-          email: formData.email.trim(),
-          password: userPassword,
-        });
-        
-        toast({
-          description: `User ${formData.full_name} restored successfully`,
-        });
-        
-        onUserCreated();
-      }
-      
-      setIsCreating(false);
+      await restoreUserProfile();
     } catch (error: any) {
-      setIsCreating(false);
       toast({
-        title: "Failed to restore user",
-        description: error.message || 'An unexpected error occurred',
+        title: "Profile restoration failed",
+        description: error.message || 'Failed to restore user profile',
         variant: "destructive",
       });
-    }
-  };
-
-  const handleCreateMissingProfile = async () => {
-    setShowConflictDialog(false);
-    setIsCreating(true);
-
-    try {
-      if (!existingUserInfo?.authUserId) {
-        throw new Error('Auth user ID not found');
-      }
-
-      const success = await createMissingProfile(
-        existingUserInfo.authUserId,
-        formData.email,
-        formData.full_name,
-        formData.role
-      );
-      
-      if (success) {
-        toast({
-          description: `User profile created for ${formData.full_name}`,
-        });
-        
-        onUserCreated();
-      }
-      
-      setIsCreating(false);
-    } catch (error: any) {
-      setIsCreating(false);
-      toast({
-        title: "Failed to create profile",
-        description: error.message || 'An unexpected error occurred',
-        variant: "destructive",
-      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -531,158 +409,109 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
       password: '',
     });
     setCreatedCredentials(null);
-    setExistingUserInfo(null);
+    setConflictInfo(null);
     setShowConflictDialog(false);
     setShowPassword(false);
     onOpenChange(false);
   };
 
   // Conflict resolution dialog
-  if (showConflictDialog && existingUserInfo) {
-    // Handle orphaned profile case (profile exists but no auth user)
-    if (existingUserInfo.hasProfile && !existingUserInfo.hasAuthUser) {
-      return (
-        <Dialog open={open} onOpenChange={handleClose}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-orange-500" />
-                User Data Conflict Detected
-              </DialogTitle>
-              <DialogDescription>
-                A user profile exists for "{formData.email}" but the authentication account is missing. 
-                This typically happens when data gets corrupted or partially deleted.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="p-4 bg-orange-50 rounded-md border border-orange-200">
-                <h4 className="font-medium text-orange-800 mb-2">Existing Profile Information:</h4>
-                <div className="text-sm text-orange-700 space-y-1">
-                  <p><strong>Name:</strong> {existingUserInfo.profileData?.full_name}</p>
-                  <p><strong>Role:</strong> {existingUserInfo.profileData?.role}</p>
-                  <p><strong>Active:</strong> {existingUserInfo.profileData?.is_active ? 'Yes' : 'No'}</p>
-                  <p><strong>Created:</strong> {existingUserInfo.profileData?.created_at ? new Date(existingUserInfo.profileData.created_at).toLocaleDateString() : 'Unknown'}</p>
-                </div>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                <p><strong>Choose an action:</strong></p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li><strong>Restore User:</strong> Create a new authentication account and link it to the existing profile</li>
-                  <li><strong>Clean & Create:</strong> Delete the orphaned profile and create a completely new user</li>
-                </ul>
+  if (showConflictDialog && conflictInfo) {
+    const getConflictDescription = () => {
+      switch (conflictInfo.conflictType) {
+        case 'COMPLETE_DUPLICATE':
+          return 'A complete user account already exists for this email address.';
+        case 'ORPHANED_PROFILE':
+          return 'A user profile exists but the authentication account is missing.';
+        case 'MISSING_PROFILE':
+          return 'An authentication account exists but the user profile is missing.';
+        default:
+          return 'An unexpected conflict was detected.';
+      }
+    };
+
+    const getConflictIcon = () => {
+      switch (conflictInfo.conflictType) {
+        case 'COMPLETE_DUPLICATE':
+          return <AlertTriangle className="w-5 h-5 text-red-500" />;
+        case 'ORPHANED_PROFILE':
+          return <AlertTriangle className="w-5 h-5 text-orange-500" />;
+        case 'MISSING_PROFILE':
+          return <AlertTriangle className="w-5 h-5 text-blue-500" />;
+        default:
+          return <AlertTriangle className="w-5 h-5 text-gray-500" />;
+      }
+    };
+
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {getConflictIcon()}
+              User Conflict Detected
+            </DialogTitle>
+            <DialogDescription>
+              {getConflictDescription()}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-muted rounded-md border">
+              <h4 className="font-medium mb-2">Conflict Details:</h4>
+              <div className="text-sm space-y-1">
+                <p><strong>Email:</strong> {formData.email}</p>
+                <p><strong>Auth User:</strong> {conflictInfo.hasAuthUser ? 'Exists' : 'Missing'}</p>
+                <p><strong>Profile:</strong> {conflictInfo.hasProfile ? 'Exists' : 'Missing'}</p>
+                {conflictInfo.profileData && (
+                  <>
+                    <p><strong>Existing Name:</strong> {conflictInfo.profileData.full_name}</p>
+                    <p><strong>Existing Role:</strong> {conflictInfo.profileData.role}</p>
+                  </>
+                )}
               </div>
             </div>
-
-            <DialogFooter className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleCleanupAndCreate}
-                disabled={isCreating}
-                className="flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Clean & Create New
-              </Button>
-              <Button 
-                onClick={handleRestoreUser}
-                disabled={isCreating}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Restore User
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      );
-    }
-
-    // Handle missing profile case (auth user exists but no profile)
-    if (existingUserInfo.hasAuthUser && !existingUserInfo.hasProfile) {
-      return (
-        <Dialog open={open} onOpenChange={handleClose}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-blue-500" />
-                Missing User Profile Detected
-              </DialogTitle>
-              <DialogDescription>
-                An authentication account exists for "{formData.email}" but the user profile is missing. 
-                This can happen if user creation was interrupted or failed partially.
-              </DialogDescription>
-            </DialogHeader>
             
-            <div className="space-y-4 py-4">
-              <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
-                <h4 className="font-medium text-blue-800 mb-2">Existing Auth Information:</h4>
-                <div className="text-sm text-blue-700 space-y-1">
-                  <p><strong>Email:</strong> {existingUserInfo.authUserEmail}</p>
-                  <p><strong>Auth ID:</strong> {existingUserInfo.authUserId}</p>
-                  <p><strong>Metadata:</strong> {existingUserInfo.authUserMetadata?.full_name || 'Not set'}</p>
-                </div>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                <p><strong>Choose an action:</strong></p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li><strong>Create Profile:</strong> Create the missing user profile and link it to the existing auth account</li>
-                  <li><strong>Delete & Recreate:</strong> Delete the auth account and create a completely new user</li>
-                </ul>
-              </div>
+            <div className="text-sm text-muted-foreground">
+              <p><strong>Resolution Options:</strong></p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li><strong>Force Cleanup & Create:</strong> Completely remove all existing data and create a fresh user</li>
+                {conflictInfo.conflictType === 'MISSING_PROFILE' && (
+                  <li><strong>Restore Profile:</strong> Create the missing profile for the existing auth account</li>
+                )}
+              </ul>
             </div>
+          </div>
 
-            <DialogFooter className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={handleClose} disabled={isProcessing}>
+              Cancel
+            </Button>
+            
+            {conflictInfo.conflictType === 'MISSING_PROFILE' && (
               <Button 
-                variant="destructive" 
-                onClick={async () => {
-                  setShowConflictDialog(false);
-                  setIsCreating(true);
-                  try {
-                    if (existingUserInfo.authUserId) {
-                      await adminClient.auth.admin.deleteUser(existingUserInfo.authUserId);
-                      toast({
-                        description: "Auth user deleted successfully",
-                      });
-                    }
-                    const success = await createUser();
-                    setIsCreating(false);
-                  } catch (error) {
-                    setIsCreating(false);
-                    toast({
-                      title: "Failed to delete and recreate user",
-                      description: "An error occurred during the process",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                disabled={isCreating}
-                className="flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete & Recreate
-              </Button>
-              <Button 
-                onClick={handleCreateMissingProfile}
-                disabled={isCreating}
+                onClick={handleRestoreProfile}
+                disabled={isProcessing}
                 className="flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" />
-                Create Missing Profile
+                Restore Profile
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      );
-    }
+            )}
+            
+            <Button 
+              variant="destructive" 
+              onClick={handleForceCleanupAndCreate}
+              disabled={isProcessing}
+              className="flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Force Cleanup & Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   // Success dialog for created credentials
@@ -734,7 +563,7 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
           <DialogDescription>
-            Create a new user account. This creates both an authentication account and user profile.
+            Create a new user account with comprehensive conflict detection and resolution.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -810,8 +639,8 @@ const AddUserModal = ({ open, onOpenChange, onUserCreated }: AddUserModalProps) 
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating || isValidating}>
-              {isValidating ? 'Validating...' : isCreating ? 'Creating User...' : 'Create User'}
+            <Button type="submit" disabled={isProcessing}>
+              {isProcessing ? 'Processing...' : 'Create User'}
             </Button>
           </DialogFooter>
         </form>
