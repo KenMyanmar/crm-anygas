@@ -88,7 +88,7 @@ const Login = () => {
           >
             <span className="text-2xl font-bold text-black">ANY GAS</span>
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">NY GAS Myanmar</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">ANY GAS Myanmar</h2>
           <p className="text-gray-600">Customer Relationship Management</p>
         </div>
         
