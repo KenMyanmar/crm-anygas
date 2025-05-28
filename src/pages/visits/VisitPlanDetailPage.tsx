@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import BulkRestaurantSelector from '@/components/visits/BulkRestaurantSelector';
 import VisitTasksTable from '@/components/visits/VisitTasksTable';
+import VisitPlanMapPreview from '@/components/visits/VisitPlanMapPreview';
 import { VisitTask } from '@/types/visits';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -228,6 +230,11 @@ const VisitPlanDetailPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Map Preview - Show only when there are tasks */}
+        {tasks.length > 0 && (
+          <VisitPlanMapPreview tasks={tasks} />
+        )}
 
         {/* Plan Status Summary */}
         <Card>
