@@ -151,7 +151,7 @@ export const useVisitTasks = (planId?: string) => {
             lead_id: leadId,
             order_number: orderNumber,
             order_date: new Date().toISOString(),
-            status: 'PENDING_CONFIRMATION',
+            status: 'PENDING_APPROVAL',
             total_amount_kyats: 0,
             notes: orderNotes,
             created_by_user_id: user.id
@@ -169,7 +169,7 @@ export const useVisitTasks = (planId?: string) => {
             lead_id: leadId,
             order_number: orderNumberData,
             order_date: new Date().toISOString(),
-            status: 'PENDING_CONFIRMATION',
+            status: 'PENDING_APPROVAL',
             total_amount_kyats: 0,
             notes: orderNotes,
             created_by_user_id: user.id

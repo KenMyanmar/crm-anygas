@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -106,7 +107,7 @@ const PendingOrdersPage = () => {
             full_name
           )
         `)
-        .eq('status', 'PENDING_CONFIRMATION')
+        .eq('status', 'PENDING_APPROVAL')
         .order('order_date', { ascending: false });
 
       if (error) {
@@ -180,7 +181,7 @@ const PendingOrdersPage = () => {
       // Remove the order from the list since it's no longer pending
       setOrders(orders.filter(order => order.id !== orderId));
       
-      const action = newStatus === 'CONFIRMED' ? 'approved' : 'rejected';
+      const action = newStatus === 'APPROVED' ? 'approved' : 'rejected';
       toast({
         title: `Order ${action}`,
         description: `Order ${selectedOrder?.order_number} has been ${action} successfully.`
@@ -375,13 +376,13 @@ const PendingOrdersPage = () => {
             <AlertDialogTitle>Approve Order</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to approve order {selectedOrder?.order_number}? 
-              This will move the order to confirmed status and allow it to proceed to delivery.
+              This will move the order to approved status and allow it to proceed to delivery.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CONFIRMED')}
+              onClick={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'APPROVED')}
               className="bg-green-500 hover:bg-green-600"
             >
               Yes, approve order
@@ -403,7 +404,7 @@ const PendingOrdersPage = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CANCELLED')}
+              onClick={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CANCELED')}
               className="bg-red-500 hover:bg-red-600"
             >
               Yes, reject order
