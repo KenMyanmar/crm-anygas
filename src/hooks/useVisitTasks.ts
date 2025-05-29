@@ -135,6 +135,7 @@ export const useVisitTasks = (planId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Insert the task outcome
       const { data, error } = await supabase
         .from('task_outcomes')
         .insert({
@@ -149,6 +150,30 @@ export const useVisitTasks = (planId?: string) => {
 
       // Update the task status to VISITED
       await updateVisitTask(taskId, { status: 'VISITED' });
+
+      // If lead status was updated, update the lead as well
+      if (outcomeData.lead_status) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task?.restaurant_id) {
+          // Find and update the lead for this restaurant
+          const { error: leadError } = await supabase
+            .from('leads')
+            .update({
+              status: outcomeData.lead_status,
+              next_action_description: outcomeData.next_action,
+              next_action_date: outcomeData.next_action_date
+            })
+            .eq('restaurant_id', task.restaurant_id);
+
+          if (leadError) {
+            console.error('Error updating lead:', leadError);
+            // Don't throw here as the main outcome was recorded successfully
+          }
+        }
+      }
+
+      // Refresh the tasks to get updated data
+      await fetchVisitTasks();
 
       toast({
         title: "Success",

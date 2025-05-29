@@ -25,6 +25,7 @@ import MeetingsPage from './pages/leads/MeetingsPage';
 // Visits pages
 import VisitPlannerPage from './pages/visits/VisitPlannerPage';
 import VisitPlanDetailPage from './pages/visits/VisitPlanDetailPage';
+import TaskOutcomePage from './pages/visits/TaskOutcomePage';
 
 // Admin pages
 import UsersPage from './pages/admin/UsersPage';
@@ -125,6 +126,12 @@ function App() {
             <Route path="/visits/plans/:id" element={
               <AuthWrapper>
                 <VisitPlanDetailPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/visits/tasks/:taskId/outcome" element={
+              <AuthWrapper>
+                <TaskOutcomePage />
               </AuthWrapper>
             } />
             
