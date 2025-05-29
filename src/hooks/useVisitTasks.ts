@@ -130,17 +130,110 @@ export const useVisitTasks = (planId?: string) => {
     }
   };
 
-  const recordTaskOutcome = async (taskId: string, outcomeData: Omit<TaskOutcome, 'id' | 'task_id' | 'created_by' | 'created_at'>) => {
+  const createOrder = async (restaurantId: string, leadId: string | null, orderNotes: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Generate order number
+      const { data: orderNumberData, error: orderNumberError } = await supabase
+        .rpc('generate_order_number');
+
+      if (orderNumberError) {
+        console.error('Error generating order number:', orderNumberError);
+        // Fallback to simple order number if function fails
+        const orderNumber = `ORD-${Date.now()}`;
+        
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            restaurant_id: restaurantId,
+            lead_id: leadId,
+            order_number: orderNumber,
+            order_date: new Date().toISOString(),
+            status: 'PENDING_CONFIRMATION',
+            total_amount_kyats: 0,
+            notes: orderNotes,
+            created_by_user_id: user.id
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+        return orderData;
+      } else {
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            restaurant_id: restaurantId,
+            lead_id: leadId,
+            order_number: orderNumberData,
+            order_date: new Date().toISOString(),
+            status: 'PENDING_CONFIRMATION',
+            total_amount_kyats: 0,
+            notes: orderNotes,
+            created_by_user_id: user.id
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+        return orderData;
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
+  };
+
+  const recordTaskOutcome = async (taskId: string, outcomeData: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) throw new Error('Task not found');
+
+      let orderId = null;
+
+      // Create order if requested
+      if (outcomeData.create_order && outcomeData.order_notes) {
+        try {
+          // Find the lead for this restaurant
+          const { data: leadData, error: leadError } = await supabase
+            .from('leads')
+            .select('id')
+            .eq('restaurant_id', task.restaurant_id)
+            .single();
+
+          const leadId = leadData?.id || null;
+          
+          const orderData = await createOrder(task.restaurant_id, leadId, outcomeData.order_notes);
+          orderId = orderData.id;
+
+          toast({
+            title: "Order Created",
+            description: `Order ${orderData.order_number} has been created successfully`,
+          });
+        } catch (orderError) {
+          console.error('Error creating order:', orderError);
+          toast({
+            title: "Warning",
+            description: "Outcome recorded but order creation failed. You can create the order manually.",
+            variant: "destructive",
+          });
+        }
+      }
 
       // Insert the task outcome
       const { data, error } = await supabase
         .from('task_outcomes')
         .insert({
-          ...outcomeData,
           task_id: taskId,
+          lead_status: outcomeData.lead_status,
+          order_id: orderId,
+          next_action: outcomeData.next_action,
+          next_action_date: outcomeData.next_action_date,
           created_by: user.id
         })
         .select()
@@ -152,23 +245,19 @@ export const useVisitTasks = (planId?: string) => {
       await updateVisitTask(taskId, { status: 'VISITED' });
 
       // If lead status was updated, update the lead as well
-      if (outcomeData.lead_status) {
-        const task = tasks.find(t => t.id === taskId);
-        if (task?.restaurant_id) {
-          // Find and update the lead for this restaurant
-          const { error: leadError } = await supabase
-            .from('leads')
-            .update({
-              status: outcomeData.lead_status,
-              next_action_description: outcomeData.next_action,
-              next_action_date: outcomeData.next_action_date
-            })
-            .eq('restaurant_id', task.restaurant_id);
+      if (outcomeData.lead_status && task.restaurant_id) {
+        const { error: leadError } = await supabase
+          .from('leads')
+          .update({
+            status: outcomeData.lead_status,
+            next_action_description: outcomeData.next_action,
+            next_action_date: outcomeData.next_action_date
+          })
+          .eq('restaurant_id', task.restaurant_id);
 
-          if (leadError) {
-            console.error('Error updating lead:', leadError);
-            // Don't throw here as the main outcome was recorded successfully
-          }
+        if (leadError) {
+          console.error('Error updating lead:', leadError);
+          // Don't throw here as the main outcome was recorded successfully
         }
       }
 
@@ -177,7 +266,9 @@ export const useVisitTasks = (planId?: string) => {
 
       toast({
         title: "Success",
-        description: "Task outcome recorded successfully",
+        description: orderId 
+          ? "Task outcome recorded and order created successfully"
+          : "Task outcome recorded successfully",
       });
 
       return data;

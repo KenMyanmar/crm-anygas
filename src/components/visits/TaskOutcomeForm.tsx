@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -41,6 +41,15 @@ const outcomeSchema = z.object({
   create_order: z.boolean().default(false),
   order_notes: z.string().optional(),
   outcome_notes: z.string().optional(),
+}).refine((data) => {
+  // If creating an order, order notes should be required
+  if (data.create_order && (!data.order_notes || data.order_notes.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Order notes are required when creating an order",
+  path: ["order_notes"],
 });
 
 type OutcomeFormData = z.infer<typeof outcomeSchema>;
@@ -66,12 +75,22 @@ const TaskOutcomeForm = ({ task, onSubmit, isSubmitting }: TaskOutcomeFormProps)
     },
   });
 
+  // Watch for lead status changes to auto-check create order
+  const watchLeadStatus = form.watch('lead_status');
+  useEffect(() => {
+    if (watchLeadStatus === 'CLOSED_WON') {
+      setCreateOrder(true);
+      form.setValue('create_order', true);
+    }
+  }, [watchLeadStatus, form]);
+
   const handleSubmit = async (data: OutcomeFormData) => {
     const outcomeData = {
       lead_status: data.lead_status,
       next_action: data.next_action,
       next_action_date: data.next_action_date?.toISOString(),
-      order_id: createOrder ? 'placeholder-order-id' : null, // Would be replaced with actual order creation
+      create_order: data.create_order,
+      order_notes: data.order_notes,
       notes: data.outcome_notes,
     };
 
@@ -87,7 +106,9 @@ const TaskOutcomeForm = ({ task, onSubmit, isSubmitting }: TaskOutcomeFormProps)
   ];
 
   const handleCreateOrderChange = (checked: boolean | "indeterminate") => {
-    setCreateOrder(checked === true);
+    const isChecked = checked === true;
+    setCreateOrder(isChecked);
+    form.setValue('create_order', isChecked);
   };
 
   return (
@@ -199,6 +220,9 @@ const TaskOutcomeForm = ({ task, onSubmit, isSubmitting }: TaskOutcomeFormProps)
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Create order for this restaurant
+                  {watchLeadStatus === 'CLOSED_WON' && (
+                    <span className="text-green-600 ml-2">(Recommended for won leads)</span>
+                  )}
                 </label>
               </div>
 
@@ -208,10 +232,10 @@ const TaskOutcomeForm = ({ task, onSubmit, isSubmitting }: TaskOutcomeFormProps)
                   name="order_notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Order Notes</FormLabel>
+                      <FormLabel>Order Notes *</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Add notes about the order..."
+                          placeholder="Add notes about the order (required)..."
                           className="resize-none"
                           {...field}
                         />
