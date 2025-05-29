@@ -86,6 +86,10 @@ const TaskOutcomeForm = ({ task, onSubmit, isSubmitting }: TaskOutcomeFormProps)
     { value: 'CLOSED_LOST', label: 'Closed Lost' },
   ];
 
+  const handleCreateOrderChange = (checked: boolean | "indeterminate") => {
+    setCreateOrder(checked === true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -188,7 +192,7 @@ const TaskOutcomeForm = ({ task, onSubmit, isSubmitting }: TaskOutcomeFormProps)
                 <Checkbox
                   id="create_order"
                   checked={createOrder}
-                  onCheckedChange={setCreateOrder}
+                  onCheckedChange={handleCreateOrderChange}
                 />
                 <label
                   htmlFor="create_order"
