@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
+import { generateOrderNumber } from '@/utils/orderUtils';
 
 export interface TaskOutcomeData {
   lead_status?: string;
@@ -50,16 +50,8 @@ export const useTaskOutcomes = () => {
       if (outcomeData.create_order && task.restaurant) {
         console.log('Creating order...');
         
-        // Generate order number
-        const { data: orderNumberData, error: orderNumberError } = await supabase
-          .rpc('generate_order_number');
-
-        if (orderNumberError) {
-          console.error('Error generating order number:', orderNumberError);
-          throw new Error('Failed to generate order number');
-        }
-
-        const orderNumber = orderNumberData || `ORD-${Date.now()}`;
+        // Generate order number using the utility function
+        const orderNumber = await generateOrderNumber();
 
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
