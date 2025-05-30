@@ -117,29 +117,29 @@ const TaskOutcomePage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-medium">{task.restaurant_name}</h3>
-                  {task.township && (
+                  <h3 className="font-medium">{task.restaurant?.name}</h3>
+                  {task.restaurant?.township && (
                     <div className="flex items-center text-sm text-muted-foreground mt-1">
                       <MapPin className="h-4 w-4 mr-1" />
-                      {task.township}
+                      {task.restaurant.township}
                     </div>
                   )}
-                  {task.address && (
-                    <p className="text-sm text-muted-foreground mt-1">{task.address}</p>
+                  {task.restaurant?.address && (
+                    <p className="text-sm text-muted-foreground mt-1">{task.restaurant.address}</p>
                   )}
                 </div>
 
-                {task.contact_person && (
+                {task.restaurant?.contact_person && (
                   <div className="flex items-center text-sm">
                     <User className="h-4 w-4 mr-2" />
-                    {task.contact_person}
+                    {task.restaurant.contact_person}
                   </div>
                 )}
 
-                {task.phone && (
+                {task.restaurant?.phone && (
                   <div className="flex items-center text-sm">
                     <Phone className="h-4 w-4 mr-2" />
-                    {task.phone}
+                    {task.restaurant.phone}
                   </div>
                 )}
 
