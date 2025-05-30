@@ -719,6 +719,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "visit_comments_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "visit_comments_parent_comment_id_fkey"
             columns: ["parent_comment_id"]
             isOneToOne: false
@@ -971,7 +978,7 @@ export type Database = {
         Returns: Json
       }
       get_restaurant_timeline: {
-        Args: { restaurant_uuid: string }
+        Args: Record<PropertyKey, never> | { restaurant_uuid: string }
         Returns: {
           id: string
           type: string

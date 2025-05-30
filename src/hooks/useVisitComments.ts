@@ -15,7 +15,7 @@ export const useVisitComments = (visitTaskId: string) => {
         .from('visit_comments')
         .select(`
           *,
-          author:users!visit_comments_author_user_id_fkey(full_name)
+          author:users!author_user_id(full_name)
         `)
         .eq('visit_task_id', visitTaskId)
         .order('created_at', { ascending: true });
@@ -82,7 +82,7 @@ export const useVisitComments = (visitTaskId: string) => {
         })
         .select(`
           *,
-          author:users!visit_comments_author_user_id_fkey(full_name)
+          author:users!author_user_id(full_name)
         `)
         .single();
 
