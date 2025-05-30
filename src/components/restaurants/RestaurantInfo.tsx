@@ -1,19 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Phone, Users } from 'lucide-react';
+import { Restaurant } from '@/types';
 
 interface RestaurantInfoProps {
-  restaurant: {
-    id: string;
-    name: string;
-    township: string | null;
-    address: string | null;
-    phone: string | null;
-    contact_person: string | null;
-    remarks?: string | null;
-    created_at: string;
-    updated_at: string;
-  };
+  restaurant: Restaurant;
 }
 
 const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {

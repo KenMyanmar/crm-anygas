@@ -20,13 +20,14 @@ export interface Restaurant {
   township?: string;
   address?: string;
   maps_link?: string;
-  contact_person_name?: string;
-  phone_primary: string;
+  contact_person?: string;
+  phone?: string;
   phone_secondary?: string;
-  notes?: string;
+  remarks?: string;
   created_at: string;
   updated_at: string;
   created_by_user_id?: string;
+  salesperson_id?: string;
 }
 
 export interface Lead {

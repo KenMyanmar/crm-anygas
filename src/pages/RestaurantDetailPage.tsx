@@ -44,13 +44,14 @@ const RestaurantDetailPage = () => {
       const restaurantData: Restaurant = {
         id: data.id,
         name: data.name,
-        phone_primary: data.phone || '',
+        phone: data.phone || '',
         township: data.township || '',
         address: data.address || '',
         contact_person: data.contact_person || '',
         remarks: data.remarks || '',
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        salesperson_id: data.salesperson_id
       };
 
       setRestaurant(restaurantData);
