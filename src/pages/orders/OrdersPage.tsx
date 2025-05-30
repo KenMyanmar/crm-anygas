@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { Order } from '@/types';
+import { Order } from '@/types/orders';
 import { formatDate } from '@/lib/supabase';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, FileText, Package, Truck, Check, X, AlertCircle, RefreshCcw } from 'lucide-react';
+import { PlusCircle, FileText, Package, Truck, Check, X, AlertCircle, RefreshCcw, History } from 'lucide-react';
 import {
   Table,
   TableHeader,
@@ -27,12 +27,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { useOrderStatusHistory } from '@/hooks/useOrderStatusHistory';
 
 const OrdersPage = () => {
   const navigate = useNavigate();
@@ -93,55 +94,6 @@ const OrdersPage = () => {
     }
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Order status updated",
-        description: `Order has been marked as ${newStatus.replace('_', ' ').toLowerCase()}`,
-      });
-
-      // Refresh the orders list
-      fetchOrders();
-
-    } catch (error: any) {
-      console.error('Error updating order status:', error);
-      toast({
-        title: "Error updating order status",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING_CONFIRMATION':
-        return <Badge className="bg-amber-500">Pending Confirmation</Badge>;
-      case 'CONFIRMED':
-        return <Badge className="bg-blue-500">Confirmed</Badge>;
-      case 'OUT_FOR_DELIVERY':
-        return <Badge className="bg-purple-500">Out for Delivery</Badge>;
-      case 'DELIVERED':
-        return <Badge className="bg-green-500">Delivered</Badge>;
-      case 'CANCELLED':
-        return <Badge className="bg-red-500">Cancelled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -174,7 +126,7 @@ const OrdersPage = () => {
             <OrdersTable 
               orders={orders} 
               isLoading={isLoading} 
-              onUpdateStatus={handleUpdateStatus}
+              onOrderUpdated={fetchOrders}
               onViewOrder={(id) => navigate(`/orders/${id}`)}
             />
           </TabsContent>
@@ -183,7 +135,7 @@ const OrdersPage = () => {
             <OrdersTable 
               orders={orders.filter(o => o.status === 'PENDING_CONFIRMATION' || o.status === 'CONFIRMED')} 
               isLoading={isLoading}
-              onUpdateStatus={handleUpdateStatus}
+              onOrderUpdated={fetchOrders}
               onViewOrder={(id) => navigate(`/orders/${id}`)}
             />
           </TabsContent>
@@ -192,7 +144,7 @@ const OrdersPage = () => {
             <OrdersTable 
               orders={orders.filter(o => o.status === 'OUT_FOR_DELIVERY')} 
               isLoading={isLoading}
-              onUpdateStatus={handleUpdateStatus}
+              onOrderUpdated={fetchOrders}
               onViewOrder={(id) => navigate(`/orders/${id}`)}
             />
           </TabsContent>
@@ -201,7 +153,7 @@ const OrdersPage = () => {
             <OrdersTable 
               orders={orders.filter(o => o.status === 'DELIVERED')} 
               isLoading={isLoading}
-              onUpdateStatus={handleUpdateStatus}
+              onOrderUpdated={fetchOrders}
               onViewOrder={(id) => navigate(`/orders/${id}`)}
             />
           </TabsContent>
@@ -210,7 +162,7 @@ const OrdersPage = () => {
             <OrdersTable 
               orders={orders.filter(o => o.status === 'CANCELLED')} 
               isLoading={isLoading}
-              onUpdateStatus={handleUpdateStatus}
+              onOrderUpdated={fetchOrders}
               onViewOrder={(id) => navigate(`/orders/${id}`)}
             />
           </TabsContent>
@@ -223,11 +175,11 @@ const OrdersPage = () => {
 interface OrdersTableProps {
   orders: Order[];
   isLoading: boolean;
-  onUpdateStatus: (id: string, status: string) => void;
+  onOrderUpdated: () => void;
   onViewOrder: (id: string) => void;
 }
 
-const OrdersTable = ({ orders, isLoading, onUpdateStatus, onViewOrder }: OrdersTableProps) => {
+const OrdersTable = ({ orders, isLoading, onOrderUpdated, onViewOrder }: OrdersTableProps) => {
   if (isLoading) {
     return (
       <Card>
@@ -270,35 +222,6 @@ const OrdersTable = ({ orders, isLoading, onUpdateStatus, onViewOrder }: OrdersT
     }
   };
 
-  const getNextStatusOptions = (currentStatus: string) => {
-    switch (currentStatus) {
-      case 'PENDING_CONFIRMATION':
-        return [
-          { value: 'CONFIRMED', label: 'Confirm Order' },
-          { value: 'CANCELLED', label: 'Cancel Order' }
-        ];
-      case 'CONFIRMED':
-        return [
-          { value: 'OUT_FOR_DELIVERY', label: 'Mark as Out for Delivery' },
-          { value: 'CANCELLED', label: 'Cancel Order' }
-        ];
-      case 'OUT_FOR_DELIVERY':
-        return [
-          { value: 'DELIVERED', label: 'Mark as Delivered' },
-          { value: 'CONFIRMED', label: 'Return to Confirmed' }
-        ];
-      case 'DELIVERED':
-        // No status changes available after delivery
-        return [];
-      case 'CANCELLED':
-        return [
-          { value: 'PENDING_CONFIRMATION', label: 'Reactivate Order' }
-        ];
-      default:
-        return [];
-    }
-  };
-
   return (
     <div className="rounded-md border">
       <Table>
@@ -314,62 +237,184 @@ const OrdersTable = ({ orders, isLoading, onUpdateStatus, onViewOrder }: OrdersT
         </TableHeader>
         <TableBody>
           {orders.map((order) => (
-            <TableRow 
-              key={order.id}
-              onClick={() => onViewOrder(order.id)}
-              className="cursor-pointer hover:bg-muted/50"
-            >
-              <TableCell className="font-medium">{order.order_number}</TableCell>
-              <TableCell>
-                {order.restaurant?.name}
-                {order.restaurant?.township && (
-                  <span className="text-xs text-muted-foreground block">
-                    {order.restaurant.township}
-                  </span>
-                )}
-              </TableCell>
-              <TableCell>{formatDate(order.order_date)}</TableCell>
-              <TableCell>{order.total_amount_kyats.toLocaleString()}</TableCell>
-              <TableCell>{getStatusBadge(order.status)}</TableCell>
-              <TableCell className="text-right">
-                <div onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        Actions
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewOrder(order.id)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      {getNextStatusOptions(order.status).map((option) => (
-                        <DropdownMenuItem 
-                          key={option.value}
-                          onClick={() => onUpdateStatus(order.id, option.value)}
-                        >
-                          {option.value === 'DELIVERED' ? (
-                            <Check className="mr-2 h-4 w-4" />
-                          ) : option.value === 'CANCELLED' ? (
-                            <X className="mr-2 h-4 w-4" />
-                          ) : option.value === 'OUT_FOR_DELIVERY' ? (
-                            <Truck className="mr-2 h-4 w-4" />
-                          ) : (
-                            <Package className="mr-2 h-4 w-4" />
-                          )}
-                          {option.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TableCell>
-            </TableRow>
+            <OrderRow 
+              key={order.id} 
+              order={order} 
+              onOrderUpdated={onOrderUpdated}
+              onViewOrder={onViewOrder}
+            />
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+};
+
+const OrderRow = ({ order, onOrderUpdated, onViewOrder }: { 
+  order: Order; 
+  onOrderUpdated: () => void;
+  onViewOrder: (id: string) => void;
+}) => {
+  const { updateOrderStatus } = useOrderStatusHistory(order.id);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING_CONFIRMATION':
+        return <Badge className="bg-amber-500">Pending Confirmation</Badge>;
+      case 'CONFIRMED':
+        return <Badge className="bg-blue-500">Confirmed</Badge>;
+      case 'OUT_FOR_DELIVERY':
+        return <Badge className="bg-purple-500">Out for Delivery</Badge>;
+      case 'DELIVERED':
+        return <Badge className="bg-green-500">Delivered</Badge>;
+      case 'CANCELLED':
+        return <Badge className="bg-red-500">Cancelled</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getNextStatusOptions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'PENDING_CONFIRMATION':
+        return [
+          { value: 'CONFIRMED', label: 'Confirm Order', icon: Check },
+          { value: 'CANCELLED', label: 'Cancel Order', icon: X }
+        ];
+      case 'CONFIRMED':
+        return [
+          { value: 'OUT_FOR_DELIVERY', label: 'Mark as Out for Delivery', icon: Truck },
+          { value: 'CANCELLED', label: 'Cancel Order', icon: X }
+        ];
+      case 'OUT_FOR_DELIVERY':
+        return [
+          { value: 'DELIVERED', label: 'Mark as Delivered', icon: Check },
+          { value: 'CONFIRMED', label: 'Return to Confirmed', icon: Package }
+        ];
+      case 'DELIVERED':
+        return [];
+      case 'CANCELLED':
+        return [
+          { value: 'PENDING_CONFIRMATION', label: 'Reactivate Order', icon: AlertCircle }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    const success = await updateOrderStatus(newStatus, `Status changed to ${newStatus.replace('_', ' ')}`);
+    if (success) {
+      onOrderUpdated();
+    }
+  };
+
+  return (
+    <TableRow 
+      onClick={() => onViewOrder(order.id)}
+      className="cursor-pointer hover:bg-muted/50"
+    >
+      <TableCell className="font-medium">{order.order_number}</TableCell>
+      <TableCell>
+        {order.restaurant?.name}
+        {order.restaurant?.township && (
+          <span className="text-xs text-muted-foreground block">
+            {order.restaurant.township}
+          </span>
+        )}
+      </TableCell>
+      <TableCell>{formatDate(order.order_date)}</TableCell>
+      <TableCell>{order.total_amount_kyats?.toLocaleString() || 0}</TableCell>
+      <TableCell>{getStatusBadge(order.status)}</TableCell>
+      <TableCell className="text-right">
+        <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end space-x-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <History className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Order Status History</DialogTitle>
+              </DialogHeader>
+              <OrderStatusHistoryDialog orderId={order.id} />
+            </DialogContent>
+          </Dialog>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onViewOrder(order.id)}>
+                <FileText className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {getNextStatusOptions(order.status).map((option) => {
+                const Icon = option.icon;
+                return (
+                  <DropdownMenuItem 
+                    key={option.value}
+                    onClick={() => handleStatusChange(option.value)}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    {option.label}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
+
+const OrderStatusHistoryDialog = ({ orderId }: { orderId: string }) => {
+  const { statusHistory, isLoading } = useOrderStatusHistory(orderId);
+
+  if (isLoading) {
+    return <p className="text-muted-foreground">Loading status history...</p>;
+  }
+
+  if (statusHistory.length === 0) {
+    return <p className="text-muted-foreground">No status changes recorded yet.</p>;
+  }
+
+  return (
+    <div className="space-y-4 max-h-96 overflow-y-auto">
+      {statusHistory.map((entry) => (
+        <div key={entry.id} className="flex items-start space-x-3 pb-3 border-b last:border-b-0">
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {entry.old_status && (
+                  <Badge variant="outline" className="text-xs">
+                    {entry.old_status.replace('_', ' ')}
+                  </Badge>
+                )}
+                <span className="text-xs text-muted-foreground">→</span>
+                <Badge className="text-xs">
+                  {entry.new_status.replace('_', ' ')}
+                </Badge>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(entry.changed_at)}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Changed by {entry.changed_by_user?.full_name || 'Unknown User'}
+            </p>
+            {entry.change_reason && (
+              <p className="text-sm mt-1">{entry.change_reason}</p>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

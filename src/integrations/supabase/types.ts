@@ -12,6 +12,8 @@ export type Database = {
       activity_logs: {
         Row: {
           activity_message: string
+          activity_type: string | null
+          context_data: Json | null
           created_at: string
           id: string
           target_id: string
@@ -20,6 +22,8 @@ export type Database = {
         }
         Insert: {
           activity_message: string
+          activity_type?: string | null
+          context_data?: Json | null
           created_at?: string
           id?: string
           target_id: string
@@ -28,6 +32,8 @@ export type Database = {
         }
         Update: {
           activity_message?: string
+          activity_type?: string | null
+          context_data?: Json | null
           created_at?: string
           id?: string
           target_id?: string
@@ -318,6 +324,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string | null
+          changed_by_user_id: string
+          id: string
+          new_status: Database["public"]["Enums"]["order_status"]
+          old_status: Database["public"]["Enums"]["order_status"] | null
+          order_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by_user_id: string
+          id?: string
+          new_status: Database["public"]["Enums"]["order_status"]
+          old_status?: Database["public"]["Enums"]["order_status"] | null
+          order_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by_user_id?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["order_status"]
+          old_status?: Database["public"]["Enums"]["order_status"] | null
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
@@ -638,6 +682,58 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_comments: {
+        Row: {
+          author_user_id: string
+          comment_text: string
+          created_at: string | null
+          id: string
+          parent_comment_id: string | null
+          updated_at: string | null
+          visit_task_id: string
+        }
+        Insert: {
+          author_user_id: string
+          comment_text: string
+          created_at?: string | null
+          id?: string
+          parent_comment_id?: string | null
+          updated_at?: string | null
+          visit_task_id: string
+        }
+        Update: {
+          author_user_id?: string
+          comment_text?: string
+          created_at?: string | null
+          id?: string
+          parent_comment_id?: string | null
+          updated_at?: string | null
+          visit_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "visit_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_comments_visit_task_id_fkey"
+            columns: ["visit_task_id"]
+            isOneToOne: false
+            referencedRelation: "visit_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_comments_visit_task_id_fkey"
+            columns: ["visit_task_id"]
+            isOneToOne: false
+            referencedRelation: "visit_tasks_detailed"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visit_plans: {
         Row: {
           created_at: string | null
@@ -867,6 +963,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_restaurant_timeline: {
+        Args: { restaurant_uuid: string }
+        Returns: {
+          id: string
+          type: string
+          title: string
+          description: string
+          created_at: string
+          created_by_name: string
+          status: string
+          metadata: Json
+        }[]
+      }
       invite_user: {
         Args: {
           p_new_user_email: string
@@ -891,11 +1000,11 @@ export type Database = {
         | "restaurant"
         | "generic"
       order_status:
-        | "PENDING_APPROVAL"
-        | "APPROVED"
-        | "IN_DELIVERY"
+        | "PENDING_CONFIRMATION"
+        | "CONFIRMED"
+        | "OUT_FOR_DELIVERY"
         | "DELIVERED"
-        | "CANCELED"
+        | "CANCELLED"
       user_role: "admin" | "salesperson" | "staff" | "manager" | "viewer"
       visit_task_status: "PLANNED" | "VISITED" | "RESCHEDULED" | "CANCELED"
       voice_linked_type: "lead" | "order" | "visit" | "meeting" | "generic"
@@ -1030,11 +1139,11 @@ export const Constants = {
         "generic",
       ],
       order_status: [
-        "PENDING_APPROVAL",
-        "APPROVED",
-        "IN_DELIVERY",
+        "PENDING_CONFIRMATION",
+        "CONFIRMED",
+        "OUT_FOR_DELIVERY",
         "DELIVERED",
-        "CANCELED",
+        "CANCELLED",
       ],
       user_role: ["admin", "salesperson", "staff", "manager", "viewer"],
       visit_task_status: ["PLANNED", "VISITED", "RESCHEDULED", "CANCELED"],

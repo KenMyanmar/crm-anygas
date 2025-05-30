@@ -1,136 +1,178 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
+import { useTaskOutcomes } from '@/hooks/useTaskOutcomes';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { useVisitTasks } from '@/hooks/useVisitTasks';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, MapPin, User, Phone } from 'lucide-react';
+import PageContainer from '@/components/layouts/PageContainer';
 import TaskOutcomeForm from '@/components/visits/TaskOutcomeForm';
+import VisitCommentsSection from '@/components/visits/VisitCommentsSection';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { VisitTask } from '@/types/visits';
+import { ArrowLeft, MapPin, User, Phone, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const TaskOutcomePage = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
-  const { tasks, recordTaskOutcome } = useVisitTasks();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const task = tasks.find(t => t.id === taskId);
+  const [task, setTask] = useState<VisitTask | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { recordTaskOutcome, isSubmitting } = useTaskOutcomes();
 
   useEffect(() => {
-    if (!taskId) {
-      navigate('/visits');
+    if (taskId) {
+      fetchTask();
     }
-  }, [taskId, navigate]);
+  }, [taskId]);
 
-  const handleBack = () => {
-    if (task?.plan_id) {
-      navigate(`/visits/plans/${task.plan_id}`);
-    } else {
+  const fetchTask = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('visit_tasks_detailed')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setTask(data);
+    } catch (error: any) {
+      console.error('Error fetching task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load visit task",
+        variant: "destructive",
+      });
       navigate('/visits');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmitOutcome = async (outcomeData: any) => {
     if (!taskId) return;
     
-    setIsSubmitting(true);
-    try {
-      await recordTaskOutcome(taskId, outcomeData);
-      handleBack();
-    } catch (error) {
-      console.error('Error recording outcome:', error);
-    } finally {
-      setIsSubmitting(false);
+    const result = await recordTaskOutcome(taskId, outcomeData);
+    
+    if (result.success) {
+      // Navigate back to visit plan or visits page
+      navigate('/visits', { 
+        state: { 
+          message: 'Visit outcome recorded successfully',
+          orderId: result.orderId 
+        }
+      });
     }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <PageContainer>
+          <div className="flex items-center justify-center h-40">
+            <p className="text-muted-foreground">Loading task details...</p>
+          </div>
+        </PageContainer>
+      </DashboardLayout>
+    );
+  }
 
   if (!task) {
     return (
       <DashboardLayout>
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Task not found</p>
-          <Button onClick={handleBack} className="mt-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Visit Planner
-          </Button>
-        </div>
+        <PageContainer>
+          <div className="text-center">
+            <p className="text-muted-foreground">Task not found</p>
+            <Button onClick={() => navigate('/visits')} className="mt-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Visits
+            </Button>
+          </div>
+        </PageContainer>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={handleBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-semibold">Record Visit Outcome</h1>
-              <p className="text-muted-foreground">
-                Record the outcome of your visit to {task.restaurant?.name}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Restaurant Info Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Visit Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <h4 className="font-medium mb-2">Restaurant</h4>
-                <p className="text-lg font-semibold">{task.restaurant?.name}</p>
-                {task.restaurant?.address && (
-                  <div className="flex items-center text-muted-foreground mt-1">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {task.restaurant.address}
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Contact Information</h4>
-                {task.restaurant?.contact_person && (
-                  <div className="flex items-center mb-1">
-                    <User className="h-4 w-4 mr-2" />
-                    {task.restaurant.contact_person}
-                  </div>
-                )}
-                {task.restaurant?.phone && (
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2" />
-                    {task.restaurant.phone}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Visit Status</h4>
-                <div className="space-y-1">
-                  <p>Status: <span className="font-medium">{task.status}</span></p>
-                  {task.priority_level && (
-                    <p>Priority: <span className="font-medium">{task.priority_level}</span></p>
+      <PageContainer
+        title="Record Visit Outcome"
+        description="Record the outcome of your visit and update lead status"
+        action={
+          <Button variant="outline" onClick={() => navigate('/visits')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Visits
+          </Button>
+        }
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Task Details */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Visit Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-medium">{task.restaurant_name}</h3>
+                  {task.township && (
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {task.township}
+                    </div>
+                  )}
+                  {task.address && (
+                    <p className="text-sm text-muted-foreground mt-1">{task.address}</p>
                   )}
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Outcome Form */}
-        <TaskOutcomeForm
-          task={task}
-          onSubmit={handleSubmitOutcome}
-          isSubmitting={isSubmitting}
-        />
-      </div>
+                {task.contact_person && (
+                  <div className="flex items-center text-sm">
+                    <User className="h-4 w-4 mr-2" />
+                    {task.contact_person}
+                  </div>
+                )}
+
+                {task.phone && (
+                  <div className="flex items-center text-sm">
+                    <Phone className="h-4 w-4 mr-2" />
+                    {task.phone}
+                  </div>
+                )}
+
+                {task.visit_time && (
+                  <div className="flex items-center text-sm">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {new Date(task.visit_time).toLocaleString()}
+                  </div>
+                )}
+
+                {task.notes && (
+                  <div>
+                    <p className="text-sm font-medium">Visit Notes:</p>
+                    <p className="text-sm text-muted-foreground">{task.notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Comments Section */}
+            <VisitCommentsSection visitTaskId={taskId!} />
+          </div>
+
+          {/* Right Column - Outcome Form */}
+          <div className="lg:col-span-2">
+            <TaskOutcomeForm
+              task={task}
+              onSubmit={handleSubmitOutcome}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </div>
+      </PageContainer>
     </DashboardLayout>
   );
 };

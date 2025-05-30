@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
   MapPin, 
   User, 
@@ -29,10 +35,12 @@ import {
   XCircle,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  MessageCircle
 } from 'lucide-react';
 import { VisitTask } from '@/types/visits';
 import { format } from 'date-fns';
+import VisitCommentsSection from './VisitCommentsSection';
 
 interface VisitTasksTableProps {
   tasks: VisitTask[];
@@ -340,15 +348,31 @@ const VisitTasksTable = ({
                     </Select>
                   </TableCell>
                   <TableCell>
-                    {task.status === 'VISITED' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => onRecordOutcome(task.id)}
-                      >
-                        Record Outcome
-                      </Button>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                          <DialogHeader>
+                            <DialogTitle>Visit Comments - {task.restaurant?.name}</DialogTitle>
+                          </DialogHeader>
+                          <VisitCommentsSection visitTaskId={task.id} />
+                        </DialogContent>
+                      </Dialog>
+                      
+                      {task.status === 'VISITED' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => onRecordOutcome(task.id)}
+                        >
+                          Record Outcome
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
