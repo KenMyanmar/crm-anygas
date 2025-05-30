@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [addUserModalOpen, setAddUserModalOpen] = useState(false);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
   const { toast } = useToast();
   const { profile } = useAuth();
 
@@ -56,6 +58,10 @@ const UsersPage = () => {
         .eq('id', userId);
 
       if (error) {
+        console.error('Toggle user status error:', error);
+        if (error.code === 'PGRST301') {
+          throw new Error('Permission denied. Only administrators can modify user status.');
+        }
         throw error;
       }
 
@@ -79,30 +85,65 @@ const UsersPage = () => {
 
   const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     try {
-      const { error } = await supabase
+      setIsUpdatingRole(userId);
+      console.log('Updating user role:', { userId, newRole });
+      
+      const { data, error } = await supabase
         .from('users')
         .update({ role: newRole })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('*')
+        .single();
 
       if (error) {
+        console.error('Update user role error:', error);
+        
+        // Handle specific RLS policy errors
+        if (error.code === 'PGRST301') {
+          throw new Error('Permission denied. Only administrators can modify user roles.');
+        }
+        
+        // Handle case where no rows were updated (might indicate RLS blocking)
+        if (error.code === 'PGRST116') {
+          throw new Error('User not found or permission denied.');
+        }
+        
         throw error;
       }
 
-      // Update local state
+      // Verify the update was successful
+      if (!data) {
+        throw new Error('Update was blocked. Please check your permissions.');
+      }
+
+      console.log('Role update successful:', data);
+
+      // Update local state with the actual data returned from the database
       setUsers(users.map(user => 
-        user.id === userId ? { ...user, role: newRole } : user
+        user.id === userId ? { ...user, role: data.role } : user
       ));
 
       toast({
-        description: `User role updated successfully`,
+        description: `User role updated to ${newRole} successfully`,
       });
+      
+      // Refresh users to ensure we have the latest data
+      setTimeout(() => {
+        fetchUsers();
+      }, 500);
+      
     } catch (error: any) {
       console.error('Error updating user role:', error);
       toast({
-        title: "Error",
+        title: "Role Update Failed",
         description: error?.message || "Could not update user role",
         variant: "destructive",
       });
+      
+      // Refresh users to revert any optimistic updates
+      fetchUsers();
+    } finally {
+      setIsUpdatingRole(null);
     }
   };
 
@@ -142,7 +183,7 @@ const UsersPage = () => {
               <CardHeader>
                 <CardTitle>System Users</CardTitle>
                 <CardDescription>
-                  Manage users, their roles, and permissions in the system. No email invitations are sent - users are created directly.
+                  Manage users, their roles, and permissions in the system. Changes are saved automatically.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -199,7 +240,7 @@ const UsersPage = () => {
                                   <Select
                                     value={user.role}
                                     onValueChange={(value: UserRole) => handleUpdateUserRole(user.id, value)}
-                                    disabled={user.id === profile?.id}
+                                    disabled={user.id === profile?.id || isUpdatingRole === user.id}
                                   >
                                     <SelectTrigger className="w-[130px] h-8 text-xs">
                                       <SelectValue placeholder="Role" />
@@ -211,6 +252,9 @@ const UsersPage = () => {
                                       <SelectItem value="staff">Staff</SelectItem>
                                     </SelectContent>
                                   </Select>
+                                  {isUpdatingRole === user.id && (
+                                    <div className="text-xs text-muted-foreground mt-1">Updating...</div>
+                                  )}
                                 </td>
                                 <td className="py-3">
                                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
