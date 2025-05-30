@@ -2,6 +2,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import './styles/design-tokens.css';
 
 @layer base {
   :root {
@@ -95,27 +96,87 @@
   }
 }
 
-/* Custom styles for CRM */
+/* Enhanced CRM styles with Apple-standard spacing */
 .kanban-column {
-  @apply min-w-[280px] h-full bg-secondary rounded-lg p-3 flex-shrink-0;
+  @apply min-w-[280px] h-full bg-secondary rounded-lg p-6 flex-shrink-0 shadow-sm;
 }
 
 .lead-card {
-  @apply bg-card shadow-sm p-3 rounded-lg mb-2 border cursor-pointer hover:shadow-md transition-shadow;
+  @apply bg-card shadow-sm p-4 rounded-lg mb-3 border cursor-pointer hover:shadow-lg transition-all duration-200 card-interactive;
 }
 
 .stats-card {
-  @apply bg-card shadow-sm rounded-lg border p-4 hover:shadow-md transition-shadow;
+  @apply bg-card shadow-sm rounded-lg border p-6 hover:shadow-md transition-all duration-200 card-interactive;
 }
 
 .form-group {
-  @apply space-y-2 mb-4;
+  @apply space-y-3 mb-6;
 }
 
 .form-label {
-  @apply block text-sm font-medium;
+  @apply block text-sm font-medium text-hierarchy-caption;
 }
 
 .form-input {
-  @apply w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring;
+  @apply w-full rounded-md border border-input bg-transparent px-4 py-3 text-sm shadow-sm transition-all duration-200 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring interact-base interact-focus;
+}
+
+/* Enhanced table styles */
+.table-enhanced {
+  @apply w-full border-collapse;
+}
+
+.table-enhanced th {
+  @apply text-left text-hierarchy-caption font-medium pb-4 border-b border-border;
+}
+
+.table-enhanced td {
+  @apply py-4 border-b border-border/50 text-hierarchy-body;
+}
+
+.table-enhanced tr:hover {
+  @apply bg-muted/50 transition-colors duration-200;
+}
+
+/* Status badges with subtle animations */
+.status-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium status-indicator;
+}
+
+.status-active {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-inactive {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+/* Loading states */
+.loading-container {
+  @apply flex items-center justify-center min-h-[200px];
+}
+
+.loading-grid {
+  @apply grid gap-6;
+}
+
+/* Empty states */
+.empty-state {
+  @apply text-center py-12 px-6;
+}
+
+.empty-state-icon {
+  @apply w-12 h-12 text-muted-foreground mx-auto mb-4;
+}
+
+.empty-state-title {
+  @apply text-lg font-medium text-foreground mb-2;
+}
+
+.empty-state-description {
+  @apply text-hierarchy-caption max-w-sm mx-auto;
 }
