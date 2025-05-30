@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +48,7 @@ const RestaurantNotes = ({ restaurantId }: RestaurantNotesProps) => {
             full_name
           )
         `)
-        .eq('target_type', 'RESTAURANT')
+        .eq('target_type', 'restaurant')
         .eq('target_id', restaurantId)
         .order('created_at', { ascending: false });
 
@@ -90,7 +89,7 @@ const RestaurantNotes = ({ restaurantId }: RestaurantNotesProps) => {
       const { error } = await supabase
         .from('notes')
         .insert({
-          target_type: 'RESTAURANT',
+          target_type: 'restaurant',
           target_id: restaurantId,
           body: newNote.trim(),
           author_uid: user.id
