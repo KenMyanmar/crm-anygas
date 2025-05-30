@@ -2,64 +2,76 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
+import { Restaurant } from '@/types';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, Phone, MapPin, Edit, Calendar, Users } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
 import RestaurantInfo from '@/components/restaurants/RestaurantInfo';
-import RestaurantLeads from '@/components/restaurants/RestaurantLeads';
 import RestaurantActivity from '@/components/restaurants/RestaurantActivity';
+import RestaurantLeads from '@/components/restaurants/RestaurantLeads';
+import RestaurantOrders from '@/components/restaurants/RestaurantOrders';
+import RestaurantVisits from '@/components/restaurants/RestaurantVisits';
+import RestaurantTimeline from '@/components/restaurants/RestaurantTimeline';
+import RestaurantNotes from '@/components/restaurants/RestaurantNotes';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronLeft, Edit, Package, MapPin, FileText, Calendar, Users } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const RestaurantDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [restaurant, setRestaurant] = useState<any>(null);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('info');
 
   useEffect(() => {
-    const fetchRestaurant = async () => {
-      if (!id) return;
-      
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('restaurants')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        setRestaurant(data);
-      } catch (error: any) {
-        toast({
-          title: "Error fetching restaurant details",
-          description: error.message || "Failed to load restaurant details",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRestaurant();
+    if (id) {
+      fetchRestaurant();
+    }
   }, [id]);
+
+  const fetchRestaurant = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Map the data to match the Restaurant interface
+      const restaurantData: Restaurant = {
+        id: data.id,
+        name: data.name,
+        phone_primary: data.phone || '',
+        township: data.township || '',
+        address: data.address || '',
+        contact_person: data.contact_person || '',
+        remarks: data.remarks || '',
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setRestaurant(restaurantData);
+    } catch (error: any) {
+      console.error('Error fetching restaurant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load restaurant details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Loading restaurant details...</p>
+        <div className="space-y-6">
+          <div className="h-8 bg-gray-200 animate-pulse rounded w-64" />
+          <div className="h-64 bg-gray-200 animate-pulse rounded" />
         </div>
       </DashboardLayout>
     );
@@ -68,11 +80,12 @@ const RestaurantDetailPage = () => {
   if (!restaurant) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-96 space-y-4">
-          <p className="text-muted-foreground">Restaurant not found</p>
-          <Button asChild>
-            <Link to="/restaurants">Back to Restaurants</Link>
-          </Button>
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold text-gray-900">Restaurant not found</h2>
+          <p className="text-gray-600 mt-2">The restaurant you're looking for doesn't exist.</p>
+          <Link to="/restaurants" className="text-blue-600 hover:text-blue-800 mt-4 inline-block">
+            ← Back to Restaurants
+          </Link>
         </div>
       </DashboardLayout>
     );
@@ -81,55 +94,83 @@ const RestaurantDetailPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" asChild size="sm">
-              <Link to="/restaurants">
+          <div className="flex items-center space-x-4">
+            <Link to="/restaurants">
+              <Button variant="ghost" size="sm">
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Back
-              </Link>
-            </Button>
-            <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
+                Back to Restaurants
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
+              <p className="text-muted-foreground">
+                {restaurant.township && `${restaurant.township} • `}
+                {restaurant.contact_person && `Contact: ${restaurant.contact_person}`}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button asChild>
-              <Link to={`/restaurants/${id}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Restaurant
-              </Link>
+          <Link to={`/restaurants/${restaurant.id}/edit`}>
+            <Button variant="outline">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Restaurant
             </Button>
-          </div>
+          </Link>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 text-sm">
-          {restaurant.township && (
-            <div className="flex items-center">
-              <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
-              <span>{restaurant.township}</span>
-            </div>
-          )}
-          {restaurant.phone && (
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 text-muted-foreground mr-1" />
-              <span>{restaurant.phone}</span>
-            </div>
-          )}
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="info">Information</TabsTrigger>
-            <TabsTrigger value="leads">Leads</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+        {/* Tabs */}
+        <Tabs defaultValue="info" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="info" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Info
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Orders
+            </TabsTrigger>
+            <TabsTrigger value="visits" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Visits
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Leads
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Timeline
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Notes
+            </TabsTrigger>
           </TabsList>
+
           <TabsContent value="info" className="space-y-4">
             <RestaurantInfo restaurant={restaurant} />
+            <RestaurantActivity restaurantId={restaurant.id} />
           </TabsContent>
-          <TabsContent value="leads" className="space-y-4">
-            <RestaurantLeads restaurantId={id as string} />
+
+          <TabsContent value="orders">
+            <RestaurantOrders restaurantId={restaurant.id} />
           </TabsContent>
-          <TabsContent value="activity" className="space-y-4">
-            <RestaurantActivity restaurantId={id as string} />
+
+          <TabsContent value="visits">
+            <RestaurantVisits restaurantId={restaurant.id} />
+          </TabsContent>
+
+          <TabsContent value="leads">
+            <RestaurantLeads restaurantId={restaurant.id} />
+          </TabsContent>
+
+          <TabsContent value="timeline">
+            <RestaurantTimeline restaurantId={restaurant.id} />
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <RestaurantNotes restaurantId={restaurant.id} />
           </TabsContent>
         </Tabs>
       </div>

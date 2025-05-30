@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -128,12 +129,43 @@ const NewOrderPage = () => {
     }, 0);
   };
 
-  // Generate order number on frontend
-  const generateOrderNumber = () => {
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const timeStr = today.getTime().toString().slice(-4);
-    return `ORD-${dateStr}-${timeStr}`;
+  // Generate order number with better collision handling
+  const generateOrderNumber = async () => {
+    const currentYear = new Date().getFullYear();
+    
+    try {
+      // Get the highest order number for this year
+      const { data: existingOrders, error } = await supabase
+        .from('orders')
+        .select('order_number')
+        .like('order_number', `ORD-${currentYear}-%`)
+        .order('order_number', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching existing orders:', error);
+        // Fallback to timestamp-based number
+        const timeStr = Date.now().toString().slice(-6);
+        return `ORD-${currentYear}-${timeStr}`;
+      }
+
+      let sequenceNumber = 1;
+      
+      if (existingOrders && existingOrders.length > 0) {
+        const lastOrderNumber = existingOrders[0].order_number;
+        const match = lastOrderNumber.match(/ORD-\d{4}-(\d+)/);
+        if (match) {
+          sequenceNumber = parseInt(match[1]) + 1;
+        }
+      }
+
+      return `ORD-${currentYear}-${sequenceNumber.toString().padStart(4, '0')}`;
+    } catch (error) {
+      console.error('Error generating order number:', error);
+      // Fallback to timestamp-based number
+      const timeStr = Date.now().toString().slice(-6);
+      return `ORD-${currentYear}-${timeStr}`;
+    }
   };
 
   const onSubmit = async (values: OrderFormValues) => {
@@ -152,8 +184,8 @@ const NewOrderPage = () => {
         return total + (item.quantity * item.unit_price_kyats);
       }, 0);
 
-      // Generate order number
-      const orderNumber = generateOrderNumber();
+      // Generate order number with better collision handling
+      const orderNumber = await generateOrderNumber();
 
       // Create the order
       const { data: orderData, error: orderError } = await supabase
@@ -164,7 +196,7 @@ const NewOrderPage = () => {
           delivery_date_scheduled: values.delivery_date ? values.delivery_date.toISOString() : null,
           notes: values.notes,
           created_by_user_id: user.id,
-          order_number: orderNumber, // Explicitly set the order number
+          order_number: orderNumber,
         })
         .select('id')
         .single();
