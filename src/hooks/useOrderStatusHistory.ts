@@ -38,6 +38,12 @@ export const useOrderStatusHistory = (orderId: string) => {
 
   const updateOrderStatus = async (newStatus: string, reason?: string) => {
     try {
+      // Validate the status value to ensure it matches the enum
+      const validStatuses = ['PENDING_CONFIRMATION', 'CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+      if (!validStatuses.includes(newStatus)) {
+        throw new Error(`Invalid status: ${newStatus}`);
+      }
+
       const { error } = await supabase
         .from('orders')
         .update({
