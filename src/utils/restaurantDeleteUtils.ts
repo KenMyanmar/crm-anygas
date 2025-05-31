@@ -25,40 +25,48 @@ export const deleteAllRestaurants = async (): Promise<DeleteResult> => {
     // Create complete backup before deletion
     await createCompleteBackup();
 
-    // Delete all related data in the correct order (due to foreign key constraints)
-    await Promise.all([
-      // Delete voice notes
-      supabase.from('voice_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      
-      // Delete notes
-      supabase.from('notes').delete().eq('target_type', 'RESTAURANT'),
-      
-      // Delete calls
-      supabase.from('calls').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      
-      // Delete meetings
-      supabase.from('meetings').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      
-      // Delete task outcomes
-      supabase.from('task_outcomes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      
-      // Delete visit tasks
-      supabase.from('visit_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      
-      // Delete visit plans
-      supabase.from('visit_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      
-      // Delete order items first
-      supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-    ]);
+    // Delete dependencies in the correct order to avoid foreign key violations
+    
+    // 1. Delete task outcomes first (references visit_tasks)
+    await supabase.from('task_outcomes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 2. Delete visit comments (references visit_tasks)
+    await supabase.from('visit_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 3. Delete visit tasks (references restaurants)
+    await supabase.from('visit_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 4. Delete visit plans
+    await supabase.from('visit_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 5. Delete voice notes (references restaurants)
+    await supabase.from('voice_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 6. Delete notes (references restaurants)
+    await supabase.from('notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 7. Delete calls (references restaurants)
+    await supabase.from('calls').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 8. Delete meetings (references restaurants)
+    await supabase.from('meetings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 9. Delete order items first (references orders)
+    await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 10. Delete order status history (references orders)
+    await supabase.from('order_status_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 11. Delete orders (references restaurants and leads)
+    await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 12. Delete tasks (references restaurants and leads)
+    await supabase.from('tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    // 13. Delete leads (references restaurants)
+    await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-    // Then delete orders and leads
-    await Promise.all([
-      supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-      supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-    ]);
-
-    // Finally delete restaurants
+    // 14. Finally delete restaurants
     const { error: deleteError } = await supabase
       .from('restaurants')
       .delete()
@@ -74,7 +82,7 @@ export const deleteAllRestaurants = async (): Promise<DeleteResult> => {
         table_name: 'restaurants',
         record_count: count,
         details: {
-          message: 'Complete restaurant database deletion',
+          message: 'Complete restaurant database deletion with proper dependency cleanup',
           backup_created: true,
           timestamp: new Date().toISOString(),
         },
