@@ -26,6 +26,7 @@ export const deleteAllRestaurants = async (): Promise<DeleteResult> => {
     await createCompleteBackup();
 
     // Delete dependencies in the correct order to avoid foreign key violations
+    // We need to be very careful about the order due to foreign key relationships
     
     // 1. Delete task outcomes first (references visit_tasks)
     await supabase.from('task_outcomes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -33,16 +34,16 @@ export const deleteAllRestaurants = async (): Promise<DeleteResult> => {
     // 2. Delete visit comments (references visit_tasks)
     await supabase.from('visit_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    // 3. Delete visit tasks (references restaurants)
+    // 3. Delete visit tasks (references restaurants and visit_plans)
     await supabase.from('visit_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    // 4. Delete visit plans
+    // 4. Delete visit plans (no foreign key dependencies from other tables)
     await supabase.from('visit_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
     // 5. Delete voice notes (references restaurants)
     await supabase.from('voice_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    // 6. Delete notes (references restaurants)
+    // 6. Delete notes (references restaurants via target_id when target_type is appropriate)
     await supabase.from('notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
     // 7. Delete calls (references restaurants)
@@ -63,10 +64,10 @@ export const deleteAllRestaurants = async (): Promise<DeleteResult> => {
     // 12. Delete tasks (references restaurants and leads)
     await supabase.from('tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
-    // 13. Delete leads (references restaurants)
+    // 13. Delete leads (references restaurants) - This was the problematic constraint
     await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-    // 14. Finally delete restaurants
+    // 14. Finally delete restaurants (now all foreign key references should be removed)
     const { error: deleteError } = await supabase
       .from('restaurants')
       .delete()
