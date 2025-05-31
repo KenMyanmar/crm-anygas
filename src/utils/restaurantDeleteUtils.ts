@@ -9,121 +9,54 @@ export interface DeleteResult {
 
 export const deleteAllRestaurants = async (): Promise<DeleteResult> => {
   try {
-    // First, get count of restaurants to be deleted
-    const { count } = await supabase
-      .from('restaurants')
-      .select('*', { count: 'exact', head: true });
+    console.log('Starting restaurant deletion using database function...');
+    
+    // Call the new PostgreSQL function that handles all foreign key dependencies properly
+    const { data, error } = await supabase.rpc('delete_all_restaurants_safely');
 
-    if (!count || count === 0) {
-      return {
-        success: true,
-        deletedCount: 0,
-        message: 'No restaurants to delete'
-      };
+    if (error) {
+      console.error('Database function error:', error);
+      throw error;
     }
 
-    // Create complete backup before deletion
-    await createCompleteBackup();
+    // The function returns a single row with success, deleted_count, and message
+    const result = data && data.length > 0 ? data[0] : null;
+    
+    if (!result) {
+      throw new Error('No result returned from deletion function');
+    }
 
-    // Delete dependencies in the correct order to avoid foreign key violations
-    // We need to be very careful about the order due to foreign key relationships
-    
-    // 1. Delete task outcomes first (references visit_tasks)
-    await supabase.from('task_outcomes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 2. Delete visit comments (references visit_tasks)
-    await supabase.from('visit_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 3. Delete visit tasks (references restaurants and visit_plans)
-    await supabase.from('visit_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 4. Delete visit plans (no foreign key dependencies from other tables)
-    await supabase.from('visit_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 5. Delete voice notes (references restaurants)
-    await supabase.from('voice_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 6. Delete notes (references restaurants via target_id when target_type is appropriate)
-    await supabase.from('notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 7. Delete calls (references restaurants)
-    await supabase.from('calls').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 8. Delete meetings (references restaurants)
-    await supabase.from('meetings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 9. Delete order items first (references orders)
-    await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 10. Delete order status history (references orders)
-    await supabase.from('order_status_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 11. Delete orders (references restaurants and leads)
-    await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 12. Delete tasks (references restaurants and leads)
-    await supabase.from('tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
-    // 13. Delete leads (references restaurants) - This was the problematic constraint
-    await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-    // 14. Finally delete restaurants (now all foreign key references should be removed)
-    const { error: deleteError } = await supabase
-      .from('restaurants')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
-
-    if (deleteError) throw deleteError;
-
-    // Log the operation
-    await supabase
-      .from('migration_log')
-      .insert({
-        action: 'DELETE_ALL',
-        table_name: 'restaurants',
-        record_count: count,
-        details: {
-          message: 'Complete restaurant database deletion with proper dependency cleanup',
-          backup_created: true,
-          timestamp: new Date().toISOString(),
-        },
-      });
+    console.log('Database function result:', result);
 
     return {
-      success: true,
-      deletedCount: count,
-      message: `Successfully deleted ${count} restaurants and all related data`
+      success: result.success,
+      deletedCount: result.deleted_count || 0,
+      message: result.message || 'Deletion completed'
     };
 
   } catch (error: any) {
-    console.error('Error deleting all restaurants:', error);
+    console.error('Error in deleteAllRestaurants:', error);
+    
+    // Log the error to migration_log for tracking
+    try {
+      await supabase
+        .from('migration_log')
+        .insert({
+          action: 'DELETE_ALL_ERROR',
+          table_name: 'restaurants',
+          details: {
+            error: error.message,
+            timestamp: new Date().toISOString(),
+          },
+        });
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+
     return {
       success: false,
       deletedCount: 0,
-      message: error.message
+      message: error.message || 'An unknown error occurred during deletion'
     };
-  }
-};
-
-const createCompleteBackup = async () => {
-  try {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    
-    // This is a simplified backup - in a real system you'd want to 
-    // implement proper backup functionality
-    await supabase
-      .from('migration_log')
-      .insert({
-        action: 'BACKUP_CREATED',
-        details: {
-          backup_type: 'COMPLETE_DELETE_BACKUP',
-          timestamp,
-          message: 'Complete backup created before delete all operation',
-        },
-      });
-
-  } catch (error: any) {
-    console.error('Error creating backup:', error);
-    throw new Error('Failed to create backup before deletion');
   }
 };

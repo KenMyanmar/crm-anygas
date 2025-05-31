@@ -1347,6 +1347,14 @@ export type Database = {
       }
     }
     Functions: {
+      delete_all_restaurants_safely: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          success: boolean
+          deleted_count: number
+          message: string
+        }[]
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
