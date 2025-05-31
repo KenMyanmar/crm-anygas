@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,34 @@ const ImportRestaurants = () => {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Improved header mapping function
+  const mapHeaderToField = (header: string): string | null => {
+    const normalizedHeader = header.toLowerCase().trim();
+    
+    // Map common variations to our field names
+    const headerMappings: { [key: string]: string } = {
+      'name': 'name',
+      'restaurant': 'name',
+      'restaurant name': 'name',
+      'township': 'township',
+      'area': 'township',
+      'region': 'township',
+      'address': 'address',
+      'location': 'address',
+      'phone': 'phone',
+      'phone number': 'phone',
+      'telephone': 'phone',
+      'contact person': 'contact_person',
+      'contact': 'contact_person',
+      'person': 'contact_person',
+      'remarks': 'remarks',
+      'notes': 'remarks',
+      'comment': 'remarks'
+    };
+
+    return headerMappings[normalizedHeader] || null;
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -51,18 +78,46 @@ const ImportRestaurants = () => {
           return;
         }
 
-        // Get headers and normalize them
-        const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
-        console.log('CSV Headers detected:', headers);
+        // Parse headers
+        const headerLine = lines[0];
+        const headers = headerLine.split('\t').map(h => h.trim().replace(/^["']|["']$/g, ''));
+        console.log('Raw CSV Headers:', headers);
         
+        // Create header mapping
+        const headerMap: { [index: number]: string } = {};
+        const mappedFields: string[] = [];
+        
+        headers.forEach((header, index) => {
+          const fieldName = mapHeaderToField(header);
+          if (fieldName) {
+            headerMap[index] = fieldName;
+            mappedFields.push(`${header} -> ${fieldName}`);
+          }
+        });
+        
+        console.log('Header mapping:', headerMap);
+        console.log('Mapped fields:', mappedFields);
+        
+        // Validate that we have at least the name field
+        const hasName = Object.values(headerMap).includes('name');
+        if (!hasName) {
+          toast({
+            title: "Missing Required Field",
+            description: "CSV must contain a 'Name' or 'Restaurant' column",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const parsedData = [];
         
+        // Parse data rows
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue; // Skip empty lines
           
           const values = line.split('\t').map(v => v.trim().replace(/^["']|["']$/g, ''));
-          console.log(`Row ${i} values:`, values);
+          console.log(`Row ${i} raw values:`, values);
           
           if (values.length < headers.length) {
             console.warn(`Row ${i} has ${values.length} values but ${headers.length} headers`);
@@ -71,22 +126,11 @@ const ImportRestaurants = () => {
           
           const restaurant: any = {};
           
-          headers.forEach((header, index) => {
-            const value = values[index] || '';
-            
-            // Map headers to restaurant fields
-            if (header.includes('name') || header === 'restaurant') {
-              restaurant.name = value;
-            } else if (header.includes('township') || header.includes('area')) {
-              restaurant.township = value;
-            } else if (header.includes('address') || header.includes('location')) {
-              restaurant.address = value;
-            } else if (header.includes('phone') && !header.includes('person') && !header.includes('contact')) {
-              restaurant.phone = value;
-            } else if (header.includes('contact person') || header === 'contact person') {
-              restaurant.contact_person = value;
-            } else if (header.includes('remarks') || header.includes('notes')) {
-              restaurant.remarks = value;
+          // Map values using our header mapping
+          Object.entries(headerMap).forEach(([index, fieldName]) => {
+            const value = values[parseInt(index)];
+            if (value && value.trim()) {
+              restaurant[fieldName] = value.trim();
             }
           });
           
@@ -95,6 +139,8 @@ const ImportRestaurants = () => {
           // Only add restaurants with names
           if (restaurant.name && restaurant.name.trim()) {
             parsedData.push(restaurant);
+          } else {
+            console.warn(`Row ${i} missing name:`, restaurant);
           }
         }
 
