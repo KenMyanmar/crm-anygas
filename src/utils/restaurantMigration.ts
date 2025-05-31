@@ -240,35 +240,32 @@ export const createRestaurantMappings = async (): Promise<{success: boolean; sta
     
     if (stagingError) throw stagingError;
     
-    // Get existing restaurants with dependency counts
-    const { data: existingRestaurants, error: existingError } = await supabase
-      .from('orders_backup')
-      .select('restaurant_id, restaurant_name, restaurant_township')
-      .union(
-        supabase.from('leads_backup').select('restaurant_id, restaurant_name, restaurant_township')
-      )
-      .union(
-        supabase.from('visit_tasks_backup').select('restaurant_id, restaurant_name, restaurant_township')
-      )
-      .union(
-        supabase.from('notes_backup').select('restaurant_id, restaurant_name, restaurant_township')
-      )
-      .union(
-        supabase.from('meetings_backup').select('restaurant_id, restaurant_name, restaurant_township')
-      )
-      .union(
-        supabase.from('calls_backup').select('restaurant_id, restaurant_name, restaurant_township')
-      );
+    // Get existing restaurants with dependency counts from backup tables
+    const existingRestaurants = [];
     
-    if (existingError) throw existingError;
+    // Collect unique restaurants from all backup tables
+    const backupTables = [
+      'orders_backup',
+      'leads_backup', 
+      'visit_tasks_backup',
+      'notes_backup',
+      'meetings_backup',
+      'calls_backup'
+    ];
     
-    // Remove duplicates and create unique restaurant list
-    const uniqueExisting = existingRestaurants?.reduce((acc: any[], curr) => {
-      if (!acc.find(r => r.restaurant_id === curr.restaurant_id)) {
-        acc.push(curr);
-      }
-      return acc;
-    }, []) || [];
+    for (const table of backupTables) {
+      const { data, error } = await supabase
+        .from(table)
+        .select('restaurant_id, restaurant_name, restaurant_township');
+      
+      if (error) throw error;
+      
+      data?.forEach(item => {
+        if (!existingRestaurants.find(r => r.restaurant_id === item.restaurant_id)) {
+          existingRestaurants.push(item);
+        }
+      });
+    }
     
     const stats: MigrationStats = {
       totalRestaurants: stagingRestaurants?.length || 0,
@@ -289,7 +286,7 @@ export const createRestaurantMappings = async (): Promise<{success: boolean; sta
     const mappings = [];
     
     for (const stagingRestaurant of stagingRestaurants || []) {
-      const match = findBestMatch(stagingRestaurant, uniqueExisting);
+      const match = findBestMatch(stagingRestaurant, existingRestaurants);
       
       if (match) {
         mappings.push({
