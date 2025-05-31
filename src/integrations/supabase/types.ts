@@ -98,6 +98,45 @@ export type Database = {
           },
         ]
       }
+      calls_backup: {
+        Row: {
+          call_date: string | null
+          created_at: string | null
+          id: string | null
+          notes: string | null
+          outcome: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+          salesperson_id: string | null
+          status: string | null
+        }
+        Insert: {
+          call_date?: string | null
+          created_at?: string | null
+          id?: string | null
+          notes?: string | null
+          outcome?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          salesperson_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          call_date?: string | null
+          created_at?: string | null
+          id?: string | null
+          notes?: string | null
+          outcome?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          salesperson_id?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assigned_to_user_id: string
@@ -158,6 +197,57 @@ export type Database = {
           },
         ]
       }
+      leads_backup: {
+        Row: {
+          assigned_to_user_id: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          next_action_date: string | null
+          next_action_description: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+          source: string | null
+          stage_entered_at: string | null
+          stage_notes: string | null
+          status: Database["public"]["Enums"]["lead_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          next_action_date?: string | null
+          next_action_description?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          source?: string | null
+          stage_entered_at?: string | null
+          stage_notes?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          next_action_date?: string | null
+          next_action_description?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          source?: string | null
+          stage_entered_at?: string | null
+          stage_notes?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           action_items: string | null
@@ -217,6 +307,90 @@ export type Database = {
           },
         ]
       }
+      meetings_backup: {
+        Row: {
+          action_items: string | null
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string | null
+          location: string | null
+          meeting_date: string | null
+          meeting_type: string | null
+          outcome: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+          scheduled_by_user_id: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_items?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string | null
+          location?: string | null
+          meeting_date?: string | null
+          meeting_type?: string | null
+          outcome?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          scheduled_by_user_id?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_items?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string | null
+          location?: string | null
+          meeting_date?: string | null
+          meeting_type?: string | null
+          outcome?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          scheduled_by_user_id?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      migration_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          record_count: number | null
+          table_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          record_count?: number | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          record_count?: number | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           author_uid: string
@@ -254,6 +428,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notes_backup: {
+        Row: {
+          author_uid: string | null
+          body: string | null
+          created_at: string | null
+          id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+          target_id: string | null
+          target_type: Database["public"]["Enums"]["note_target_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_uid?: string | null
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          target_id?: string | null
+          target_type?: Database["public"]["Enums"]["note_target_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_uid?: string | null
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          target_id?: string | null
+          target_type?: Database["public"]["Enums"]["note_target_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -446,6 +656,60 @@ export type Database = {
           },
         ]
       }
+      orders_backup: {
+        Row: {
+          created_at: string | null
+          created_by_user_id: string | null
+          delivery_date_actual: string | null
+          delivery_date_scheduled: string | null
+          id: string | null
+          lead_id: string | null
+          notes: string | null
+          order_date: string | null
+          order_number: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          total_amount_kyats: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          delivery_date_actual?: string | null
+          delivery_date_scheduled?: string | null
+          id?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          order_date?: string | null
+          order_number?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          total_amount_kyats?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          delivery_date_actual?: string | null
+          delivery_date_scheduled?: string | null
+          id?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          order_date?: string | null
+          order_number?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          total_amount_kyats?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -467,6 +731,30 @@ export type Database = {
           password?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      restaurant_id_mapping: {
+        Row: {
+          match_confidence: string | null
+          new_restaurant_id: string | null
+          old_restaurant_id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+        }
+        Insert: {
+          match_confidence?: string | null
+          new_restaurant_id?: string | null
+          old_restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+        }
+        Update: {
+          match_confidence?: string | null
+          new_restaurant_id?: string | null
+          old_restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
         }
         Relationships: []
       }
@@ -516,6 +804,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      restaurants_staging: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string | null
+          id: string
+          name: string
+          phone: string | null
+          remarks: string | null
+          salesperson_id: string
+          township: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          remarks?: string | null
+          salesperson_id: string
+          township?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          remarks?: string | null
+          salesperson_id?: string
+          township?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       task_outcomes: {
         Row: {
@@ -858,6 +1185,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      visit_tasks_backup: {
+        Row: {
+          created_at: string | null
+          estimated_duration_minutes: number | null
+          id: string | null
+          notes: string | null
+          plan_id: string | null
+          priority_level: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          restaurant_township: string | null
+          salesperson_uid: string | null
+          status: Database["public"]["Enums"]["visit_task_status"] | null
+          updated_at: string | null
+          visit_sequence: number | null
+          visit_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          priority_level?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          salesperson_uid?: string | null
+          status?: Database["public"]["Enums"]["visit_task_status"] | null
+          updated_at?: string | null
+          visit_sequence?: number | null
+          visit_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          priority_level?: string | null
+          restaurant_id?: string | null
+          restaurant_name?: string | null
+          restaurant_township?: string | null
+          salesperson_uid?: string | null
+          status?: Database["public"]["Enums"]["visit_task_status"] | null
+          updated_at?: string | null
+          visit_sequence?: number | null
+          visit_time?: string | null
+        }
+        Relationships: []
       }
       voice_notes: {
         Row: {
