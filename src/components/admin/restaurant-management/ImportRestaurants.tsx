@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,60 +41,81 @@ const ImportRestaurants = () => {
       try {
         const csvText = e.target?.result as string;
         const lines = csvText.trim().split('\n');
-        const headers = lines[0].split('\t').map(h => h.trim().toLowerCase()); // Changed to split by tab
         
+        if (lines.length < 2) {
+          toast({
+            title: "No Data",
+            description: "CSV file must contain at least a header and one data row",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Get headers and normalize them
+        const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
         console.log('CSV Headers detected:', headers);
         
-        const parsedData = lines.slice(1).map((line, index) => {
-          const values = line.split('\t').map(v => v.trim().replace(/['"]/g, '')); // Changed to split by tab
-          const restaurant: any = {};
+        const parsedData = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue; // Skip empty lines
           
-          console.log(`Row ${index + 1} values:`, values);
+          const values = line.split('\t').map(v => v.trim().replace(/^["']|["']$/g, ''));
+          console.log(`Row ${i} values:`, values);
+          
+          if (values.length < headers.length) {
+            console.warn(`Row ${i} has ${values.length} values but ${headers.length} headers`);
+            continue;
+          }
+          
+          const restaurant: any = {};
           
           headers.forEach((header, index) => {
             const value = values[index] || '';
-            switch (header) {
-              case 'name':
-              case 'restaurant_name':
-                restaurant.name = value;
-                break;
-              case 'township':
-              case 'area':
-                restaurant.township = value;
-                break;
-              case 'address':
-              case 'location':
-                restaurant.address = value;
-                break;
-              case 'phone':
-              case 'phone_number':
-                restaurant.phone = value;
-                break;
-              case 'contact person':
-              case 'contact_person':
-              case 'contact_name':
-              case 'contact':
-                restaurant.contact_person = value;
-                break;
-              case 'remarks':
-              case 'notes':
-                restaurant.remarks = value;
-                break;
+            
+            // Map headers to restaurant fields
+            if (header.includes('name') || header === 'restaurant') {
+              restaurant.name = value;
+            } else if (header.includes('township') || header.includes('area')) {
+              restaurant.township = value;
+            } else if (header.includes('address') || header.includes('location')) {
+              restaurant.address = value;
+            } else if (header.includes('phone') && !header.includes('person') && !header.includes('contact')) {
+              restaurant.phone = value;
+            } else if (header.includes('contact person') || header === 'contact person') {
+              restaurant.contact_person = value;
+            } else if (header.includes('remarks') || header.includes('notes')) {
+              restaurant.remarks = value;
             }
           });
           
-          console.log(`Parsed restaurant ${index + 1}:`, restaurant);
-          return restaurant;
-        }).filter(r => r.name);
+          console.log(`Parsed restaurant ${i}:`, restaurant);
+          
+          // Only add restaurants with names
+          if (restaurant.name && restaurant.name.trim()) {
+            parsedData.push(restaurant);
+          }
+        }
 
         console.log('Final parsed data:', parsedData);
         setCsvData(parsedData);
+        
+        if (parsedData.length === 0) {
+          toast({
+            title: "No Valid Data",
+            description: "No restaurants with valid names found in the CSV file",
+            variant: "destructive",
+          });
+          return;
+        }
         
         toast({
           title: "File Uploaded",
           description: `Successfully parsed ${parsedData.length} restaurants`,
         });
       } catch (error: any) {
+        console.error('CSV parsing error:', error);
         toast({
           title: "Parse Error",
           description: `Failed to parse CSV file: ${error.message}`,
@@ -189,7 +211,9 @@ const ImportRestaurants = () => {
                 <div className="max-h-32 overflow-auto text-sm">
                   {csvData.slice(0, 3).map((restaurant, index) => (
                     <div key={index} className="mb-1">
-                      {restaurant.name} - {restaurant.township || 'No township'} - Contact: {restaurant.contact_person || 'No contact'}
+                      <strong>{restaurant.name}</strong> - {restaurant.township || 'No township'} - 
+                      Phone: {restaurant.phone || 'No phone'} - 
+                      Contact: {restaurant.contact_person || 'No contact'}
                     </div>
                   ))}
                   {csvData.length > 3 && <div>... and {csvData.length - 3} more</div>}
