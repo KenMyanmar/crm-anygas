@@ -38,7 +38,7 @@ export const importRestaurantsCSV = async (
     // Get existing restaurants for duplicate check
     const { data: existingRestaurants } = await supabase
       .from('restaurants')
-      .select('name, township, phone');
+      .select('name, township, phone, contact_person');
 
     const existingSet = new Set(
       existingRestaurants?.map(r => 

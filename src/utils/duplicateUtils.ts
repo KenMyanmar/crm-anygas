@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface DuplicateGroup {
@@ -37,6 +36,28 @@ const createDuplicateKey = (restaurant: any): string => {
   return `${name}|${township}|${phone}`;
 };
 
+// Score restaurant quality for duplicate resolution
+const scoreRestaurantQuality = (restaurant: any): number => {
+  let score = 0;
+  
+  // Higher score for phone number in phone field vs contact_person field
+  if (restaurant.phone && restaurant.phone.trim()) {
+    score += 10; // Highest priority: proper phone field
+  }
+  
+  // Penalize if phone appears to be in contact_person field
+  if (restaurant.contact_person && /^\d/.test(restaurant.contact_person.trim())) {
+    score -= 5; // Phone number in wrong field
+  }
+  
+  // Score based on data completeness
+  if (restaurant.address) score += 2;
+  if (restaurant.contact_person && !/^\d/.test(restaurant.contact_person.trim())) score += 2;
+  if (restaurant.remarks) score += 1;
+  
+  return score;
+};
+
 export const findDuplicateRestaurants = async (): Promise<{
   groups: DuplicateGroup[];
   stats: DuplicateStats;
@@ -73,11 +94,13 @@ export const findDuplicateRestaurants = async (): Promise<{
     let exactDuplicateCount = 0;
     for (const [key, group] of exactDuplicateMap) {
       if (group.length > 1) {
-        // Sort by completeness (most complete record first)
+        // Sort by quality score (best quality record first)
         group.sort((a, b) => {
-          const scoreA = [a.address, a.contact_person, a.remarks].filter(Boolean).length;
-          const scoreB = [b.address, b.contact_person, b.remarks].filter(Boolean).length;
-          return scoreB - scoreA || new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          const scoreA = scoreRestaurantQuality(a);
+          const scoreB = scoreRestaurantQuality(b);
+          if (scoreA !== scoreB) return scoreB - scoreA; // Higher score first
+          // If same score, prefer older record
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         });
 
         duplicateGroups.push({

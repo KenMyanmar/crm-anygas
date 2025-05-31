@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,11 +40,15 @@ const ImportRestaurants = () => {
       try {
         const csvText = e.target?.result as string;
         const lines = csvText.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const headers = lines[0].split('\t').map(h => h.trim().toLowerCase()); // Changed to split by tab
         
-        const parsedData = lines.slice(1).map(line => {
-          const values = line.split(',').map(v => v.trim().replace(/['"]/g, ''));
+        console.log('CSV Headers detected:', headers);
+        
+        const parsedData = lines.slice(1).map((line, index) => {
+          const values = line.split('\t').map(v => v.trim().replace(/['"]/g, '')); // Changed to split by tab
           const restaurant: any = {};
+          
+          console.log(`Row ${index + 1} values:`, values);
           
           headers.forEach((header, index) => {
             const value = values[index] || '';
@@ -66,8 +69,10 @@ const ImportRestaurants = () => {
               case 'phone_number':
                 restaurant.phone = value;
                 break;
+              case 'contact person':
               case 'contact_person':
               case 'contact_name':
+              case 'contact':
                 restaurant.contact_person = value;
                 break;
               case 'remarks':
@@ -77,9 +82,11 @@ const ImportRestaurants = () => {
             }
           });
           
+          console.log(`Parsed restaurant ${index + 1}:`, restaurant);
           return restaurant;
         }).filter(r => r.name);
 
+        console.log('Final parsed data:', parsedData);
         setCsvData(parsedData);
         
         toast({
@@ -168,7 +175,7 @@ const ImportRestaurants = () => {
               className="mt-2"
             />
             <p className="text-sm text-muted-foreground mt-1">
-              Expected columns: name, township, address, phone, contact_person, remarks
+              Expected columns: Name, Township, Address, Phone, Contact Person, Remarks (tab-separated)
             </p>
           </div>
 
@@ -182,7 +189,7 @@ const ImportRestaurants = () => {
                 <div className="max-h-32 overflow-auto text-sm">
                   {csvData.slice(0, 3).map((restaurant, index) => (
                     <div key={index} className="mb-1">
-                      {restaurant.name} - {restaurant.township || 'No township'}
+                      {restaurant.name} - {restaurant.township || 'No township'} - Contact: {restaurant.contact_person || 'No contact'}
                     </div>
                   ))}
                   {csvData.length > 3 && <div>... and {csvData.length - 3} more</div>}
