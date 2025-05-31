@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,15 +23,51 @@ const ImportRestaurants = () => {
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Improved CSV parsing function to handle comma-separated values properly
+  const parseCSVLine = (line: string): string[] => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    // Add the last field
+    result.push(current.trim());
+    return result;
+  };
+
   // Improved header mapping function
   const mapHeaderToField = (header: string): string | null => {
-    const normalizedHeader = header.toLowerCase().trim();
+    const normalizedHeader = header.toLowerCase().trim().replace(/['"]/g, '');
+    
+    console.log(`Mapping header: "${header}" -> normalized: "${normalizedHeader}"`);
     
     // Map common variations to our field names
     const headerMappings: { [key: string]: string } = {
       'name': 'name',
       'restaurant': 'name',
       'restaurant name': 'name',
+      'restaurant_name': 'name',
       'township': 'township',
       'area': 'township',
       'region': 'township',
@@ -40,6 +77,7 @@ const ImportRestaurants = () => {
       'phone number': 'phone',
       'telephone': 'phone',
       'contact person': 'contact_person',
+      'contact_person': 'contact_person',
       'contact': 'contact_person',
       'person': 'contact_person',
       'remarks': 'remarks',
@@ -47,7 +85,9 @@ const ImportRestaurants = () => {
       'comment': 'remarks'
     };
 
-    return headerMappings[normalizedHeader] || null;
+    const mappedField = headerMappings[normalizedHeader];
+    console.log(`Header "${header}" mapped to field: "${mappedField}"`);
+    return mappedField || null;
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +107,10 @@ const ImportRestaurants = () => {
     reader.onload = (e) => {
       try {
         const csvText = e.target?.result as string;
-        const lines = csvText.trim().split('\n');
+        const lines = csvText.trim().split('\n').map(line => line.trim()).filter(line => line);
+        
+        console.log('Total lines found:', lines.length);
+        console.log('First few lines:', lines.slice(0, 3));
         
         if (lines.length < 2) {
           toast({
@@ -78,9 +121,8 @@ const ImportRestaurants = () => {
           return;
         }
 
-        // Parse headers
-        const headerLine = lines[0];
-        const headers = headerLine.split('\t').map(h => h.trim().replace(/^["']|["']$/g, ''));
+        // Parse headers using proper CSV parsing
+        const headers = parseCSVLine(lines[0]);
         console.log('Raw CSV Headers:', headers);
         
         // Create header mapping
@@ -101,9 +143,10 @@ const ImportRestaurants = () => {
         // Validate that we have at least the name field
         const hasName = Object.values(headerMap).includes('name');
         if (!hasName) {
+          console.error('No name field found. Available headers:', headers);
           toast({
             title: "Missing Required Field",
-            description: "CSV must contain a 'Name' or 'Restaurant' column",
+            description: `CSV must contain a 'Name' or 'Restaurant' column. Found headers: ${headers.join(', ')}`,
             variant: "destructive",
           });
           return;
@@ -111,17 +154,16 @@ const ImportRestaurants = () => {
 
         const parsedData = [];
         
-        // Parse data rows
+        // Parse data rows using proper CSV parsing
         for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
+          const line = lines[i];
           if (!line) continue; // Skip empty lines
           
-          const values = line.split('\t').map(v => v.trim().replace(/^["']|["']$/g, ''));
-          console.log(`Row ${i} raw values:`, values);
+          const values = parseCSVLine(line);
+          console.log(`Row ${i} parsed values:`, values);
           
           if (values.length < headers.length) {
             console.warn(`Row ${i} has ${values.length} values but ${headers.length} headers`);
-            continue;
           }
           
           const restaurant: any = {};
@@ -243,7 +285,7 @@ const ImportRestaurants = () => {
               className="mt-2"
             />
             <p className="text-sm text-muted-foreground mt-1">
-              Expected columns: Name, Township, Address, Phone, Contact Person, Remarks (tab-separated)
+              Expected columns: Name, Township, Address, Phone, Contact Person (comma-separated)
             </p>
           </div>
 
