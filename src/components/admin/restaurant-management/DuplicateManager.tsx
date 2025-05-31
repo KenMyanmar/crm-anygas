@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Copy, Trash2, Eye, RefreshCw, Zap, AlertTriangle } from 'lucide-react';
+import { Copy, Trash2, Eye, RefreshCw, Zap, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { findDuplicateRestaurants, removeAllExactDuplicates, removeDuplicateRestaurant, DuplicateGroup, DuplicateStats } from '@/utils/duplicateUtils';
@@ -17,9 +17,15 @@ const DuplicateManager = () => {
   const [processProgress, setProcessProgress] = useState(0);
   const [processMessage, setProcessMessage] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<DuplicateGroup | null>(null);
+  const [lastOperationResult, setLastOperationResult] = useState<{
+    success: boolean;
+    message: string;
+    removed: number;
+  } | null>(null);
 
   const scanForDuplicates = async () => {
     setIsLoading(true);
+    setLastOperationResult(null);
     try {
       const result = await findDuplicateRestaurants();
       setDuplicateGroups(result.groups);
@@ -44,6 +50,7 @@ const DuplicateManager = () => {
     setIsProcessing(true);
     setProcessProgress(0);
     setProcessMessage('Starting...');
+    setLastOperationResult(null);
     
     try {
       const result = await removeAllExactDuplicates((progress, message) => {
@@ -51,18 +58,31 @@ const DuplicateManager = () => {
         setProcessMessage(message);
       });
       
+      setLastOperationResult(result);
+      
       if (result.success) {
         toast({
           title: "Bulk Removal Complete",
           description: result.message,
         });
-        
-        // Refresh the list
-        await scanForDuplicates();
       } else {
-        throw new Error(result.message);
+        toast({
+          title: "Bulk Removal Issues",
+          description: result.message,
+          variant: "destructive",
+        });
       }
+      
+      // Refresh the list
+      await scanForDuplicates();
     } catch (error: any) {
+      const errorResult = {
+        success: false,
+        removed: 0,
+        message: error.message
+      };
+      setLastOperationResult(errorResult);
+      
       toast({
         title: "Bulk Removal Error",
         description: error.message,
@@ -84,7 +104,7 @@ const DuplicateManager = () => {
       
       toast({
         title: "Duplicates Removed",
-        description: `Removed ${removeIds.length} duplicate restaurant(s)`,
+        description: `Successfully removed ${removeIds.length} duplicate restaurant(s)`,
       });
     } catch (error: any) {
       toast({
@@ -113,7 +133,7 @@ const DuplicateManager = () => {
           </CardTitle>
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">
-              Automatically detect and remove exact duplicates
+              Automatically detect and remove exact duplicates (same name, township, and phone)
             </p>
             <Button onClick={scanForDuplicates} disabled={isLoading || isProcessing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -146,6 +166,38 @@ const DuplicateManager = () => {
                 <div className="text-xs text-muted-foreground">With auto-cleanup</div>
               </div>
             </div>
+
+            {/* Last Operation Result */}
+            {lastOperationResult && (
+              <div className={`p-4 rounded-lg mb-4 ${
+                lastOperationResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+              } border`}>
+                <div className="flex items-center gap-2">
+                  {lastOperationResult.success ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-600" />
+                  )}
+                  <div className="flex-1">
+                    <div className={`font-medium ${
+                      lastOperationResult.success ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      Last Operation: {lastOperationResult.success ? 'Success' : 'Failed'}
+                    </div>
+                    <div className={`text-sm ${
+                      lastOperationResult.success ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {lastOperationResult.message}
+                    </div>
+                    {lastOperationResult.removed > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Removed: {lastOperationResult.removed} duplicates
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {stats.exactDuplicates > 0 && (
               <div className="flex items-center gap-4">

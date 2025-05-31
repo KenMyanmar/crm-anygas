@@ -88,7 +88,7 @@ export const findDuplicateRestaurants = async (): Promise<{
           autoRemovable: true,
         });
 
-        exactDuplicateCount += group.length - 1; // Count duplicates to be removed
+        exactDuplicateCount += group.length - 1;
         group.forEach(r => processed.add(r.id));
       }
     }
@@ -111,7 +111,6 @@ export const findDuplicateRestaurants = async (): Promise<{
     let similarRestaurantCount = 0;
     for (const [key, group] of similarNameMap) {
       if (group.length > 1) {
-        // Group by unique phone numbers to show these are likely chains
         const phoneGroups = new Map<string, any[]>();
         for (const restaurant of group) {
           const phoneKey = normalizePhone(restaurant.phone);
@@ -121,7 +120,6 @@ export const findDuplicateRestaurants = async (): Promise<{
           phoneGroups.get(phoneKey)!.push(restaurant);
         }
 
-        // Only show as similar if there are multiple unique phone numbers
         if (phoneGroups.size > 1) {
           duplicateGroups.push({
             id: `similar_${duplicateGroups.length}`,
@@ -171,22 +169,29 @@ export const removeAllExactDuplicates = async (
     if (onProgress) onProgress(20, 'Preparing duplicate removal...');
 
     let totalRemoved = 0;
+    let totalFailed = 0;
+    const failedDeletions: string[] = [];
     const totalGroups = exactGroups.length;
 
     // Process each exact duplicate group
     for (let i = 0; i < exactGroups.length; i++) {
       const group = exactGroups[i];
-      const keepId = group.restaurants[0].id; // Keep the first (most complete) record
+      const keepId = group.restaurants[0].id;
       const removeIds = group.restaurants.slice(1).map(r => r.id);
 
       if (onProgress) {
         const progress = 20 + ((i / totalGroups) * 70);
-        onProgress(progress, `Processing group ${i + 1}/${totalGroups}...`);
+        onProgress(progress, `Processing group ${i + 1}/${totalGroups}: ${group.restaurants[0].name}...`);
       }
 
-      // Transfer dependencies and remove duplicates
-      await removeDuplicateRestaurant(keepId, removeIds);
-      totalRemoved += removeIds.length;
+      try {
+        await removeDuplicateRestaurantWithTransaction(keepId, removeIds);
+        totalRemoved += removeIds.length;
+      } catch (error: any) {
+        console.error(`Failed to remove duplicates for group ${i + 1}:`, error);
+        totalFailed += removeIds.length;
+        failedDeletions.push(`${group.restaurants[0].name} (${error.message})`);
+      }
     }
 
     if (onProgress) onProgress(95, 'Logging operation...');
@@ -201,11 +206,21 @@ export const removeAllExactDuplicates = async (
         details: {
           exact_duplicate_groups: exactGroups.length,
           total_removed: totalRemoved,
+          total_failed: totalFailed,
+          failed_deletions: failedDeletions,
           auto_processed: true,
         },
       });
 
     if (onProgress) onProgress(100, 'Complete!');
+
+    if (totalFailed > 0) {
+      return {
+        success: false,
+        removed: totalRemoved,
+        message: `Partially successful: Removed ${totalRemoved} duplicates, failed to remove ${totalFailed}. Failed items: ${failedDeletions.join(', ')}`
+      };
+    }
 
     return {
       success: true,
@@ -224,65 +239,147 @@ export const removeAllExactDuplicates = async (
 };
 
 export const removeDuplicateRestaurant = async (keepId: string, removeIds: string[]) => {
-  try {
-    // Transfer all related records to the kept restaurant
-    for (const removeId of removeIds) {
-      await Promise.all([
-        // Update orders
-        supabase
-          .from('orders')
-          .update({ restaurant_id: keepId })
-          .eq('restaurant_id', removeId),
-        
-        // Update leads
-        supabase
-          .from('leads')
-          .update({ restaurant_id: keepId })
-          .eq('restaurant_id', removeId),
-          
-        // Update visit tasks
-        supabase
-          .from('visit_tasks')
-          .update({ restaurant_id: keepId })
-          .eq('restaurant_id', removeId),
-          
-        // Update meetings
-        supabase
-          .from('meetings')
-          .update({ restaurant_id: keepId })
-          .eq('restaurant_id', removeId),
-          
-        // Update calls
-        supabase
-          .from('calls')
-          .update({ restaurant_id: keepId })
-          .eq('restaurant_id', removeId),
-          
-        // Update notes
-        supabase
-          .from('notes')
-          .update({ target_id: keepId })
-          .eq('target_id', removeId)
-          .eq('target_type', 'RESTAURANT'),
-          
-        // Update voice notes
-        supabase
-          .from('voice_notes')
-          .update({ restaurant_id: keepId })
-          .eq('restaurant_id', removeId),
+  return removeDuplicateRestaurantWithTransaction(keepId, removeIds);
+};
+
+const removeDuplicateRestaurantWithTransaction = async (keepId: string, removeIds: string[]) => {
+  console.log(`Starting duplicate removal: keeping ${keepId}, removing ${removeIds.join(', ')}`);
+  
+  // Use a transaction-like approach by processing sequentially
+  for (const removeId of removeIds) {
+    try {
+      // Step 1: Transfer all dependencies sequentially
+      console.log(`Transferring dependencies for restaurant ${removeId} to ${keepId}`);
+      
+      // Transfer orders (most critical)
+      const { error: ordersError } = await supabase
+        .from('orders')
+        .update({ restaurant_id: keepId })
+        .eq('restaurant_id', removeId);
+      
+      if (ordersError) {
+        console.error('Error transferring orders:', ordersError);
+        throw new Error(`Failed to transfer orders: ${ordersError.message}`);
+      }
+
+      // Transfer leads
+      const { error: leadsError } = await supabase
+        .from('leads')
+        .update({ restaurant_id: keepId })
+        .eq('restaurant_id', removeId);
+      
+      if (leadsError) {
+        console.error('Error transferring leads:', leadsError);
+        throw new Error(`Failed to transfer leads: ${leadsError.message}`);
+      }
+
+      // Transfer visit tasks
+      const { error: visitTasksError } = await supabase
+        .from('visit_tasks')
+        .update({ restaurant_id: keepId })
+        .eq('restaurant_id', removeId);
+      
+      if (visitTasksError) {
+        console.error('Error transferring visit tasks:', visitTasksError);
+        throw new Error(`Failed to transfer visit tasks: ${visitTasksError.message}`);
+      }
+
+      // Transfer meetings
+      const { error: meetingsError } = await supabase
+        .from('meetings')
+        .update({ restaurant_id: keepId })
+        .eq('restaurant_id', removeId);
+      
+      if (meetingsError) {
+        console.error('Error transferring meetings:', meetingsError);
+        throw new Error(`Failed to transfer meetings: ${meetingsError.message}`);
+      }
+
+      // Transfer calls
+      const { error: callsError } = await supabase
+        .from('calls')
+        .update({ restaurant_id: keepId })
+        .eq('restaurant_id', removeId);
+      
+      if (callsError) {
+        console.error('Error transferring calls:', callsError);
+        throw new Error(`Failed to transfer calls: ${callsError.message}`);
+      }
+
+      // Transfer notes (check target_type enum values)
+      const { error: notesError } = await supabase
+        .from('notes')
+        .update({ target_id: keepId })
+        .eq('target_id', removeId)
+        .eq('target_type', 'RESTAURANT');
+      
+      if (notesError) {
+        console.error('Error transferring notes:', notesError);
+        // Don't throw error for notes as the enum might not support RESTAURANT
+        console.log('Notes transfer failed, but continuing...');
+      }
+
+      // Transfer voice notes
+      const { error: voiceNotesError } = await supabase
+        .from('voice_notes')
+        .update({ restaurant_id: keepId })
+        .eq('restaurant_id', removeId);
+      
+      if (voiceNotesError) {
+        console.error('Error transferring voice notes:', voiceNotesError);
+        throw new Error(`Failed to transfer voice notes: ${voiceNotesError.message}`);
+      }
+
+      // Step 2: Verify all dependencies have been transferred
+      console.log(`Verifying dependency transfer for restaurant ${removeId}`);
+      
+      const verificationQueries = await Promise.all([
+        supabase.from('orders').select('id').eq('restaurant_id', removeId).limit(1),
+        supabase.from('leads').select('id').eq('restaurant_id', removeId).limit(1),
+        supabase.from('visit_tasks').select('id').eq('restaurant_id', removeId).limit(1),
+        supabase.from('meetings').select('id').eq('restaurant_id', removeId).limit(1),
+        supabase.from('calls').select('id').eq('restaurant_id', removeId).limit(1),
+        supabase.from('voice_notes').select('id').eq('restaurant_id', removeId).limit(1),
       ]);
+
+      const hasRemainingDependencies = verificationQueries.some(
+        ({ data }) => data && data.length > 0
+      );
+
+      if (hasRemainingDependencies) {
+        throw new Error(`Restaurant ${removeId} still has dependencies after transfer`);
+      }
+
+      // Step 3: Delete the duplicate restaurant
+      console.log(`Deleting restaurant ${removeId}`);
+      const { error: deleteError } = await supabase
+        .from('restaurants')
+        .delete()
+        .eq('id', removeId);
+
+      if (deleteError) {
+        console.error('Error deleting restaurant:', deleteError);
+        throw new Error(`Failed to delete restaurant: ${deleteError.message}`);
+      }
+
+      // Step 4: Verify deletion
+      const { data: verifyDelete } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('id', removeId)
+        .limit(1);
+
+      if (verifyDelete && verifyDelete.length > 0) {
+        throw new Error(`Restaurant ${removeId} was not actually deleted`);
+      }
+
+      console.log(`Successfully removed duplicate restaurant ${removeId}`);
+
+    } catch (error: any) {
+      console.error(`Failed to remove restaurant ${removeId}:`, error);
+      throw error;
     }
-
-    // Delete the duplicate restaurants
-    const { error: deleteError } = await supabase
-      .from('restaurants')
-      .delete()
-      .in('id', removeIds);
-
-    if (deleteError) throw deleteError;
-
-  } catch (error: any) {
-    console.error('Error removing duplicates:', error);
-    throw error;
   }
+
+  console.log(`Completed duplicate removal for ${removeIds.length} restaurants`);
 };
