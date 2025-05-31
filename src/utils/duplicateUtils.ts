@@ -4,49 +4,43 @@ import { supabase } from '@/lib/supabase';
 export interface DuplicateGroup {
   id: string;
   restaurants: any[];
-  confidence: 'high' | 'medium' | 'low';
+  duplicateType: 'exact' | 'similar';
   reason: string;
+  autoRemovable: boolean;
 }
 
-export const calculateSimilarity = (str1: string, str2: string): number => {
-  if (!str1 || !str2) return 0;
-  
-  const s1 = str1.toLowerCase().trim();
-  const s2 = str2.toLowerCase().trim();
-  
-  if (s1 === s2) return 1.0;
-  
-  // Simple Levenshtein distance calculation
-  const matrix = [];
-  const len1 = s1.length;
-  const len2 = s2.length;
-  
-  for (let i = 0; i <= len2; i++) {
-    matrix[i] = [i];
-  }
-  
-  for (let j = 0; j <= len1; j++) {
-    matrix[0][j] = j;
-  }
-  
-  for (let i = 1; i <= len2; i++) {
-    for (let j = 1; j <= len1; j++) {
-      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
-        );
-      }
-    }
-  }
-  
-  const maxLen = Math.max(len1, len2);
-  return 1 - matrix[len2][len1] / maxLen;
+export interface DuplicateStats {
+  exactDuplicates: number;
+  exactDuplicateGroups: number;
+  similarRestaurants: number;
+  similarGroups: number;
+  totalRemovable: number;
+}
+
+// Normalize text for comparison
+const normalizeText = (text: string | null): string => {
+  if (!text) return '';
+  return text.toLowerCase().trim();
 };
 
-export const findDuplicateRestaurants = async (): Promise<DuplicateGroup[]> => {
+// Normalize phone number for comparison
+const normalizePhone = (phone: string | null): string => {
+  if (!phone) return '';
+  return phone.replace(/[\s-]/g, '');
+};
+
+// Create unique key for exact duplicate detection
+const createDuplicateKey = (restaurant: any): string => {
+  const name = normalizeText(restaurant.name);
+  const township = normalizeText(restaurant.township);
+  const phone = normalizePhone(restaurant.phone);
+  return `${name}|${township}|${phone}`;
+};
+
+export const findDuplicateRestaurants = async (): Promise<{
+  groups: DuplicateGroup[];
+  stats: DuplicateStats;
+}> => {
   try {
     const { data: restaurants, error } = await supabase
       .from('restaurants')
@@ -56,94 +50,183 @@ export const findDuplicateRestaurants = async (): Promise<DuplicateGroup[]> => {
     if (error) throw error;
 
     const duplicateGroups: DuplicateGroup[] = [];
+    const exactDuplicateMap = new Map<string, any[]>();
+    const similarNameMap = new Map<string, any[]>();
     const processed = new Set<string>();
 
-    for (let i = 0; i < restaurants.length; i++) {
-      const restaurant1 = restaurants[i];
+    // Phase 1: Find exact duplicates (same name + township + phone)
+    for (const restaurant of restaurants) {
+      const key = createDuplicateKey(restaurant);
       
-      if (processed.has(restaurant1.id)) continue;
-
-      const group: any[] = [restaurant1];
-      let confidence: 'high' | 'medium' | 'low' = 'low';
-      let reason = '';
-
-      for (let j = i + 1; j < restaurants.length; j++) {
-        const restaurant2 = restaurants[j];
-        
-        if (processed.has(restaurant2.id)) continue;
-
-        // Exact name match
-        if (restaurant1.name.toLowerCase().trim() === restaurant2.name.toLowerCase().trim()) {
-          group.push(restaurant2);
-          confidence = 'high';
-          reason = 'Exact name match';
-          processed.add(restaurant2.id);
-          continue;
-        }
-
-        // Similar name with same township
-        const nameSimilarity = calculateSimilarity(restaurant1.name, restaurant2.name);
-        const sameTownship = restaurant1.township && restaurant2.township && 
-          restaurant1.township.toLowerCase() === restaurant2.township.toLowerCase();
-
-        if (nameSimilarity >= 0.8 && sameTownship) {
-          group.push(restaurant2);
-          confidence = confidence === 'low' ? 'medium' : confidence;
-          reason = 'Similar name + same township';
-          processed.add(restaurant2.id);
-          continue;
-        }
-
-        // Same phone number
-        if (restaurant1.phone && restaurant2.phone && 
-            restaurant1.phone.replace(/\s/g, '') === restaurant2.phone.replace(/\s/g, '')) {
-          group.push(restaurant2);
-          confidence = 'high';
-          reason = 'Same phone number';
-          processed.add(restaurant2.id);
-          continue;
-        }
-
-        // High name similarity
-        if (nameSimilarity >= 0.9) {
-          group.push(restaurant2);
-          confidence = confidence === 'low' ? 'medium' : confidence;
-          reason = 'Very similar names';
-          processed.add(restaurant2.id);
-        }
+      // Skip restaurants with missing critical info for exact matching
+      if (!restaurant.name || !restaurant.township || !restaurant.phone) {
+        continue;
       }
+      
+      if (!exactDuplicateMap.has(key)) {
+        exactDuplicateMap.set(key, []);
+      }
+      exactDuplicateMap.get(key)!.push(restaurant);
+    }
 
+    // Process exact duplicates
+    let exactDuplicateCount = 0;
+    for (const [key, group] of exactDuplicateMap) {
       if (group.length > 1) {
         // Sort by completeness (most complete record first)
         group.sort((a, b) => {
-          const scoreA = [a.township, a.address, a.phone, a.contact_person].filter(Boolean).length;
-          const scoreB = [b.township, b.address, b.phone, b.contact_person].filter(Boolean).length;
-          return scoreB - scoreA;
+          const scoreA = [a.address, a.contact_person, a.remarks].filter(Boolean).length;
+          const scoreB = [b.address, b.contact_person, b.remarks].filter(Boolean).length;
+          return scoreB - scoreA || new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         });
 
         duplicateGroups.push({
-          id: `group_${duplicateGroups.length}`,
+          id: `exact_${duplicateGroups.length}`,
           restaurants: group,
-          confidence,
-          reason,
+          duplicateType: 'exact',
+          reason: 'Exact match: Same name, township, and phone number',
+          autoRemovable: true,
         });
 
+        exactDuplicateCount += group.length - 1; // Count duplicates to be removed
         group.forEach(r => processed.add(r.id));
       }
     }
 
-    return duplicateGroups;
+    // Phase 2: Find similar names (same name + township, different phone)
+    for (const restaurant of restaurants) {
+      if (processed.has(restaurant.id) || !restaurant.name || !restaurant.township) {
+        continue;
+      }
+
+      const nameKey = `${normalizeText(restaurant.name)}|${normalizeText(restaurant.township)}`;
+      
+      if (!similarNameMap.has(nameKey)) {
+        similarNameMap.set(nameKey, []);
+      }
+      similarNameMap.get(nameKey)!.push(restaurant);
+    }
+
+    // Process similar names (potential chains)
+    let similarRestaurantCount = 0;
+    for (const [key, group] of similarNameMap) {
+      if (group.length > 1) {
+        // Group by unique phone numbers to show these are likely chains
+        const phoneGroups = new Map<string, any[]>();
+        for (const restaurant of group) {
+          const phoneKey = normalizePhone(restaurant.phone);
+          if (!phoneGroups.has(phoneKey)) {
+            phoneGroups.set(phoneKey, []);
+          }
+          phoneGroups.get(phoneKey)!.push(restaurant);
+        }
+
+        // Only show as similar if there are multiple unique phone numbers
+        if (phoneGroups.size > 1) {
+          duplicateGroups.push({
+            id: `similar_${duplicateGroups.length}`,
+            restaurants: group,
+            duplicateType: 'similar',
+            reason: `Chain restaurants: Same name and township, ${phoneGroups.size} different phone numbers`,
+            autoRemovable: false,
+          });
+
+          similarRestaurantCount += group.length;
+        }
+      }
+    }
+
+    const stats: DuplicateStats = {
+      exactDuplicates: exactDuplicateCount,
+      exactDuplicateGroups: duplicateGroups.filter(g => g.duplicateType === 'exact').length,
+      similarRestaurants: similarRestaurantCount,
+      similarGroups: duplicateGroups.filter(g => g.duplicateType === 'similar').length,
+      totalRemovable: exactDuplicateCount,
+    };
+
+    return { groups: duplicateGroups, stats };
   } catch (error: any) {
     console.error('Error finding duplicates:', error);
     throw error;
   }
 };
 
+export const removeAllExactDuplicates = async (
+  onProgress?: (progress: number, message: string) => void
+): Promise<{ success: boolean; removed: number; message: string }> => {
+  try {
+    if (onProgress) onProgress(10, 'Finding exact duplicates...');
+    
+    const { groups } = await findDuplicateRestaurants();
+    const exactGroups = groups.filter(g => g.duplicateType === 'exact');
+    
+    if (exactGroups.length === 0) {
+      return {
+        success: true,
+        removed: 0,
+        message: 'No exact duplicates found to remove'
+      };
+    }
+
+    if (onProgress) onProgress(20, 'Preparing duplicate removal...');
+
+    let totalRemoved = 0;
+    const totalGroups = exactGroups.length;
+
+    // Process each exact duplicate group
+    for (let i = 0; i < exactGroups.length; i++) {
+      const group = exactGroups[i];
+      const keepId = group.restaurants[0].id; // Keep the first (most complete) record
+      const removeIds = group.restaurants.slice(1).map(r => r.id);
+
+      if (onProgress) {
+        const progress = 20 + ((i / totalGroups) * 70);
+        onProgress(progress, `Processing group ${i + 1}/${totalGroups}...`);
+      }
+
+      // Transfer dependencies and remove duplicates
+      await removeDuplicateRestaurant(keepId, removeIds);
+      totalRemoved += removeIds.length;
+    }
+
+    if (onProgress) onProgress(95, 'Logging operation...');
+
+    // Log the bulk operation
+    await supabase
+      .from('migration_log')
+      .insert({
+        action: 'BULK_DELETE_EXACT_DUPLICATES',
+        table_name: 'restaurants',
+        record_count: totalRemoved,
+        details: {
+          exact_duplicate_groups: exactGroups.length,
+          total_removed: totalRemoved,
+          auto_processed: true,
+        },
+      });
+
+    if (onProgress) onProgress(100, 'Complete!');
+
+    return {
+      success: true,
+      removed: totalRemoved,
+      message: `Successfully removed ${totalRemoved} exact duplicates from ${exactGroups.length} groups`
+    };
+
+  } catch (error: any) {
+    console.error('Error removing exact duplicates:', error);
+    return {
+      success: false,
+      removed: 0,
+      message: error.message
+    };
+  }
+};
+
 export const removeDuplicateRestaurant = async (keepId: string, removeIds: string[]) => {
   try {
-    // Start a transaction-like operation
+    // Transfer all related records to the kept restaurant
     for (const removeId of removeIds) {
-      // Update all related records to point to the kept restaurant
       await Promise.all([
         // Update orders
         supabase
@@ -197,19 +280,6 @@ export const removeDuplicateRestaurant = async (keepId: string, removeIds: strin
       .in('id', removeIds);
 
     if (deleteError) throw deleteError;
-
-    // Log the operation
-    await supabase
-      .from('migration_log')
-      .insert({
-        action: 'DELETE_DUPLICATES',
-        table_name: 'restaurants',
-        record_count: removeIds.length,
-        details: {
-          kept_restaurant_id: keepId,
-          removed_restaurant_ids: removeIds,
-        },
-      });
 
   } catch (error: any) {
     console.error('Error removing duplicates:', error);
