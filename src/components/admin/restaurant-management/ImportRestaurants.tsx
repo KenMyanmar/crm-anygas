@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { importRestaurantsCSV } from '@/utils/restaurantImportUtils';
+import { cleanRestaurantData } from '@/utils/csvDataCleaner';
 
 interface ImportResult {
   success: boolean;
@@ -176,13 +176,17 @@ const ImportRestaurants = () => {
             }
           });
           
-          console.log(`Parsed restaurant ${i}:`, restaurant);
+          console.log(`Raw restaurant ${i}:`, restaurant);
+          
+          // Clean the restaurant data to remove prefixes like "Phone:" and "Contact:"
+          const cleanedRestaurant = cleanRestaurantData(restaurant);
+          console.log(`Cleaned restaurant ${i}:`, cleanedRestaurant);
           
           // Only add restaurants with names
-          if (restaurant.name && restaurant.name.trim()) {
-            parsedData.push(restaurant);
+          if (cleanedRestaurant.name && cleanedRestaurant.name.trim()) {
+            parsedData.push(cleanedRestaurant);
           } else {
-            console.warn(`Row ${i} missing name:`, restaurant);
+            console.warn(`Row ${i} missing name:`, cleanedRestaurant);
           }
         }
 
@@ -200,7 +204,7 @@ const ImportRestaurants = () => {
         
         toast({
           title: "File Uploaded",
-          description: `Successfully parsed ${parsedData.length} restaurants`,
+          description: `Successfully parsed ${parsedData.length} restaurants with cleaned data`,
         });
       } catch (error: any) {
         console.error('CSV parsing error:', error);
@@ -285,7 +289,8 @@ const ImportRestaurants = () => {
               className="mt-2"
             />
             <p className="text-sm text-muted-foreground mt-1">
-              Expected columns: Name, Township, Address, Phone, Contact Person (comma-separated)
+              Expected columns: Name, Township, Address, Phone, Contact Person (comma-separated).
+              Prefixes like "Phone:" and "Contact:" will be automatically removed.
             </p>
           </div>
 
@@ -294,7 +299,7 @@ const ImportRestaurants = () => {
               <div className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4" />
-                  <span className="font-medium">Preview: {csvData.length} restaurants</span>
+                  <span className="font-medium">Preview: {csvData.length} restaurants (cleaned data)</span>
                 </div>
                 <div className="max-h-32 overflow-auto text-sm">
                   {csvData.slice(0, 3).map((restaurant, index) => (
