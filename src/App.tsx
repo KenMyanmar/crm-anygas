@@ -32,6 +32,7 @@ import UsersPage from './pages/admin/UsersPage';
 import ProductsPage from './pages/admin/ProductsPage';
 import ImportPage from './pages/admin/ImportPage';
 import AdminSettingsPage from './pages/admin/SettingsPage';
+import RestaurantManagementPage from './pages/admin/RestaurantManagementPage';
 
 // Orders pages
 import OrdersPage from './pages/orders/OrdersPage';
@@ -157,6 +158,12 @@ function App() {
             <Route path="/admin/import" element={
               <AuthWrapper>
                 <ImportPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/admin/restaurant-management" element={
+              <AuthWrapper>
+                <RestaurantManagementPage />
               </AuthWrapper>
             } />
             
