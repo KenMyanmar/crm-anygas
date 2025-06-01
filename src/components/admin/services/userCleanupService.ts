@@ -33,18 +33,29 @@ export const completeNuclearCleanup = async (email: string): Promise<void> => {
     // Add UUIDs from email profiles
     emailProfiles?.forEach(profile => uuidsToClean.add(profile.id));
 
+    // Step 4: NEW - Check for any UUID conflicts in users table specifically
+    const { data: existingUsersByUuid } = await adminClient
+      .from('users')
+      .select('id, email')
+      .in('id', Array.from(uuidsToClean));
+
+    console.log('Found existing users by UUID:', existingUsersByUuid?.length || 0);
+    
+    // Add any additional UUIDs found
+    existingUsersByUuid?.forEach(user => uuidsToClean.add(user.id));
+
     console.log('Total UUIDs to clean:', uuidsToClean.size);
 
-    // Step 4: Delete ALL profiles by UUID (multiple approaches for safety)
+    // Step 5: Delete ALL profiles by UUID (multiple approaches for safety)
     for (const uuid of uuidsToClean) {
       console.log('Deleting profile by UUID:', uuid);
       
-      // Try multiple delete approaches
+      // Try multiple delete approaches for thorough cleanup
       await adminClient.from('users').delete().eq('id', uuid);
       await adminClient.from('users').delete().ilike('email', cleanEmail);
     }
 
-    // Step 5: Delete ALL auth users
+    // Step 6: Delete ALL auth users
     for (const authUser of matchingAuthUsers) {
       console.log('Deleting auth user:', authUser.id);
       const { error } = await adminClient.auth.admin.deleteUser(authUser.id);
@@ -53,11 +64,11 @@ export const completeNuclearCleanup = async (email: string): Promise<void> => {
       }
     }
 
-    // Step 6: VERIFICATION - ensure cleanup was complete
-    console.log('=== CLEANUP VERIFICATION ===');
+    // Step 7: ENHANCED VERIFICATION - ensure cleanup was complete
+    console.log('=== ENHANCED CLEANUP VERIFICATION ===');
     
-    // Wait for deletion to propagate
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait longer for deletion to propagate
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Verify no auth users remain
     const { data: remainingAuthUsers } = await adminClient.auth.admin.listUsers();
@@ -65,17 +76,26 @@ export const completeNuclearCleanup = async (email: string): Promise<void> => {
       user.email?.toLowerCase() === cleanEmail
     );
 
-    // Verify no profiles remain
-    const { data: remainingProfiles } = await adminClient
+    // Verify no profiles remain by email
+    const { data: remainingProfilesByEmail } = await adminClient
       .from('users')
       .select('id, email')
-      .or(`email.ilike.${cleanEmail},${Array.from(uuidsToClean).map(uuid => `id.eq.${uuid}`).join(',')}`);
+      .ilike('email', cleanEmail);
 
-    if (stillExistingAuth.length > 0 || (remainingProfiles && remainingProfiles.length > 0)) {
+    // Verify no profiles remain by UUID
+    const { data: remainingProfilesByUuid } = await adminClient
+      .from('users')
+      .select('id, email')
+      .in('id', Array.from(uuidsToClean));
+
+    const totalRemainingProfiles = (remainingProfilesByEmail?.length || 0) + (remainingProfilesByUuid?.length || 0);
+
+    if (stillExistingAuth.length > 0 || totalRemainingProfiles > 0) {
       console.error('CLEANUP FAILED - REMAINING RECORDS:');
       console.error('Auth users:', stillExistingAuth.length);
-      console.error('Profiles:', remainingProfiles?.length || 0);
-      throw new Error(`Cleanup verification failed: ${stillExistingAuth.length} auth users and ${remainingProfiles?.length || 0} profiles still exist`);
+      console.error('Profiles by email:', remainingProfilesByEmail?.length || 0);
+      console.error('Profiles by UUID:', remainingProfilesByUuid?.length || 0);
+      throw new Error(`Cleanup verification failed: ${stillExistingAuth.length} auth users and ${totalRemainingProfiles} profiles still exist`);
     }
 
     console.log('=== CLEANUP VERIFICATION PASSED ===');
@@ -94,7 +114,7 @@ export const preFlightCleanupAndCheck = async (email: string): Promise<boolean> 
     // Perform complete nuclear cleanup first
     await completeNuclearCleanup(cleanEmail);
 
-    // Double-check that everything is clean
+    // Enhanced double-check that everything is clean
     const { data: authUsers } = await adminClient.auth.admin.listUsers();
     const existingAuth = authUsers.users.find((user: any) => 
       user.email?.toLowerCase() === cleanEmail
@@ -105,8 +125,17 @@ export const preFlightCleanupAndCheck = async (email: string): Promise<boolean> 
       .select('*')
       .ilike('email', cleanEmail);
 
-    if (existingAuth || (existingProfiles && existingProfiles.length > 0)) {
+    // Also check for any UUID conflicts that might exist
+    const { data: existingUsersByAnyUuid } = await adminClient
+      .from('users')
+      .select('*')
+      .ilike('email', cleanEmail);
+
+    if (existingAuth || (existingProfiles && existingProfiles.length > 0) || (existingUsersByAnyUuid && existingUsersByAnyUuid.length > 0)) {
       console.error('PRE-FLIGHT CHECK FAILED - RECORDS STILL EXIST');
+      console.error('Auth user exists:', !!existingAuth);
+      console.error('Profiles exist:', existingProfiles?.length || 0);
+      console.error('Users by UUID exist:', existingUsersByAnyUuid?.length || 0);
       throw new Error('Unable to clean existing records completely');
     }
 

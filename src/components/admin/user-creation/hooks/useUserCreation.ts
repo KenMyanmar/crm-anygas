@@ -16,11 +16,12 @@ export const useUserCreation = (onUserCreated: () => void) => {
     const cleanEmail = formData.email.trim().toLowerCase();
     const cleanFullName = formData.full_name.trim();
 
-    console.log('=== ATOMIC USER CREATION ===');
+    console.log('=== ENHANCED ATOMIC USER CREATION ===');
     console.log('Email:', cleanEmail);
 
     try {
-      // STEP 1: Pre-flight cleanup - ensure no conflicts exist
+      // STEP 1: Enhanced pre-flight cleanup - ensure no conflicts exist
+      console.log('Running enhanced pre-flight cleanup...');
       await preFlightCleanupAndCheck(cleanEmail);
 
       // STEP 2: Create auth user
@@ -46,9 +47,27 @@ export const useUserCreation = (onUserCreated: () => void) => {
 
       console.log('Auth user created successfully:', authData.user.id);
 
-      // STEP 3: Create profile (with enhanced error handling)
+      // STEP 3: Add delay to ensure auth user is fully created
+      console.log('Waiting for auth user creation to propagate...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // STEP 4: Double-check that no profile exists with this UUID before creating
+      console.log('Checking for existing profile with UUID...');
+      const { data: existingProfile } = await adminClient
+        .from('users')
+        .select('id')
+        .eq('id', authData.user.id);
+
+      if (existingProfile && existingProfile.length > 0) {
+        console.error('Profile already exists with this UUID:', authData.user.id);
+        // Clean up the auth user we just created
+        await adminClient.auth.admin.deleteUser(authData.user.id);
+        throw new Error('UUID conflict detected - profile already exists with this ID');
+      }
+
+      // STEP 5: Create profile (with enhanced error handling)
       console.log('Creating user profile...');
-      const { error: profileError } = await adminClient
+      const { error: profileError, data: profileData } = await adminClient
         .from('users')
         .insert({
           id: authData.user.id,
@@ -57,10 +76,18 @@ export const useUserCreation = (onUserCreated: () => void) => {
           role: formData.role,
           is_active: true,
           must_reset_pw: true
-        });
+        })
+        .select()
+        .single();
 
       if (profileError) {
         console.error('Profile creation failed:', profileError);
+        console.error('Profile error details:', {
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint
+        });
         
         // ENHANCED ROLLBACK - clean up auth user
         console.log('Rolling back auth user...');
@@ -71,9 +98,19 @@ export const useUserCreation = (onUserCreated: () => void) => {
           console.error('CRITICAL: Auth user rollback failed:', rollbackError);
         }
         
+        // Provide more specific error messages
+        if (profileError.code === '23505') {
+          throw new Error('User with this email or ID already exists. Please try again.');
+        }
+        
         throw new Error(`Profile creation failed: ${profileError.message}`);
       }
 
+      if (!profileData) {
+        throw new Error('Profile creation succeeded but returned no data');
+      }
+
+      console.log('Profile created successfully:', profileData);
       console.log('=== USER CREATION SUCCESSFUL ===');
 
       // Set credentials for display
@@ -90,10 +127,22 @@ export const useUserCreation = (onUserCreated: () => void) => {
       return true;
 
     } catch (error: any) {
-      console.error('Atomic user creation failed:', error);
+      console.error('Enhanced atomic user creation failed:', error);
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = error.message || 'Failed to create user';
+      
+      if (error.message.includes('duplicate key')) {
+        errorMessage = 'A user with this email or ID already exists. Please try a different email.';
+      } else if (error.message.includes('UUID conflict')) {
+        errorMessage = 'System conflict detected. Please try again in a moment.';
+      } else if (error.message.includes('Auth creation failed')) {
+        errorMessage = 'Failed to create user account. Please check the email format and try again.';
+      }
+      
       toast({
         title: "User creation failed",
-        description: error.message || 'Failed to create user',
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
