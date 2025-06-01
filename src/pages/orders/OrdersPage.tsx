@@ -9,7 +9,8 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, FileText, Package, Truck, Check, X, AlertCircle, RefreshCcw, History } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { PlusCircle, RefreshCcw, Search, Filter } from 'lucide-react';
 import {
   Table,
   TableHeader,
@@ -19,27 +20,24 @@ import {
   TableCell
 } from '@/components/ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useOrderStatusHistory } from '@/hooks/useOrderStatusHistory';
+import OrderDashboardStats from '@/components/orders/OrderDashboardStats';
+import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
+import OrderActionButtons from '@/components/orders/OrderActionButtons';
 
 const OrdersPage = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [townshipFilter, setTownshipFilter] = useState('all');
   
   useEffect(() => {
     fetchOrders();
@@ -60,7 +58,10 @@ const OrdersPage = () => {
         let statusFilter;
         switch (activeTab) {
           case 'pending':
-            statusFilter = ['PENDING_CONFIRMATION', 'CONFIRMED'];
+            statusFilter = ['PENDING_CONFIRMATION'];
+            break;
+          case 'confirmed':
+            statusFilter = ['CONFIRMED'];
             break;
           case 'delivery':
             statusFilter = ['OUT_FOR_DELIVERY'];
@@ -94,79 +95,121 @@ const OrdersPage = () => {
     }
   };
 
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.restaurant?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTownship = townshipFilter === 'all' || order.restaurant?.township === townshipFilter;
+    return matchesSearch && matchesTownship;
+  });
+
+  const getOrderStats = () => {
+    return {
+      pendingCount: orders.filter(o => o.status === 'PENDING_CONFIRMATION').length,
+      confirmedCount: orders.filter(o => o.status === 'CONFIRMED').length,
+      inDeliveryCount: orders.filter(o => o.status === 'OUT_FOR_DELIVERY').length,
+      deliveredCount: orders.filter(o => o.status === 'DELIVERED').length,
+      totalRevenue: orders.reduce((sum, o) => sum + (o.total_amount_kyats || 0), 0)
+    };
+  };
+
+  const getTownships = () => {
+    const townships = [...new Set(orders.map(o => o.restaurant?.township).filter(Boolean))];
+    return townships.sort();
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
-          <Button asChild>
-            <Link to="/orders/new">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Order
-            </Link>
-          </Button>
-        </div>
-
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex justify-between items-center">
-            <TabsList>
-              <TabsTrigger value="all">All Orders</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="delivery">In Delivery</TabsTrigger>
-              <TabsTrigger value="delivered">Delivered</TabsTrigger>
-              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-            </TabsList>
-            <Button variant="outline" size="sm" onClick={fetchOrders}>
-              <RefreshCcw className="h-4 w-4 mr-2" />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage and track orders through their complete lifecycle
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={fetchOrders} disabled={isLoading}>
+              <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
+            <Button asChild>
+              <Link to="/orders/new">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create Order
+              </Link>
+            </Button>
           </div>
+        </div>
 
-          <TabsContent value="all" className="pt-4">
-            <OrdersTable 
-              orders={orders} 
-              isLoading={isLoading} 
-              onOrderUpdated={fetchOrders}
-              onViewOrder={(id) => navigate(`/orders/${id}`)}
-            />
-          </TabsContent>
+        <OrderDashboardStats stats={getOrderStats()} />
 
-          <TabsContent value="pending" className="pt-4">
-            <OrdersTable 
-              orders={orders.filter(o => o.status === 'PENDING_CONFIRMATION' || o.status === 'CONFIRMED')} 
-              isLoading={isLoading}
-              onOrderUpdated={fetchOrders}
-              onViewOrder={(id) => navigate(`/orders/${id}`)}
-            />
-          </TabsContent>
-          
-          <TabsContent value="delivery" className="pt-4">
-            <OrdersTable 
-              orders={orders.filter(o => o.status === 'OUT_FOR_DELIVERY')} 
-              isLoading={isLoading}
-              onOrderUpdated={fetchOrders}
-              onViewOrder={(id) => navigate(`/orders/${id}`)}
-            />
-          </TabsContent>
-          
-          <TabsContent value="delivered" className="pt-4">
-            <OrdersTable 
-              orders={orders.filter(o => o.status === 'DELIVERED')} 
-              isLoading={isLoading}
-              onOrderUpdated={fetchOrders}
-              onViewOrder={(id) => navigate(`/orders/${id}`)}
-            />
-          </TabsContent>
-          
-          <TabsContent value="cancelled" className="pt-4">
-            <OrdersTable 
-              orders={orders.filter(o => o.status === 'CANCELLED')} 
-              isLoading={isLoading}
-              onOrderUpdated={fetchOrders}
-              onViewOrder={(id) => navigate(`/orders/${id}`)}
-            />
-          </TabsContent>
-        </Tabs>
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl">Orders Overview</CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 w-64"
+                  />
+                </div>
+                <Select value={townshipFilter} onValueChange={setTownshipFilter}>
+                  <SelectTrigger className="w-48">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by township" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Townships</SelectItem>
+                    {getTownships().map((township) => (
+                      <SelectItem key={township} value={township}>
+                        {township}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-6 mb-6">
+                <TabsTrigger value="all" className="data-[state=active]:bg-blue-100">
+                  All Orders ({orders.length})
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="data-[state=active]:bg-amber-100">
+                  Pending ({getOrderStats().pendingCount})
+                </TabsTrigger>
+                <TabsTrigger value="confirmed" className="data-[state=active]:bg-blue-100">
+                  Confirmed ({getOrderStats().confirmedCount})
+                </TabsTrigger>
+                <TabsTrigger value="delivery" className="data-[state=active]:bg-purple-100">
+                  In Delivery ({getOrderStats().inDeliveryCount})
+                </TabsTrigger>
+                <TabsTrigger value="delivered" className="data-[state=active]:bg-green-100">
+                  Delivered ({getOrderStats().deliveredCount})
+                </TabsTrigger>
+                <TabsTrigger value="cancelled" className="data-[state=active]:bg-red-100">
+                  Cancelled
+                </TabsTrigger>
+              </TabsList>
+
+              {['all', 'pending', 'confirmed', 'delivery', 'delivered', 'cancelled'].map((tab) => (
+                <TabsContent key={tab} value={tab} className="mt-0">
+                  <OrdersTable 
+                    orders={filteredOrders} 
+                    isLoading={isLoading} 
+                    onOrderUpdated={fetchOrders}
+                    onViewOrder={(id) => navigate(`/orders/${id}`)}
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
@@ -182,57 +225,36 @@ interface OrdersTableProps {
 const OrdersTable = ({ orders, isLoading, onOrderUpdated, onViewOrder }: OrdersTableProps) => {
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-center h-40">
-            <p className="text-muted-foreground">Loading orders...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-40">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      </div>
     );
   }
 
   if (orders.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center h-40 gap-2">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-            <p className="text-muted-foreground">No orders found</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-12">
+        <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📦</div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+        <p className="text-gray-500">No orders match your current filters.</p>
+      </div>
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING_CONFIRMATION':
-        return <Badge className="bg-amber-500">Pending Confirmation</Badge>;
-      case 'CONFIRMED':
-        return <Badge className="bg-blue-500">Confirmed</Badge>;
-      case 'OUT_FOR_DELIVERY':
-        return <Badge className="bg-purple-500">Out for Delivery</Badge>;
-      case 'DELIVERED':
-        return <Badge className="bg-green-500">Delivered</Badge>;
-      case 'CANCELLED':
-        return <Badge className="bg-red-500">Cancelled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-lg overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
-            <TableHead className="w-[100px]">Order #</TableHead>
-            <TableHead>Restaurant</TableHead>
-            <TableHead>Order Date</TableHead>
-            <TableHead>Total (Kyats)</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="font-semibold">Order Details</TableHead>
+            <TableHead className="font-semibold">Restaurant</TableHead>
+            <TableHead className="font-semibold">Order Date</TableHead>
+            <TableHead className="font-semibold">Amount</TableHead>
+            <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="text-right font-semibold">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -256,166 +278,59 @@ const OrderRow = ({ order, onOrderUpdated, onViewOrder }: {
   onViewOrder: (id: string) => void;
 }) => {
   const { updateOrderStatus } = useOrderStatusHistory(order.id);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING_CONFIRMATION':
-        return <Badge className="bg-amber-500">Pending Confirmation</Badge>;
-      case 'CONFIRMED':
-        return <Badge className="bg-blue-500">Confirmed</Badge>;
-      case 'OUT_FOR_DELIVERY':
-        return <Badge className="bg-purple-500">Out for Delivery</Badge>;
-      case 'DELIVERED':
-        return <Badge className="bg-green-500">Delivered</Badge>;
-      case 'CANCELLED':
-        return <Badge className="bg-red-500">Cancelled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  const getNextStatusOptions = (currentStatus: string) => {
-    switch (currentStatus) {
-      case 'PENDING_CONFIRMATION':
-        return [
-          { value: 'CONFIRMED', label: 'Confirm Order', icon: Check },
-          { value: 'CANCELLED', label: 'Cancel Order', icon: X }
-        ];
-      case 'CONFIRMED':
-        return [
-          { value: 'OUT_FOR_DELIVERY', label: 'Mark as Out for Delivery', icon: Truck },
-          { value: 'CANCELLED', label: 'Cancel Order', icon: X }
-        ];
-      case 'OUT_FOR_DELIVERY':
-        return [
-          { value: 'DELIVERED', label: 'Mark as Delivered', icon: Check },
-          { value: 'CONFIRMED', label: 'Return to Confirmed', icon: Package }
-        ];
-      case 'DELIVERED':
-        return [];
-      case 'CANCELLED':
-        return [
-          { value: 'PENDING_CONFIRMATION', label: 'Reactivate Order', icon: AlertCircle }
-        ];
-      default:
-        return [];
-    }
-  };
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
+    setIsUpdating(true);
     const success = await updateOrderStatus(newStatus, `Status changed to ${newStatus.replace('_', ' ')}`);
     if (success) {
       onOrderUpdated();
     }
+    setIsUpdating(false);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US').format(amount) + ' Kyats';
   };
 
   return (
-    <TableRow 
-      onClick={() => onViewOrder(order.id)}
-      className="cursor-pointer hover:bg-muted/50"
-    >
-      <TableCell className="font-medium">{order.order_number}</TableCell>
+    <TableRow className="hover:bg-gray-50">
       <TableCell>
-        {order.restaurant?.name}
-        {order.restaurant?.township && (
-          <span className="text-xs text-muted-foreground block">
-            {order.restaurant.township}
-          </span>
-        )}
+        <div>
+          <div className="font-medium text-blue-600">{order.order_number}</div>
+          {order.delivery_date_scheduled && (
+            <div className="text-sm text-gray-500">
+              Due: {formatDate(order.delivery_date_scheduled)}
+            </div>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div>
+          <div className="font-medium">{order.restaurant?.name || 'Unknown'}</div>
+          {order.restaurant?.township && (
+            <div className="text-sm text-gray-500">{order.restaurant.township}</div>
+          )}
+        </div>
       </TableCell>
       <TableCell>{formatDate(order.order_date)}</TableCell>
-      <TableCell>{order.total_amount_kyats?.toLocaleString() || 0}</TableCell>
-      <TableCell>{getStatusBadge(order.status)}</TableCell>
+      <TableCell>
+        <span className="font-semibold text-green-600">
+          {formatCurrency(order.total_amount_kyats || 0)}
+        </span>
+      </TableCell>
+      <TableCell>
+        <OrderStatusBadge status={order.status} />
+      </TableCell>
       <TableCell className="text-right">
-        <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end space-x-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <History className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Order Status History</DialogTitle>
-              </DialogHeader>
-              <OrderStatusHistoryDialog orderId={order.id} />
-            </DialogContent>
-          </Dialog>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                Actions
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewOrder(order.id)}>
-                <FileText className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {getNextStatusOptions(order.status).map((option) => {
-                const Icon = option.icon;
-                return (
-                  <DropdownMenuItem 
-                    key={option.value}
-                    onClick={() => handleStatusChange(option.value)}
-                  >
-                    <Icon className="mr-2 h-4 w-4" />
-                    {option.label}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <OrderActionButtons
+          status={order.status}
+          onStatusChange={handleStatusChange}
+          onViewOrder={() => onViewOrder(order.id)}
+          isUpdating={isUpdating}
+        />
       </TableCell>
     </TableRow>
-  );
-};
-
-const OrderStatusHistoryDialog = ({ orderId }: { orderId: string }) => {
-  const { statusHistory, isLoading } = useOrderStatusHistory(orderId);
-
-  if (isLoading) {
-    return <p className="text-muted-foreground">Loading status history...</p>;
-  }
-
-  if (statusHistory.length === 0) {
-    return <p className="text-muted-foreground">No status changes recorded yet.</p>;
-  }
-
-  return (
-    <div className="space-y-4 max-h-96 overflow-y-auto">
-      {statusHistory.map((entry) => (
-        <div key={entry.id} className="flex items-start space-x-3 pb-3 border-b last:border-b-0">
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {entry.old_status && (
-                  <Badge variant="outline" className="text-xs">
-                    {entry.old_status.replace('_', ' ')}
-                  </Badge>
-                )}
-                <span className="text-xs text-muted-foreground">→</span>
-                <Badge className="text-xs">
-                  {entry.new_status.replace('_', ' ')}
-                </Badge>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {formatDate(entry.changed_at)}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Changed by {entry.changed_by_user?.full_name || 'Unknown User'}
-            </p>
-            {entry.change_reason && (
-              <p className="text-sm mt-1">{entry.change_reason}</p>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
   );
 };
 

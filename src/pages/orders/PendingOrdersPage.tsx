@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -35,14 +36,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  Package, 
-  Check, 
-  X, 
+  AlertTriangle, 
+  CheckCircle, 
+  XCircle, 
   Eye, 
   Search,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Clock
 } from 'lucide-react';
+import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 
 interface PendingOrder {
   id: string;
@@ -220,7 +223,10 @@ const PendingOrdersPage = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Loading pending orders...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading pending orders...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -230,12 +236,21 @@ const PendingOrdersPage = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Package className="h-6 w-6 text-amber-500" />
-            <h1 className="text-2xl font-bold tracking-tight">Pending Orders</h1>
-            <Badge variant="outline" className="ml-2">
-              {filteredOrders.length} orders
-            </Badge>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <AlertTriangle className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Orders Awaiting Approval</h1>
+              <p className="text-muted-foreground">
+                Review and approve orders to process them for delivery
+              </p>
+            </div>
+            {filteredOrders.length > 0 && (
+              <Badge variant="outline" className="ml-4 bg-amber-50 text-amber-700 border-amber-200">
+                {filteredOrders.length} orders pending
+              </Badge>
+            )}
           </div>
           <Button onClick={fetchPendingOrders} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -244,125 +259,139 @@ const PendingOrdersPage = () => {
         </div>
 
         {!canApprove && (
-          <Card className="border-amber-200 bg-amber-50">
+          <Card className="border-2 border-amber-200 bg-amber-50">
             <CardContent className="pt-6">
-              <p className="text-amber-800">
-                You need manager or admin permissions to approve/reject orders. 
-                You can view pending orders but cannot take action on them.
-              </p>
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <p className="text-amber-800 font-medium">
+                  You need manager or admin permissions to approve/reject orders. 
+                  You can view pending orders but cannot take action on them.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        <Card>
+        <Card className="border-2">
           <CardHeader>
-            <CardTitle>Filter Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-amber-600" />
+                Pending Orders Review
+              </CardTitle>
+              <div className="flex gap-3">
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by order number or restaurant name..."
+                    placeholder="Search orders..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
+                    className="pl-9 w-64"
                   />
                 </div>
+                <Select value={townshipFilter} onValueChange={setTownshipFilter}>
+                  <SelectTrigger className="w-48">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by township" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Townships</SelectItem>
+                    {getTownships().map((township) => (
+                      <SelectItem key={township} value={township}>
+                        {township}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={townshipFilter} onValueChange={setTownshipFilter}>
-                <SelectTrigger className="w-48">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by township" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Townships</SelectItem>
-                  {getTownships().map((township) => (
-                    <SelectItem key={township} value={township}>
-                      {township}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Orders Awaiting Approval</CardTitle>
           </CardHeader>
           <CardContent>
             {filteredOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-lg font-medium text-muted-foreground">No pending orders found</p>
-                <p className="text-sm text-muted-foreground">
+              <div className="text-center py-12">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">All caught up!</h3>
+                <p className="text-gray-500 mb-4">
                   {orders.length === 0 
-                    ? "All orders have been processed" 
-                    : "Try adjusting your filters"}
+                    ? "No orders are waiting for approval" 
+                    : "All orders matching your filters have been processed"}
                 </p>
+                <Button variant="outline" onClick={fetchPendingOrders}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Check for new orders
+                </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Restaurant</TableHead>
-                    <TableHead>Township</TableHead>
-                    <TableHead>Order Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">
-                        {order.order_number}
-                      </TableCell>
-                      <TableCell>{order.restaurant.name}</TableCell>
-                      <TableCell>{order.restaurant.township || 'N/A'}</TableCell>
-                      <TableCell>{formatDate(order.order_date)}</TableCell>
-                      <TableCell>{order.total_amount_kyats.toLocaleString()} Kyats</TableCell>
-                      <TableCell>{order.created_by_user?.full_name || 'Unknown'}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/orders/${order.id}`}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Link>
-                          </Button>
-                          {canApprove && (
-                            <>
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleApprove(order)}
-                                disabled={isUpdating}
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => handleReject(order)}
-                                disabled={isUpdating}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-amber-50">
+                    <TableRow>
+                      <TableHead className="font-semibold">Order Details</TableHead>
+                      <TableHead className="font-semibold">Restaurant</TableHead>
+                      <TableHead className="font-semibold">Township</TableHead>
+                      <TableHead className="font-semibold">Order Date</TableHead>
+                      <TableHead className="font-semibold">Amount</TableHead>
+                      <TableHead className="font-semibold">Created By</TableHead>
+                      <TableHead className="text-right font-semibold">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-amber-50/50">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <OrderStatusBadge status={order.status} size="sm" />
+                            <span className="font-medium text-blue-600">{order.order_number}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{order.restaurant.name}</TableCell>
+                        <TableCell>{order.restaurant.township || 'N/A'}</TableCell>
+                        <TableCell>{formatDate(order.order_date)}</TableCell>
+                        <TableCell>
+                          <span className="font-semibold text-green-600">
+                            {order.total_amount_kyats.toLocaleString()} Kyats
+                          </span>
+                        </TableCell>
+                        <TableCell>{order.created_by_user?.full_name || 'Unknown'}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button variant="outline" size="sm" asChild>
+                              <Link to={`/orders/${order.id}`}>
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Link>
+                            </Button>
+                            {canApprove && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleApprove(order)}
+                                  disabled={isUpdating}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => handleReject(order)}
+                                  disabled={isUpdating}
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
