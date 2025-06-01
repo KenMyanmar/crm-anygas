@@ -197,7 +197,9 @@ const SimpleOrderRow = ({ order, onOrderUpdated }: {
     <TableRow className="hover:bg-gray-50">
       <TableCell>
         <div>
-          <div className="font-medium text-blue-600">{order.order_number}</div>
+          <Link to={`/orders/${order.id}`} className="font-medium text-blue-600 hover:text-blue-800">
+            {order.order_number}
+          </Link>
           {order.delivery_date_scheduled && (
             <div className="text-sm text-gray-500">
               Due: {formatDate(order.delivery_date_scheduled)}

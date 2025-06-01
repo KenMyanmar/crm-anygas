@@ -12,6 +12,16 @@ export interface OrderStatusHistory {
   };
 }
 
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price_kyats: number;
+  sub_total_kyats: number;
+  created_at: string;
+}
+
 export interface Order {
   id: string;
   order_number: string;
@@ -30,7 +40,10 @@ export interface Order {
     id: string;
     name: string;
     township?: string;
+    contact_person?: string;
+    phone?: string;
   };
+  order_items?: OrderItem[];
   status_history?: OrderStatusHistory[];
 }
 
