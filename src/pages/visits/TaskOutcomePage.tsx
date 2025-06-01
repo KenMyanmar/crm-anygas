@@ -18,35 +18,118 @@ const TaskOutcomePage = () => {
   const navigate = useNavigate();
   const [task, setTask] = useState<VisitTask | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { recordTaskOutcome, isSubmitting } = useTaskOutcomes();
 
   useEffect(() => {
+    console.log('TaskOutcomePage mounted with taskId:', taskId);
     if (taskId) {
       fetchTask();
+    } else {
+      console.error('No taskId provided');
+      setError('No task ID provided');
+      setIsLoading(false);
     }
   }, [taskId]);
 
   const fetchTask = async () => {
+    if (!taskId) {
+      console.error('fetchTask called without taskId');
+      setError('No task ID provided');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      console.log('Fetching task with ID:', taskId);
+      setIsLoading(true);
+      setError(null);
+
+      // First try the detailed view
+      const { data: detailedData, error: detailedError } = await supabase
         .from('visit_tasks_detailed')
         .select('*')
         .eq('id', taskId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        throw error;
+      console.log('Detailed view query result:', { detailedData, detailedError });
+
+      if (detailedError) {
+        console.error('Error from detailed view:', detailedError);
+        
+        // Fallback to basic visit_tasks table with join
+        console.log('Falling back to basic visit_tasks table');
+        const { data: basicData, error: basicError } = await supabase
+          .from('visit_tasks')
+          .select(`
+            *,
+            restaurant:restaurants(
+              id,
+              name,
+              township,
+              address,
+              contact_person,
+              phone
+            )
+          `)
+          .eq('id', taskId)
+          .maybeSingle();
+
+        console.log('Basic query result:', { basicData, basicError });
+
+        if (basicError) {
+          console.error('Error from basic query:', basicError);
+          throw new Error(`Failed to fetch task: ${basicError.message}`);
+        }
+
+        if (!basicData) {
+          console.error('Task not found in basic query');
+          throw new Error('Task not found');
+        }
+
+        setTask(basicData);
+      } else {
+        if (!detailedData) {
+          console.error('Task not found in detailed view');
+          throw new Error('Task not found');
+        }
+        
+        // Transform detailed view data to match VisitTask interface
+        const transformedTask = {
+          id: detailedData.id,
+          plan_id: detailedData.plan_id,
+          restaurant_id: detailedData.restaurant_id,
+          salesperson_uid: detailedData.salesperson_uid,
+          status: detailedData.status,
+          visit_time: detailedData.visit_time,
+          notes: detailedData.notes,
+          visit_sequence: detailedData.visit_sequence,
+          estimated_duration_minutes: detailedData.estimated_duration_minutes,
+          priority_level: detailedData.priority_level,
+          created_at: detailedData.created_at,
+          updated_at: detailedData.updated_at,
+          restaurant: {
+            id: detailedData.restaurant_id,
+            name: detailedData.restaurant_name,
+            township: detailedData.township,
+            contact_person: detailedData.contact_person,
+            phone: detailedData.phone,
+            address: detailedData.address
+          }
+        };
+        
+        console.log('Transformed task data:', transformedTask);
+        setTask(transformedTask);
       }
-
-      setTask(data);
     } catch (error: any) {
-      console.error('Error fetching task:', error);
+      console.error('Error in fetchTask:', error);
+      const errorMessage = error.message || 'Failed to load visit task';
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to load visit task",
+        description: errorMessage,
         variant: "destructive",
       });
-      navigate('/visits');
     } finally {
       setIsLoading(false);
     }
@@ -73,23 +156,34 @@ const TaskOutcomePage = () => {
       <DashboardLayout>
         <PageContainer>
           <div className="flex items-center justify-center h-40">
-            <p className="text-muted-foreground">Loading task details...</p>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading task details...</p>
+              <p className="text-sm text-gray-500 mt-2">Task ID: {taskId}</p>
+            </div>
           </div>
         </PageContainer>
       </DashboardLayout>
     );
   }
 
-  if (!task) {
+  if (error || !task) {
     return (
       <DashboardLayout>
         <PageContainer>
           <div className="text-center">
-            <p className="text-muted-foreground">Task not found</p>
-            <Button onClick={() => navigate('/visits')} className="mt-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Visits
-            </Button>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Task</h3>
+            <p className="text-muted-foreground mb-4">{error || 'Task not found'}</p>
+            <p className="text-sm text-gray-500 mb-4">Task ID: {taskId}</p>
+            <div className="space-x-2">
+              <Button onClick={() => navigate('/visits')} className="mr-2">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Visits
+              </Button>
+              <Button variant="outline" onClick={fetchTask}>
+                Try Again
+              </Button>
+            </div>
           </div>
         </PageContainer>
       </DashboardLayout>
@@ -117,7 +211,7 @@ const TaskOutcomePage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-medium">{task.restaurant?.name}</h3>
+                  <h3 className="font-medium">{task.restaurant?.name || 'Unknown Restaurant'}</h3>
                   {task.restaurant?.township && (
                     <div className="flex items-center text-sm text-muted-foreground mt-1">
                       <MapPin className="h-4 w-4 mr-1" />
