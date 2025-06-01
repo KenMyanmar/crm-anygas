@@ -14,7 +14,7 @@ import { ArrowLeft, MapPin, User, Phone, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const TaskOutcomePage = () => {
-  const { taskId } = useParams<{ taskId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [task, setTask] = useState<VisitTask | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,26 +22,26 @@ const TaskOutcomePage = () => {
   const { recordTaskOutcome, isSubmitting } = useTaskOutcomes();
 
   useEffect(() => {
-    console.log('TaskOutcomePage mounted with taskId:', taskId);
-    if (taskId) {
+    console.log('TaskOutcomePage mounted with id:', id);
+    if (id) {
       fetchTask();
     } else {
-      console.error('No taskId provided');
+      console.error('No id provided');
       setError('No task ID provided');
       setIsLoading(false);
     }
-  }, [taskId]);
+  }, [id]);
 
   const fetchTask = async () => {
-    if (!taskId) {
-      console.error('fetchTask called without taskId');
+    if (!id) {
+      console.error('fetchTask called without id');
       setError('No task ID provided');
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching task with ID:', taskId);
+      console.log('Fetching task with ID:', id);
       setIsLoading(true);
       setError(null);
 
@@ -49,7 +49,7 @@ const TaskOutcomePage = () => {
       const { data: detailedData, error: detailedError } = await supabase
         .from('visit_tasks_detailed')
         .select('*')
-        .eq('id', taskId)
+        .eq('id', id)
         .maybeSingle();
 
       console.log('Detailed view query result:', { detailedData, detailedError });
@@ -72,7 +72,7 @@ const TaskOutcomePage = () => {
               phone
             )
           `)
-          .eq('id', taskId)
+          .eq('id', id)
           .maybeSingle();
 
         console.log('Basic query result:', { basicData, basicError });
@@ -136,9 +136,9 @@ const TaskOutcomePage = () => {
   };
 
   const handleSubmitOutcome = async (outcomeData: any) => {
-    if (!taskId) return;
+    if (!id) return;
     
-    const result = await recordTaskOutcome(taskId, outcomeData);
+    const result = await recordTaskOutcome(id, outcomeData);
     
     if (result.success) {
       // Navigate back to visit plan or visits page
@@ -159,7 +159,7 @@ const TaskOutcomePage = () => {
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading task details...</p>
-              <p className="text-sm text-gray-500 mt-2">Task ID: {taskId}</p>
+              <p className="text-sm text-gray-500 mt-2">Task ID: {id}</p>
             </div>
           </div>
         </PageContainer>
@@ -174,7 +174,7 @@ const TaskOutcomePage = () => {
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Task</h3>
             <p className="text-muted-foreground mb-4">{error || 'Task not found'}</p>
-            <p className="text-sm text-gray-500 mb-4">Task ID: {taskId}</p>
+            <p className="text-sm text-gray-500 mb-4">Task ID: {id}</p>
             <div className="space-x-2">
               <Button onClick={() => navigate('/visits')} className="mr-2">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -254,7 +254,7 @@ const TaskOutcomePage = () => {
             </Card>
 
             {/* Comments Section */}
-            <VisitCommentsSection visitTaskId={taskId!} />
+            <VisitCommentsSection visitTaskId={id!} />
           </div>
 
           {/* Right Column - Outcome Form */}
