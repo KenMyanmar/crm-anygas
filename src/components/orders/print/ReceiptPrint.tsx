@@ -2,6 +2,7 @@ import React from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
 import { formatDate } from '@/lib/supabase';
+import { getCompanyLogoUrl } from '@/utils/logoUpload';
 
 interface ReceiptPrintProps {
   order: DeliveredOrder;
@@ -11,6 +12,8 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US').format(amount);
   };
+
+  const logoUrl = getCompanyLogoUrl();
 
   return (
     <PrintLayout title="PAYMENT RECEIPT" className="receipt">
@@ -129,7 +132,7 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
       `}</style>
 
       <div className="receipt-header">
-        <img src="/anygas-logo.png" alt="ANY GAS Logo" className="receipt-logo" />
+        <img src={logoUrl} alt="ANY GAS Logo" className="receipt-logo" />
         <div className="receipt-header-text">
           <div className="receipt-title">ANY GAS</div>
           <div className="receipt-subtitle">Payment Receipt</div>

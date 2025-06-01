@@ -2,6 +2,7 @@ import React from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
 import { formatDate } from '@/lib/supabase';
+import { getCompanyLogoUrl } from '@/utils/logoUpload';
 
 interface InvoicePrintProps {
   order: DeliveredOrder;
@@ -20,6 +21,7 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
   const subtotal = order.total_amount_kyats;
   const tax = calculateTax(subtotal);
   const total = subtotal + tax;
+  const logoUrl = getCompanyLogoUrl();
 
   return (
     <PrintLayout title="INVOICE" className="invoice">
@@ -158,7 +160,7 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
 
       <div className="invoice-header">
         <div className="invoice-company">
-          <img src="/anygas-logo.png" alt="ANY GAS Logo" className="invoice-logo" />
+          <img src={logoUrl} alt="ANY GAS Logo" className="invoice-logo" />
           <div className="invoice-company-text">
             <div className="invoice-company-name">ANY GAS</div>
             <div className="invoice-company-details">
