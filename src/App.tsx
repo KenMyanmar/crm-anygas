@@ -51,7 +51,6 @@ import OrdersPage from '@/pages/orders/OrdersPage';
 import NewOrderPage from '@/pages/orders/NewOrderPage';
 import OrderDetailPage from '@/pages/orders/OrderDetailPage';
 import PendingOrdersPage from '@/pages/orders/PendingOrdersPage';
-import ApprovedOrdersPage from '@/pages/orders/ApprovedOrdersPage';
 import DeliveredOrdersPage from '@/pages/orders/DeliveredOrdersPage';
 
 // Report pages
@@ -112,11 +111,11 @@ function App() {
                 <Route path="/visits/plan/:id" element={<ProtectedRoute><VisitPlanDetailPage /></ProtectedRoute>} />
                 <Route path="/visits/task/:id/outcome" element={<ProtectedRoute><TaskOutcomePage /></ProtectedRoute>} />
 
-                {/* Order routes - Fixed routing */}
+                {/* Order routes - Fixed to use the main OrdersPage with tabs */}
                 <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
                 <Route path="/orders/new" element={<ProtectedRoute><NewOrderPage /></ProtectedRoute>} />
                 <Route path="/orders/pending" element={<ProtectedRoute><PendingOrdersPage /></ProtectedRoute>} />
-                <Route path="/orders/approved" element={<ProtectedRoute><ApprovedOrdersPage /></ProtectedRoute>} />
+                <Route path="/orders/process" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
                 <Route path="/orders/delivered" element={<ProtectedRoute><DeliveredOrdersPage /></ProtectedRoute>} />
                 <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
 

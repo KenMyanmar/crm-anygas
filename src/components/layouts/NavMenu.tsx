@@ -1,4 +1,3 @@
-
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -154,7 +153,7 @@ const NavMenu: FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <MenuLink to="/orders/pending" icon={Clock} label="Pending Orders" />
-              <MenuLink to="/orders/approved" icon={CheckCircle} label="In Process" />
+              <MenuLink to="/orders/process" icon={CheckCircle} label="In Process" />
               <MenuLink to="/orders/delivered" icon={Truck} label="Delivered Orders" />
             </SidebarMenu>
           </SidebarGroupContent>

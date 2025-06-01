@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Order } from '@/types/orders';
@@ -33,9 +32,18 @@ import OrderActionButtons from '@/components/orders/OrderActionButtons';
 
 const OrdersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
+  
+  // Determine initial tab based on route
+  const getInitialTab = () => {
+    if (location.pathname.includes('/process')) return 'process';
+    if (location.pathname.includes('/delivered')) return 'delivered';
+    return 'pending';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [searchTerm, setSearchTerm] = useState('');
   const [townshipFilter, setTownshipFilter] = useState('all');
   
@@ -47,7 +55,7 @@ const OrdersPage = () => {
 
   const setupRealtimeSubscription = () => {
     const channel = supabase
-      .channel('orders-changes')
+      .channel('orders-main-page')
       .on(
         'postgres_changes',
         {
@@ -57,7 +65,7 @@ const OrdersPage = () => {
         },
         (payload) => {
           console.log('Order updated in main page:', payload);
-          // Refresh orders when any order changes
+          // Immediately refresh orders when any order changes
           fetchOrders();
           
           if (payload.eventType === 'UPDATE') {
@@ -136,30 +144,6 @@ const OrdersPage = () => {
   });
 
   const getOrderStats = () => {
-    // Get all orders regardless of current tab for stats
-    const fetchAllOrdersForStats = async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('status, total_amount_kyats');
-      
-      if (data) {
-        return {
-          pendingCount: data.filter(o => o.status === 'PENDING_CONFIRMATION').length,
-          confirmedCount: data.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
-          deliveredCount: data.filter(o => o.status === 'DELIVERED').length,
-          totalRevenue: data.reduce((sum, o) => sum + (o.total_amount_kyats || 0), 0)
-        };
-      }
-      
-      return {
-        pendingCount: 0,
-        confirmedCount: 0,
-        deliveredCount: 0,
-        totalRevenue: 0
-      };
-    };
-
-    // For now, use current orders (will be updated by real-time)
     return {
       pendingCount: orders.filter(o => o.status === 'PENDING_CONFIRMATION').length,
       confirmedCount: orders.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
@@ -361,10 +345,8 @@ const OrderRow = ({ order, onOrderUpdated, onViewOrder }: {
     
     const success = await updateOrderStatus(newStatus, `Status changed to ${newStatus.replace('_', ' ')}`);
     if (success) {
-      // Give a small delay to ensure the real-time update has processed
-      setTimeout(() => {
-        onOrderUpdated();
-      }, 500);
+      // Immediately refresh to reflect changes
+      onOrderUpdated();
     }
     setIsUpdating(false);
   };

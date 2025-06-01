@@ -46,7 +46,7 @@ export const useOrderStatusHistory = (orderId: string) => {
 
       console.log(`Updating order ${orderId} to status: ${newStatus}`);
 
-      // First, get the current order to check current status
+      // Get the current order to check current status
       const { data: currentOrder, error: fetchError } = await supabase
         .from('orders')
         .select('status')
@@ -59,12 +59,11 @@ export const useOrderStatusHistory = (orderId: string) => {
 
       console.log(`Current status: ${currentOrder.status}, New status: ${newStatus}`);
 
-      // Update the order status
+      // Update the order status - the trigger will automatically create the history entry
       const { error } = await supabase
         .from('orders')
         .update({
           status: newStatus,
-          notes: reason,
           updated_at: new Date().toISOString(),
         })
         .eq('id', orderId);
@@ -75,9 +74,12 @@ export const useOrderStatusHistory = (orderId: string) => {
 
       console.log(`Successfully updated order ${orderId} to ${newStatus}`);
 
+      // Format status text for display
+      const statusText = newStatus.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+      
       toast({
         title: "Success",
-        description: `Order status updated to ${newStatus.replace('_', ' ').toLowerCase()}`,
+        description: `Order status updated to ${statusText}`,
       });
 
       // Refresh status history
