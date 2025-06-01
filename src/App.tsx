@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -21,6 +20,10 @@ import LeadsPage from './pages/leads/LeadsPage';
 import AssignedLeadsPage from './pages/leads/AssignedLeadsPage';
 import NewLeadPage from './pages/leads/NewLeadPage';
 import MeetingsPage from './pages/leads/MeetingsPage';
+import NewMeetingPage from './pages/leads/NewMeetingPage';
+import MeetingDetailPage from './pages/leads/MeetingDetailPage';
+import NewCallPage from './pages/leads/NewCallPage';
+import CallDetailPage from './pages/leads/CallDetailPage';
 
 // Visits pages
 import VisitPlannerPage from './pages/visits/VisitPlannerPage';
@@ -114,6 +117,30 @@ function App() {
             <Route path="/leads/meetings" element={
               <AuthWrapper>
                 <MeetingsPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/leads/meetings/new" element={
+              <AuthWrapper>
+                <NewMeetingPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/leads/meetings/:id" element={
+              <AuthWrapper>
+                <MeetingDetailPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/leads/calls/new" element={
+              <AuthWrapper>
+                <NewCallPage />
+              </AuthWrapper>
+            } />
+            
+            <Route path="/leads/calls/:id" element={
+              <AuthWrapper>
+                <CallDetailPage />
               </AuthWrapper>
             } />
 
