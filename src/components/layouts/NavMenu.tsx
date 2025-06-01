@@ -153,7 +153,7 @@ const NavMenu: FC = () => {
         {ordersGroupOpen && (
           <SidebarGroupContent>
             <SidebarMenu>
-              <MenuLink to="/orders" icon={Clock} label="Pending Orders" />
+              <MenuLink to="/orders/pending" icon={Clock} label="Pending Orders" />
               <MenuLink to="/orders/approved" icon={CheckCircle} label="In Process" />
               <MenuLink to="/orders/delivered" icon={Truck} label="Delivered Orders" />
             </SidebarMenu>

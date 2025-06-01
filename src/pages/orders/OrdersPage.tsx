@@ -41,7 +41,8 @@ const OrdersPage = () => {
   
   useEffect(() => {
     fetchOrders();
-    setupRealtimeSubscription();
+    const cleanup = setupRealtimeSubscription();
+    return cleanup;
   }, [activeTab]);
 
   const setupRealtimeSubscription = () => {
@@ -55,13 +56,15 @@ const OrdersPage = () => {
           table: 'orders'
         },
         (payload) => {
-          console.log('Order updated:', payload);
+          console.log('Order updated in main page:', payload);
+          // Refresh orders when any order changes
           fetchOrders();
           
           if (payload.eventType === 'UPDATE') {
+            const newStatus = payload.new?.status?.replace('_', ' ') || 'unknown';
             toast({
               title: "Order Updated",
-              description: `Order ${payload.new.order_number} status changed to ${payload.new.status.replace('_', ' ')}`,
+              description: `Order ${payload.new?.order_number || 'unknown'} status changed to ${newStatus}`,
             });
           }
         }
@@ -84,7 +87,8 @@ const OrdersPage = () => {
         `)
         .order('created_at', { ascending: false });
 
-      let statusFilter;
+      // Filter by tab status
+      let statusFilter: string[] = [];
       switch (activeTab) {
         case 'pending':
           statusFilter = ['PENDING_CONFIRMATION'];
@@ -95,8 +99,14 @@ const OrdersPage = () => {
         case 'delivered':
           statusFilter = ['DELIVERED'];
           break;
+        default:
+          // Show all orders if no specific tab
+          break;
       }
-      query = query.in('status', statusFilter);
+      
+      if (statusFilter.length > 0) {
+        query = query.in('status', statusFilter);
+      }
 
       const { data, error } = await query;
 
@@ -104,6 +114,7 @@ const OrdersPage = () => {
         throw error;
       }
 
+      console.log(`Fetched ${data?.length || 0} orders for tab: ${activeTab}`);
       setOrders(data || []);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
@@ -125,6 +136,30 @@ const OrdersPage = () => {
   });
 
   const getOrderStats = () => {
+    // Get all orders regardless of current tab for stats
+    const fetchAllOrdersForStats = async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('status, total_amount_kyats');
+      
+      if (data) {
+        return {
+          pendingCount: data.filter(o => o.status === 'PENDING_CONFIRMATION').length,
+          confirmedCount: data.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
+          deliveredCount: data.filter(o => o.status === 'DELIVERED').length,
+          totalRevenue: data.reduce((sum, o) => sum + (o.total_amount_kyats || 0), 0)
+        };
+      }
+      
+      return {
+        pendingCount: 0,
+        confirmedCount: 0,
+        deliveredCount: 0,
+        totalRevenue: 0
+      };
+    };
+
+    // For now, use current orders (will be updated by real-time)
     return {
       pendingCount: orders.filter(o => o.status === 'PENDING_CONFIRMATION').length,
       confirmedCount: orders.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
@@ -229,6 +264,7 @@ const OrdersPage = () => {
                     isLoading={isLoading} 
                     onOrderUpdated={fetchOrders}
                     onViewOrder={(id) => navigate(`/orders/${id}`)}
+                    currentTab={tab}
                   />
                 </TabsContent>
               ))}
@@ -245,9 +281,10 @@ interface OrdersTableProps {
   isLoading: boolean;
   onOrderUpdated: () => void;
   onViewOrder: (id: string) => void;
+  currentTab: string;
 }
 
-const OrdersTable = ({ orders, isLoading, onOrderUpdated, onViewOrder }: OrdersTableProps) => {
+const OrdersTable = ({ orders, isLoading, onOrderUpdated, onViewOrder, currentTab }: OrdersTableProps) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-40">
@@ -260,11 +297,24 @@ const OrdersTable = ({ orders, isLoading, onOrderUpdated, onViewOrder }: OrdersT
   }
 
   if (orders.length === 0) {
+    const getEmptyMessage = () => {
+      switch (currentTab) {
+        case 'pending':
+          return 'No orders are waiting for approval';
+        case 'process':
+          return 'No orders are currently in process';
+        case 'delivered':
+          return 'No orders have been delivered yet';
+        default:
+          return 'No orders found';
+      }
+    };
+
     return (
       <div className="text-center py-12">
         <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📦</div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-        <p className="text-gray-500">No orders match your current filters.</p>
+        <p className="text-gray-500">{getEmptyMessage()}</p>
       </div>
     );
   }
@@ -307,9 +357,14 @@ const OrderRow = ({ order, onOrderUpdated, onViewOrder }: {
 
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true);
+    console.log(`Updating order ${order.id} status from ${order.status} to ${newStatus}`);
+    
     const success = await updateOrderStatus(newStatus, `Status changed to ${newStatus.replace('_', ' ')}`);
     if (success) {
-      onOrderUpdated();
+      // Give a small delay to ensure the real-time update has processed
+      setTimeout(() => {
+        onOrderUpdated();
+      }, 500);
     }
     setIsUpdating(false);
   };

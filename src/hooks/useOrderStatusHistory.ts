@@ -44,6 +44,22 @@ export const useOrderStatusHistory = (orderId: string) => {
         throw new Error(`Invalid status: ${newStatus}`);
       }
 
+      console.log(`Updating order ${orderId} to status: ${newStatus}`);
+
+      // First, get the current order to check current status
+      const { data: currentOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', orderId)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      console.log(`Current status: ${currentOrder.status}, New status: ${newStatus}`);
+
+      // Update the order status
       const { error } = await supabase
         .from('orders')
         .update({
@@ -56,6 +72,8 @@ export const useOrderStatusHistory = (orderId: string) => {
       if (error) {
         throw error;
       }
+
+      console.log(`Successfully updated order ${orderId} to ${newStatus}`);
 
       toast({
         title: "Success",
@@ -70,7 +88,7 @@ export const useOrderStatusHistory = (orderId: string) => {
       console.error('Error updating order status:', error);
       toast({
         title: "Error",
-        description: "Failed to update order status",
+        description: `Failed to update order status: ${error.message}`,
         variant: "destructive",
       });
       return false;

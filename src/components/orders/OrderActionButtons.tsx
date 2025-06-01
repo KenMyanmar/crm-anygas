@@ -7,7 +7,8 @@ import {
   Package, 
   AlertTriangle, 
   RotateCcw,
-  Eye 
+  Eye,
+  Clock
 } from 'lucide-react';
 
 interface OrderActionButtonsProps {
@@ -54,6 +55,13 @@ const OrderActionButtons = ({
             className: 'bg-purple-600 hover:bg-purple-700 text-white'
           },
           {
+            label: 'Mark Delivered',
+            action: () => onStatusChange('DELIVERED'),
+            icon: Package,
+            variant: 'default' as const,
+            className: 'bg-green-600 hover:bg-green-700 text-white'
+          },
+          {
             label: 'Cancel',
             action: () => onStatusChange('CANCELLED'),
             icon: XCircle,
@@ -89,7 +97,15 @@ const OrderActionButtons = ({
           }
         ];
       case 'DELIVERED':
-        return [];
+        return [
+          {
+            label: 'Reopen',
+            action: () => onStatusChange('CONFIRMED'),
+            icon: Clock,
+            variant: 'outline' as const,
+            className: 'text-blue-600 border-blue-200 hover:bg-blue-50'
+          }
+        ];
       default:
         return [];
     }

@@ -1,287 +1,147 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import AuthWrapper from './components/AuthWrapper';
+import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider } from 'next-themes';
+import AuthWrapper from '@/components/AuthWrapper';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-// Auth pages (no auth required)
-import Login from './pages/Login';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-
-// Protected pages
-import Dashboard from './pages/Dashboard';
-import ProfilePage from './pages/ProfilePage';
-import NotFound from './pages/NotFound';
-import Notifications from './pages/Notifications';
-import SettingsPage from './pages/SettingsPage';
-
-// Leads pages
-import LeadsPage from './pages/leads/LeadsPage';
-import AssignedLeadsPage from './pages/leads/AssignedLeadsPage';
-import NewLeadPage from './pages/leads/NewLeadPage';
-import MeetingsPage from './pages/leads/MeetingsPage';
-import NewMeetingPage from './pages/leads/NewMeetingPage';
-import MeetingDetailPage from './pages/leads/MeetingDetailPage';
-import NewCallPage from './pages/leads/NewCallPage';
-import CallDetailPage from './pages/leads/CallDetailPage';
-
-// Visits pages
-import VisitPlannerPage from './pages/visits/VisitPlannerPage';
-import VisitPlanDetailPage from './pages/visits/VisitPlanDetailPage';
-import TaskOutcomePage from './pages/visits/TaskOutcomePage';
+// Page imports
+import Login from '@/pages/Login';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import SetNewPassword from '@/pages/SetNewPassword';
+import Dashboard from '@/pages/Dashboard';
+import NotFound from '@/pages/NotFound';
+import ProfilePage from '@/pages/ProfilePage';
+import Notifications from '@/pages/Notifications';
 
 // Admin pages
-import UsersPage from './pages/admin/UsersPage';
-import ProductsPage from './pages/admin/ProductsPage';
-import ImportPage from './pages/admin/ImportPage';
-import AdminSettingsPage from './pages/admin/SettingsPage';
-import RestaurantManagementPage from './pages/admin/RestaurantManagementPage';
+import UsersPage from '@/pages/admin/UsersPage';
+import ProductsPage from '@/pages/admin/ProductsPage';
+import ImportPage from '@/pages/admin/ImportPage';
+import RestaurantManagementPage from '@/pages/admin/RestaurantManagementPage';
+import RestaurantMigrationPage from '@/pages/admin/RestaurantMigrationPage';
+import SettingsPage from '@/pages/admin/SettingsPage';
 
-// Orders pages
-import OrdersPage from './pages/orders/OrdersPage';
-import PendingOrdersPage from './pages/orders/PendingOrdersPage';
-import DeliveredOrdersPage from './pages/orders/DeliveredOrdersPage';
-import NewOrderPage from './pages/orders/NewOrderPage';
-import OrderDetailPage from './pages/orders/OrderDetailPage';
+// Restaurant pages
+import RestaurantsPage from '@/pages/placeholder/RestaurantsPage';
+import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
+import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
+import RestaurantEditPage from '@/pages/RestaurantEditPage';
 
-// Restaurants pages
-import NewRestaurantPage from './pages/restaurants/NewRestaurantPage';
-import RestaurantDetailPage from './pages/RestaurantDetailPage';
-import RestaurantEditPage from './pages/RestaurantEditPage';
+// Lead pages
+import LeadsPage from '@/pages/leads/LeadsPage';
+import AssignedLeadsPage from '@/pages/leads/AssignedLeadsPage';
+import MeetingsPage from '@/pages/leads/MeetingsPage';
+import NewLeadPage from '@/pages/leads/NewLeadPage';
+import NewCallPage from '@/pages/leads/NewCallPage';
+import NewMeetingPage from '@/pages/leads/NewMeetingPage';
+import CallDetailPage from '@/pages/leads/CallDetailPage';
+import MeetingDetailPage from '@/pages/leads/MeetingDetailPage';
 
-// Reports pages
-import LeadReportsPage from './pages/reports/LeadReportsPage';
-import PerformancePage from './pages/reports/PerformancePage';
+// Visit pages
+import VisitPlannerPage from '@/pages/visits/VisitPlannerPage';
+import VisitPlanDetailPage from '@/pages/visits/VisitPlanDetailPage';
+import TaskOutcomePage from '@/pages/visits/TaskOutcomePage';
 
-// Placeholder pages
-import RestaurantsPage from './pages/placeholder/RestaurantsPage';
-import ReportsPage from './pages/placeholder/ReportsPage';
+// Order pages
+import OrdersPage from '@/pages/orders/OrdersPage';
+import NewOrderPage from '@/pages/orders/NewOrderPage';
+import OrderDetailPage from '@/pages/orders/OrderDetailPage';
+import PendingOrdersPage from '@/pages/orders/PendingOrdersPage';
+import ApprovedOrdersPage from '@/pages/orders/ApprovedOrdersPage';
+import DeliveredOrdersPage from '@/pages/orders/DeliveredOrdersPage';
+
+// Report pages
+import ReportsPage from '@/pages/placeholder/ReportsPage';
+import LeadReportsPage from '@/pages/reports/LeadReportsPage';
+import PerformancePage from '@/pages/reports/PerformancePage';
 
 import './App.css';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            {/* Public routes - no auth required */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <Router>
+          <AuthProvider>
+            <AuthWrapper>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/set-new-password" element={<SetNewPassword />} />
 
-            {/* Protected routes */}
-            <Route path="/" element={
-              <AuthWrapper>
-                <Dashboard />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/profile" element={
-              <AuthWrapper>
-                <ProfilePage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/notifications" element={
-              <AuthWrapper>
-                <Notifications />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/settings" element={
-              <AuthWrapper>
-                <SettingsPage />
-              </AuthWrapper>
-            } />
+                {/* Protected routes */}
+                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
-            {/* Leads routes */}
-            <Route path="/leads" element={
-              <AuthWrapper>
-                <LeadsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/assigned" element={
-              <AuthWrapper>
-                <AssignedLeadsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/new" element={
-              <AuthWrapper>
-                <NewLeadPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/meetings" element={
-              <AuthWrapper>
-                <MeetingsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/meetings/new" element={
-              <AuthWrapper>
-                <NewMeetingPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/meetings/:id" element={
-              <AuthWrapper>
-                <MeetingDetailPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/calls/new" element={
-              <AuthWrapper>
-                <NewCallPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/leads/calls/:id" element={
-              <AuthWrapper>
-                <CallDetailPage />
-              </AuthWrapper>
-            } />
+                {/* Restaurant routes */}
+                <Route path="/restaurants" element={<ProtectedRoute><RestaurantsPage /></ProtectedRoute>} />
+                <Route path="/restaurants/new" element={<ProtectedRoute><NewRestaurantPage /></ProtectedRoute>} />
+                <Route path="/restaurants/:id" element={<ProtectedRoute><RestaurantDetailPage /></ProtectedRoute>} />
+                <Route path="/restaurants/:id/edit" element={<ProtectedRoute><RestaurantEditPage /></ProtectedRoute>} />
 
-            {/* Visits routes */}
-            <Route path="/visits" element={
-              <AuthWrapper>
-                <VisitPlannerPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/visits/plans/:id" element={
-              <AuthWrapper>
-                <VisitPlanDetailPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/visits/tasks/:taskId/outcome" element={
-              <AuthWrapper>
-                <TaskOutcomePage />
-              </AuthWrapper>
-            } />
-            
-            {/* Redirect /visits/new to the main planner page where they can create new plans */}
-            <Route path="/visits/new" element={<Navigate to="/visits" replace />} />
-            
-            {/* Redirect /visits/today to the main planner for now - can be a filtered view later */}
-            <Route path="/visits/today" element={<Navigate to="/visits" replace />} />
+                {/* Lead routes */}
+                <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
+                <Route path="/leads/assigned" element={<ProtectedRoute><AssignedLeadsPage /></ProtectedRoute>} />
+                <Route path="/leads/meetings" element={<ProtectedRoute><MeetingsPage /></ProtectedRoute>} />
+                <Route path="/leads/new" element={<ProtectedRoute><NewLeadPage /></ProtectedRoute>} />
+                <Route path="/leads/call/new" element={<ProtectedRoute><NewCallPage /></ProtectedRoute>} />
+                <Route path="/leads/meeting/new" element={<ProtectedRoute><NewMeetingPage /></ProtectedRoute>} />
+                <Route path="/leads/calls/:id" element={<ProtectedRoute><CallDetailPage /></ProtectedRoute>} />
+                <Route path="/leads/meetings/:id" element={<ProtectedRoute><MeetingDetailPage /></ProtectedRoute>} />
 
-            {/* Admin routes */}
-            <Route path="/admin/users" element={
-              <AuthWrapper>
-                <UsersPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/admin/products" element={
-              <AuthWrapper>
-                <ProductsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/admin/import" element={
-              <AuthWrapper>
-                <ImportPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/admin/restaurant-management" element={
-              <AuthWrapper>
-                <RestaurantManagementPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/admin/settings" element={
-              <AuthWrapper>
-                <AdminSettingsPage />
-              </AuthWrapper>
-            } />
+                {/* Visit routes */}
+                <Route path="/visits" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
+                <Route path="/visits/today" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
+                <Route path="/visits/new" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
+                <Route path="/visits/plan/:id" element={<ProtectedRoute><VisitPlanDetailPage /></ProtectedRoute>} />
+                <Route path="/visits/task/:id/outcome" element={<ProtectedRoute><TaskOutcomePage /></ProtectedRoute>} />
 
-            {/* Orders routes */}
-            <Route path="/orders" element={
-              <AuthWrapper>
-                <OrdersPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/orders/pending" element={
-              <AuthWrapper>
-                <PendingOrdersPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/orders/delivered" element={
-              <AuthWrapper>
-                <DeliveredOrdersPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/orders/new" element={
-              <AuthWrapper>
-                <NewOrderPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/orders/:id" element={
-              <AuthWrapper>
-                <OrderDetailPage />
-              </AuthWrapper>
-            } />
+                {/* Order routes - Fixed routing */}
+                <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+                <Route path="/orders/new" element={<ProtectedRoute><NewOrderPage /></ProtectedRoute>} />
+                <Route path="/orders/pending" element={<ProtectedRoute><PendingOrdersPage /></ProtectedRoute>} />
+                <Route path="/orders/approved" element={<ProtectedRoute><ApprovedOrdersPage /></ProtectedRoute>} />
+                <Route path="/orders/delivered" element={<ProtectedRoute><DeliveredOrdersPage /></ProtectedRoute>} />
+                <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
 
-            {/* Restaurants routes */}
-            <Route path="/restaurants" element={
-              <AuthWrapper>
-                <RestaurantsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/restaurants/new" element={
-              <AuthWrapper>
-                <NewRestaurantPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/restaurants/:id" element={
-              <AuthWrapper>
-                <RestaurantDetailPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/restaurants/:id/edit" element={
-              <AuthWrapper>
-                <RestaurantEditPage />
-              </AuthWrapper>
-            } />
+                {/* Report routes */}
+                <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+                <Route path="/reports/leads" element={<ProtectedRoute><LeadReportsPage /></ProtectedRoute>} />
+                <Route path="/reports/performance" element={<ProtectedRoute><PerformancePage /></ProtectedRoute>} />
 
-            {/* Reports routes */}
-            <Route path="/reports" element={
-              <AuthWrapper>
-                <ReportsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/reports/leads" element={
-              <AuthWrapper>
-                <LeadReportsPage />
-              </AuthWrapper>
-            } />
-            
-            <Route path="/reports/performance" element={
-              <AuthWrapper>
-                <PerformancePage />
-              </AuthWrapper>
-            } />
+                {/* Admin routes */}
+                <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+                <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+                <Route path="/admin/import" element={<ProtectedRoute><ImportPage /></ProtectedRoute>} />
+                <Route path="/admin/restaurants" element={<ProtectedRoute><RestaurantManagementPage /></ProtectedRoute>} />
+                <Route path="/admin/migration" element={<ProtectedRoute><RestaurantMigrationPage /></ProtectedRoute>} />
+                <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Toaster />
-      </AuthProvider>
-    </Router>
+                {/* 404 route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthWrapper>
+            <Toaster />
+          </AuthProvider>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
