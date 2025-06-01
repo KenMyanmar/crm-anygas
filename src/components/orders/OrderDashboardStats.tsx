@@ -6,7 +6,6 @@ interface OrderDashboardStatsProps {
   stats: {
     pendingCount: number;
     confirmedCount: number;
-    inDeliveryCount: number;
     deliveredCount: number;
     totalRevenue: number;
   };
@@ -24,20 +23,12 @@ const OrderDashboardStats = ({ stats }: OrderDashboardStatsProps) => {
       urgent: stats.pendingCount > 0
     },
     {
-      title: 'Confirmed',
+      title: 'In Process',
       value: stats.confirmedCount,
       icon: CheckCircle,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200'
-    },
-    {
-      title: 'In Delivery',
-      value: stats.inDeliveryCount,
-      icon: Truck,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200'
     },
     {
       title: 'Delivered Today',
@@ -54,7 +45,7 @@ const OrderDashboardStats = ({ stats }: OrderDashboardStatsProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       {statCards.map((stat) => {
         const Icon = stat.icon;
         return (
