@@ -1,4 +1,3 @@
-
 import React from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
@@ -24,6 +23,19 @@ const DeliveryOrderPrint = ({ order }: DeliveryOrderPrintProps) => {
         }
         
         .company-info {
+          flex: 1;
+          display: flex;
+          align-items: flex-start;
+          gap: 15px;
+        }
+        
+        .company-logo {
+          width: 60px;
+          height: 60px;
+          object-fit: contain;
+        }
+        
+        .company-details-text {
           flex: 1;
         }
         
@@ -99,12 +111,15 @@ const DeliveryOrderPrint = ({ order }: DeliveryOrderPrintProps) => {
 
       <div className="delivery-header">
         <div className="company-info">
-          <div className="company-name">PARAMI GAS</div>
-          <div className="company-tagline">Your Trusted Gas Partner</div>
-          <div className="company-details">
-            Address: [Company Address]<br/>
-            Phone: [Company Phone]<br/>
-            Email: [Company Email]
+          <img src="/anygas-logo.png" alt="ANY GAS Logo" className="company-logo" />
+          <div className="company-details-text">
+            <div className="company-name">ANY GAS</div>
+            <div className="company-tagline">Your Trusted Gas Partner</div>
+            <div className="company-details">
+              Address: 84 Baho Road, Ward 3, South Okkalapa, Yangon Myanmar<br/>
+              Hotline: 8484<br/>
+              Email: sales@anygas.org
+            </div>
           </div>
         </div>
         <div className="do-number">

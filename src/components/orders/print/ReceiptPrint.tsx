@@ -1,4 +1,3 @@
-
 import React from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
@@ -27,6 +26,23 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
           color: white;
           padding: 15px;
           margin: -20px -20px 20px -20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+        }
+        
+        .receipt-logo {
+          width: 50px;
+          height: 50px;
+          object-fit: contain;
+          background: white;
+          border-radius: 50%;
+          padding: 5px;
+        }
+        
+        .receipt-header-text {
+          text-align: center;
         }
         
         .receipt-title {
@@ -101,11 +117,23 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
           font-size: 11px;
           font-style: italic;
         }
+        
+        .receipt-company-info {
+          text-align: center;
+          font-size: 10px;
+          margin-top: 15px;
+          padding: 10px;
+          background: rgba(255,255,255,0.8);
+          border-radius: 5px;
+        }
       `}</style>
 
       <div className="receipt-header">
-        <div className="receipt-title">PARAMI GAS</div>
-        <div className="receipt-subtitle">Payment Receipt</div>
+        <img src="/anygas-logo.png" alt="ANY GAS Logo" className="receipt-logo" />
+        <div className="receipt-header-text">
+          <div className="receipt-title">ANY GAS</div>
+          <div className="receipt-subtitle">Payment Receipt</div>
+        </div>
       </div>
 
       <div className="receipt-number">
@@ -167,6 +195,11 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
 
       <div className="receipt-total">
         TOTAL AMOUNT: {formatCurrency(order.total_amount_kyats)} KYATS
+      </div>
+
+      <div className="receipt-company-info">
+        84 Baho Road, Ward 3, South Okkalapa, Yangon Myanmar<br/>
+        Hotline: 8484 | Email: sales@anygas.org
       </div>
 
       <div className="receipt-footer">

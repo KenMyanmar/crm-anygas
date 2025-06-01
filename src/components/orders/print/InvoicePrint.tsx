@@ -1,4 +1,3 @@
-
 import React from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
@@ -35,6 +34,19 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
         }
         
         .invoice-company {
+          flex: 1;
+          display: flex;
+          align-items: flex-start;
+          gap: 15px;
+        }
+        
+        .invoice-logo {
+          width: 60px;
+          height: 60px;
+          object-fit: contain;
+        }
+        
+        .invoice-company-text {
           flex: 1;
         }
         
@@ -146,12 +158,15 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
 
       <div className="invoice-header">
         <div className="invoice-company">
-          <div className="invoice-company-name">PARAMI GAS</div>
-          <div className="invoice-company-details">
-            Your Trusted Gas Partner<br/>
-            [Company Address]<br/>
-            Phone: [Company Phone] | Email: [Company Email]<br/>
-            Tax ID: [Tax Number]
+          <img src="/anygas-logo.png" alt="ANY GAS Logo" className="invoice-logo" />
+          <div className="invoice-company-text">
+            <div className="invoice-company-name">ANY GAS</div>
+            <div className="invoice-company-details">
+              Your Trusted Gas Partner<br/>
+              84 Baho Road, Ward 3, South Okkalapa, Yangon Myanmar<br/>
+              Hotline: 8484 | Email: sales@anygas.org<br/>
+              Tax ID: [Tax Number]
+            </div>
           </div>
         </div>
         <div className="invoice-number-section">
@@ -236,7 +251,7 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
           1. Payment is due within 30 days of invoice date.<br/>
           2. Late payments may incur additional charges.<br/>
           3. All prices are in Myanmar Kyats.<br/>
-          4. Goods remain the property of PARAMI GAS until payment is received in full.
+          4. Goods remain the property of ANY GAS until payment is received in full.
         </div>
       </div>
     </PrintLayout>
