@@ -35,7 +35,7 @@ const OrdersPage = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [townshipFilter, setTownshipFilter] = useState('all');
   
@@ -56,9 +56,8 @@ const OrdersPage = () => {
         },
         (payload) => {
           console.log('Order updated:', payload);
-          fetchOrders(); // Refresh orders when any change occurs
+          fetchOrders();
           
-          // Show toast notification for status changes
           if (payload.eventType === 'UPDATE') {
             toast({
               title: "Order Updated",
@@ -85,27 +84,19 @@ const OrdersPage = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (activeTab !== 'all') {
-        let statusFilter;
-        switch (activeTab) {
-          case 'pending':
-            statusFilter = ['PENDING_CONFIRMATION'];
-            break;
-          case 'approved':
-            statusFilter = ['CONFIRMED'];
-            break;
-          case 'delivery':
-            statusFilter = ['OUT_FOR_DELIVERY'];
-            break;
-          case 'delivered':
-            statusFilter = ['DELIVERED'];
-            break;
-          case 'cancelled':
-            statusFilter = ['CANCELLED'];
-            break;
-        }
-        query = query.in('status', statusFilter);
+      let statusFilter;
+      switch (activeTab) {
+        case 'pending':
+          statusFilter = ['PENDING_CONFIRMATION'];
+          break;
+        case 'process':
+          statusFilter = ['CONFIRMED', 'OUT_FOR_DELIVERY'];
+          break;
+        case 'delivered':
+          statusFilter = ['DELIVERED'];
+          break;
       }
+      query = query.in('status', statusFilter);
 
       const { data, error } = await query;
 
@@ -136,8 +127,7 @@ const OrdersPage = () => {
   const getOrderStats = () => {
     return {
       pendingCount: orders.filter(o => o.status === 'PENDING_CONFIRMATION').length,
-      confirmedCount: orders.filter(o => o.status === 'CONFIRMED').length,
-      inDeliveryCount: orders.filter(o => o.status === 'OUT_FOR_DELIVERY').length,
+      confirmedCount: orders.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
       deliveredCount: orders.filter(o => o.status === 'DELIVERED').length,
       totalRevenue: orders.reduce((sum, o) => sum + (o.total_amount_kyats || 0), 0)
     };
@@ -157,7 +147,7 @@ const OrdersPage = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and track orders through their complete lifecycle
+              Manage orders through their workflow: Pending → In Process → Delivered
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -190,7 +180,7 @@ const OrdersPage = () => {
         <Card className="border-2">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">Orders Overview</CardTitle>
+              <CardTitle className="text-xl">Order Workflow Management</CardTitle>
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -219,29 +209,20 @@ const OrdersPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-6 mb-6">
-                <TabsTrigger value="all" className="data-[state=active]:bg-slate-100">
-                  All Orders ({orders.length})
-                </TabsTrigger>
+            <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="pending" className="data-[state=active]:bg-amber-100">
-                  Pending Approval ({stats.pendingCount})
+                  Pending Orders ({stats.pendingCount})
                 </TabsTrigger>
-                <TabsTrigger value="approved" className="data-[state=active]:bg-blue-100">
-                  Approved Orders ({stats.confirmedCount})
-                </TabsTrigger>
-                <TabsTrigger value="delivery" className="data-[state=active]:bg-purple-100">
-                  In Delivery ({stats.inDeliveryCount})
+                <TabsTrigger value="process" className="data-[state=active]:bg-blue-100">
+                  In Process ({stats.confirmedCount})
                 </TabsTrigger>
                 <TabsTrigger value="delivered" className="data-[state=active]:bg-green-100">
                   Delivered ({stats.deliveredCount})
                 </TabsTrigger>
-                <TabsTrigger value="cancelled" className="data-[state=active]:bg-red-100">
-                  Cancelled
-                </TabsTrigger>
               </TabsList>
 
-              {['all', 'pending', 'approved', 'delivery', 'delivered', 'cancelled'].map((tab) => (
+              {['pending', 'process', 'delivered'].map((tab) => (
                 <TabsContent key={tab} value={tab} className="mt-0">
                   <OrdersTable 
                     orders={filteredOrders} 

@@ -1,3 +1,4 @@
+
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -24,7 +25,9 @@ import {
   Plus,
   MapPin,
   Route,
-  Calendar
+  Calendar,
+  Clock,
+  Truck
 } from 'lucide-react';
 
 interface MenuLinkProps {
@@ -38,12 +41,10 @@ const MenuLink: FC<MenuLinkProps> = ({ to, icon: Icon, label, end = false }) => 
   const sidebar = useSidebar();
   const location = useLocation();
   
-  // More precise active state detection
   const isActive = end 
     ? location.pathname === to
     : location.pathname === to || location.pathname.startsWith(`${to}/`);
   
-  // Build class names conditionally
   const baseClasses = "flex items-center py-2 px-3 rounded-md transition-colors";
   const activeClasses = "bg-primary/10 text-primary font-medium border-l-2 border-primary";
   const inactiveClasses = "hover:bg-muted/50 text-muted-foreground hover:text-foreground";
@@ -68,7 +69,6 @@ const NavMenu: FC = () => {
   const location = useLocation();
   const isAdminOrManager = profile?.role === 'admin' || profile?.role === 'manager';
   
-  // Control open states manually instead of using defaultOpen
   const [leadsGroupOpen, setLeadsGroupOpen] = useState(false);
   const [ordersGroupOpen, setOrdersGroupOpen] = useState(false);
   const [visitsGroupOpen, setVisitsGroupOpen] = useState(false);
@@ -76,7 +76,6 @@ const NavMenu: FC = () => {
   const [adminGroupOpen, setAdminGroupOpen] = useState(false);
   const [restaurantsGroupOpen, setRestaurantsGroupOpen] = useState(false);
   
-  // Determine which group should be expanded based on current route
   useEffect(() => {
     const isLeadsActive = location.pathname.includes('/leads');
     const isOrdersActive = location.pathname.includes('/orders');
@@ -153,9 +152,9 @@ const NavMenu: FC = () => {
         {ordersGroupOpen && (
           <SidebarGroupContent>
             <SidebarMenu>
-              <MenuLink to="/orders" icon={Package} label="All Orders" />
-              <MenuLink to="/orders/pending" icon={Package} label="Pending Orders" />
-              <MenuLink to="/orders/delivered" icon={Package} label="Delivered Orders" />
+              <MenuLink to="/orders/pending" icon={Clock} label="Pending Orders" />
+              <MenuLink to="/orders/approved" icon={Package} label="In Process" />
+              <MenuLink to="/orders/delivered" icon={Truck} label="Delivered Orders" />
             </SidebarMenu>
           </SidebarGroupContent>
         )}
