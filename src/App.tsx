@@ -100,7 +100,7 @@ function App() {
                 <Route path="/leads/meetings" element={<ProtectedRoute><MeetingsPage /></ProtectedRoute>} />
                 <Route path="/leads/new" element={<ProtectedRoute><NewLeadPage /></ProtectedRoute>} />
                 <Route path="/leads/call/new" element={<ProtectedRoute><NewCallPage /></ProtectedRoute>} />
-                <Route path="/leads/meeting/new" element={<ProtectedRoute><NewMeetingPage /></ProtectedRoute>} />
+                <Route path="/leads/meetings/new" element={<ProtectedRoute><NewMeetingPage /></ProtectedRoute>} />
                 <Route path="/leads/calls/:id" element={<ProtectedRoute><CallDetailPage /></ProtectedRoute>} />
                 <Route path="/leads/meetings/:id" element={<ProtectedRoute><MeetingDetailPage /></ProtectedRoute>} />
 
