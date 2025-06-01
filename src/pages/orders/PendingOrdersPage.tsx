@@ -43,7 +43,8 @@ import {
   Search,
   Filter,
   RefreshCw,
-  Clock
+  Clock,
+  ArrowLeft
 } from 'lucide-react';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 
@@ -78,11 +79,34 @@ const PendingOrdersPage = () => {
   useEffect(() => {
     fetchPendingOrders();
     checkApprovalPermissions();
+    setupRealtimeSubscription();
   }, []);
 
   useEffect(() => {
     filterOrders();
   }, [orders, searchTerm, townshipFilter]);
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('pending-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order updated in pending page:', payload);
+          fetchPendingOrders(); // Refresh pending orders
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const checkApprovalPermissions = async () => {
     const userRole = await getUserRole();
@@ -116,7 +140,6 @@ const PendingOrdersPage = () => {
         throw error;
       }
 
-      // Transform the data to match our interface
       const transformedData = (data || []).map((order: any) => ({
         id: order.id,
         order_number: order.order_number,
@@ -180,7 +203,6 @@ const PendingOrdersPage = () => {
         throw error;
       }
 
-      // Remove the order from the list since it's no longer pending
       setOrders(orders.filter(order => order.id !== orderId));
       
       const action = newStatus === 'CONFIRMED' ? 'approved' : 'rejected';
@@ -237,6 +259,12 @@ const PendingOrdersPage = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/orders">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Orders
+              </Link>
+            </Button>
             <div className="p-2 bg-amber-100 rounded-lg">
               <AlertTriangle className="h-6 w-6 text-amber-600" />
             </div>
@@ -318,10 +346,17 @@ const PendingOrdersPage = () => {
                     ? "No orders are waiting for approval" 
                     : "All orders matching your filters have been processed"}
                 </p>
-                <Button variant="outline" onClick={fetchPendingOrders}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Check for new orders
-                </Button>
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" onClick={fetchPendingOrders}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Check for new orders
+                  </Button>
+                  <Button asChild>
+                    <Link to="/orders">
+                      View All Orders
+                    </Link>
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="border rounded-lg overflow-hidden">
@@ -419,7 +454,6 @@ const PendingOrdersPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reject Dialog */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

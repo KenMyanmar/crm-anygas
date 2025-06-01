@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, RefreshCcw, Search, Filter } from 'lucide-react';
+import { PlusCircle, RefreshCcw, Search, Filter, Bell } from 'lucide-react';
 import {
   Table,
   TableHeader,
@@ -41,7 +41,38 @@ const OrdersPage = () => {
   
   useEffect(() => {
     fetchOrders();
+    setupRealtimeSubscription();
   }, [activeTab]);
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          fetchOrders(); // Refresh orders when any change occurs
+          
+          // Show toast notification for status changes
+          if (payload.eventType === 'UPDATE') {
+            toast({
+              title: "Order Updated",
+              description: `Order ${payload.new.order_number} status changed to ${payload.new.status.replace('_', ' ')}`,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -60,7 +91,7 @@ const OrdersPage = () => {
           case 'pending':
             statusFilter = ['PENDING_CONFIRMATION'];
             break;
-          case 'confirmed':
+          case 'approved':
             statusFilter = ['CONFIRMED'];
             break;
           case 'delivery':
@@ -117,6 +148,8 @@ const OrdersPage = () => {
     return townships.sort();
   };
 
+  const stats = getOrderStats();
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -132,6 +165,17 @@ const OrdersPage = () => {
               <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
+            {stats.pendingCount > 0 && (
+              <Button variant="outline" asChild className="relative">
+                <Link to="/orders/pending">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Pending Approvals
+                  <span className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {stats.pendingCount}
+                  </span>
+                </Link>
+              </Button>
+            )}
             <Button asChild>
               <Link to="/orders/new">
                 <PlusCircle className="h-4 w-4 mr-2" />
@@ -141,7 +185,7 @@ const OrdersPage = () => {
           </div>
         </div>
 
-        <OrderDashboardStats stats={getOrderStats()} />
+        <OrderDashboardStats stats={stats} />
 
         <Card className="border-2">
           <CardHeader className="pb-4">
@@ -177,27 +221,27 @@ const OrdersPage = () => {
           <CardContent>
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-6 mb-6">
-                <TabsTrigger value="all" className="data-[state=active]:bg-blue-100">
+                <TabsTrigger value="all" className="data-[state=active]:bg-slate-100">
                   All Orders ({orders.length})
                 </TabsTrigger>
                 <TabsTrigger value="pending" className="data-[state=active]:bg-amber-100">
-                  Pending ({getOrderStats().pendingCount})
+                  Pending Approval ({stats.pendingCount})
                 </TabsTrigger>
-                <TabsTrigger value="confirmed" className="data-[state=active]:bg-blue-100">
-                  Confirmed ({getOrderStats().confirmedCount})
+                <TabsTrigger value="approved" className="data-[state=active]:bg-blue-100">
+                  Approved Orders ({stats.confirmedCount})
                 </TabsTrigger>
                 <TabsTrigger value="delivery" className="data-[state=active]:bg-purple-100">
-                  In Delivery ({getOrderStats().inDeliveryCount})
+                  In Delivery ({stats.inDeliveryCount})
                 </TabsTrigger>
                 <TabsTrigger value="delivered" className="data-[state=active]:bg-green-100">
-                  Delivered ({getOrderStats().deliveredCount})
+                  Delivered ({stats.deliveredCount})
                 </TabsTrigger>
                 <TabsTrigger value="cancelled" className="data-[state=active]:bg-red-100">
                   Cancelled
                 </TabsTrigger>
               </TabsList>
 
-              {['all', 'pending', 'confirmed', 'delivery', 'delivered', 'cancelled'].map((tab) => (
+              {['all', 'pending', 'approved', 'delivery', 'delivered', 'cancelled'].map((tab) => (
                 <TabsContent key={tab} value={tab} className="mt-0">
                   <OrdersTable 
                     orders={filteredOrders} 
