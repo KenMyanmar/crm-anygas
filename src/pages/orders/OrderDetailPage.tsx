@@ -43,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import PrintManager from '@/components/orders/print/PrintManager';
 
 // Custom type that includes the phone field for backward compatibility
 interface RestaurantWithPhone extends Restaurant {
@@ -231,6 +232,37 @@ const OrderDetailPage = () => {
     }
   };
 
+  // Convert order to DeliveredOrder format for printing
+  const getOrderForPrinting = () => {
+    if (!order || !order.restaurant) return null;
+
+    return {
+      id: order.id,
+      order_number: order.order_number,
+      order_date: order.order_date,
+      delivery_date_scheduled: order.delivery_date_scheduled || order.order_date,
+      delivery_date_actual: order.delivery_date_actual || new Date().toISOString(),
+      total_amount_kyats: order.total_amount_kyats || 0,
+      notes: order.notes || '',
+      restaurant: {
+        id: order.restaurant.id,
+        name: order.restaurant.name,
+        township: order.restaurant.township || '',
+        contact_person: order.restaurant.contact_person || '',
+        phone: order.restaurant.phone || '',
+      },
+      created_by_user: {
+        full_name: 'Current User', // You might want to fetch this from context
+      },
+      order_items: orderItems.map(item => ({
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price_kyats: item.unit_price_kyats,
+        sub_total_kyats: item.sub_total_kyats,
+      }))
+    };
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -254,6 +286,8 @@ const OrderDetailPage = () => {
       </DashboardLayout>
     );
   }
+
+  const orderForPrinting = getOrderForPrinting();
 
   return (
     <DashboardLayout>
@@ -280,10 +314,14 @@ const OrderDetailPage = () => {
                 </Link>
               </Button>
             )}
-            <Button variant="outline">
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
+            
+            {orderForPrinting && (
+              <PrintManager 
+                order={orderForPrinting} 
+                variant="button" 
+                size="default" 
+              />
+            )}
           </div>
         </div>
 

@@ -48,3 +48,8 @@ export const hasAdminAccess = (role: string | undefined): boolean => {
 export const isAdminOrManager = (role: string | undefined): boolean => {
   return ['admin', 'manager'].includes(role || '');
 };
+
+// New function for deleting delivered orders - admin only
+export const canDeleteDeliveredOrders = (role: string | undefined): boolean => {
+  return role === 'admin';
+};

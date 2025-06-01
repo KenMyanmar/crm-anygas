@@ -105,7 +105,11 @@ const DeliveredOrdersPage = () => {
           <CardTitle>Delivered Orders ({orders.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <DeliveredOrdersTable orders={orders} isLoading={isLoading} />
+          <DeliveredOrdersTable 
+            orders={orders} 
+            isLoading={isLoading} 
+            onOrdersDeleted={refetch}
+          />
         </CardContent>
       </Card>
     </div>
