@@ -108,7 +108,7 @@ function App() {
                 <Route path="/visits" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
                 <Route path="/visits/today" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
                 <Route path="/visits/new" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
-                <Route path="/visits/plan/:id" element={<ProtectedRoute><VisitPlanDetailPage /></ProtectedRoute>} />
+                <Route path="/visits/plans/:id" element={<ProtectedRoute><VisitPlanDetailPage /></ProtectedRoute>} />
                 <Route path="/visits/task/:id/outcome" element={<ProtectedRoute><TaskOutcomePage /></ProtectedRoute>} />
 
                 {/* Order routes - Fixed to use the main OrdersPage with tabs */}
