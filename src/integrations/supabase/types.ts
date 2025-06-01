@@ -541,51 +541,6 @@ export type Database = {
           },
         ]
       }
-      order_status_history: {
-        Row: {
-          change_reason: string | null
-          changed_at: string | null
-          changed_by_user_id: string
-          id: string
-          new_status: Database["public"]["Enums"]["order_status"]
-          old_status: Database["public"]["Enums"]["order_status"] | null
-          order_id: string
-        }
-        Insert: {
-          change_reason?: string | null
-          changed_at?: string | null
-          changed_by_user_id: string
-          id?: string
-          new_status: Database["public"]["Enums"]["order_status"]
-          old_status?: Database["public"]["Enums"]["order_status"] | null
-          order_id: string
-        }
-        Update: {
-          change_reason?: string | null
-          changed_at?: string | null
-          changed_by_user_id?: string
-          id?: string
-          new_status?: Database["public"]["Enums"]["order_status"]
-          old_status?: Database["public"]["Enums"]["order_status"] | null
-          order_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_status_history_changed_by_user_id_fkey"
-            columns: ["changed_by_user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_status_history_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orders: {
         Row: {
           created_at: string | null
@@ -593,12 +548,11 @@ export type Database = {
           delivery_date_actual: string | null
           delivery_date_scheduled: string | null
           id: string
-          lead_id: string | null
           notes: string | null
           order_date: string | null
           order_number: string
           restaurant_id: string
-          status: Database["public"]["Enums"]["order_status"] | null
+          status: Database["public"]["Enums"]["order_status"]
           total_amount_kyats: number | null
           updated_at: string | null
         }
@@ -608,12 +562,11 @@ export type Database = {
           delivery_date_actual?: string | null
           delivery_date_scheduled?: string | null
           id?: string
-          lead_id?: string | null
           notes?: string | null
           order_date?: string | null
           order_number: string
           restaurant_id: string
-          status?: Database["public"]["Enums"]["order_status"] | null
+          status?: Database["public"]["Enums"]["order_status"]
           total_amount_kyats?: number | null
           updated_at?: string | null
         }
@@ -623,12 +576,11 @@ export type Database = {
           delivery_date_actual?: string | null
           delivery_date_scheduled?: string | null
           id?: string
-          lead_id?: string | null
           notes?: string | null
           order_date?: string | null
           order_number?: string
           restaurant_id?: string
-          status?: Database["public"]["Enums"]["order_status"] | null
+          status?: Database["public"]["Enums"]["order_status"]
           total_amount_kyats?: number | null
           updated_at?: string | null
         }
@@ -641,13 +593,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "orders_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
@@ -655,60 +600,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      orders_backup: {
-        Row: {
-          created_at: string | null
-          created_by_user_id: string | null
-          delivery_date_actual: string | null
-          delivery_date_scheduled: string | null
-          id: string | null
-          lead_id: string | null
-          notes: string | null
-          order_date: string | null
-          order_number: string | null
-          restaurant_id: string | null
-          restaurant_name: string | null
-          restaurant_township: string | null
-          status: Database["public"]["Enums"]["order_status"] | null
-          total_amount_kyats: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by_user_id?: string | null
-          delivery_date_actual?: string | null
-          delivery_date_scheduled?: string | null
-          id?: string | null
-          lead_id?: string | null
-          notes?: string | null
-          order_date?: string | null
-          order_number?: string | null
-          restaurant_id?: string | null
-          restaurant_name?: string | null
-          restaurant_township?: string | null
-          status?: Database["public"]["Enums"]["order_status"] | null
-          total_amount_kyats?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by_user_id?: string | null
-          delivery_date_actual?: string | null
-          delivery_date_scheduled?: string | null
-          id?: string | null
-          lead_id?: string | null
-          notes?: string | null
-          order_date?: string | null
-          order_number?: string | null
-          restaurant_id?: string | null
-          restaurant_name?: string | null
-          restaurant_township?: string | null
-          status?: Database["public"]["Enums"]["order_status"] | null
-          total_amount_kyats?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -881,13 +772,6 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_outcomes_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {

@@ -1,3 +1,4 @@
+
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -25,9 +26,7 @@ import {
   MapPin,
   Route,
   Calendar,
-  Clock,
-  Truck,
-  CheckCircle
+  ShoppingCart
 } from 'lucide-react';
 
 interface MenuLinkProps {
@@ -152,9 +151,8 @@ const NavMenu: FC = () => {
         {ordersGroupOpen && (
           <SidebarGroupContent>
             <SidebarMenu>
-              <MenuLink to="/orders/pending" icon={Clock} label="Pending Orders" />
-              <MenuLink to="/orders/process" icon={CheckCircle} label="In Process" />
-              <MenuLink to="/orders/delivered" icon={Truck} label="Delivered Orders" />
+              <MenuLink to="/orders" icon={ShoppingCart} label="Order Management" />
+              <MenuLink to="/orders/new" icon={Plus} label="Create Order" />
             </SidebarMenu>
           </SidebarGroupContent>
         )}

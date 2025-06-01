@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, RefreshCcw, Search, Filter, Bell } from 'lucide-react';
+import { PlusCircle, RefreshCcw, Search, Filter } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import OrderDashboardStats from '@/components/orders/OrderDashboardStats';
-import OrdersTable from '@/components/orders/OrdersTable';
+import SimpleOrdersTable from '@/components/orders/SimpleOrdersTable';
 
 const OrdersPage = () => {
   const navigate = useNavigate();
@@ -39,65 +39,7 @@ const OrdersPage = () => {
   
   useEffect(() => {
     fetchAllOrders();
-    const cleanup = setupRealtimeSubscription();
-    return cleanup;
   }, []);
-
-  const setupRealtimeSubscription = () => {
-    console.log('Setting up real-time subscription for orders');
-    
-    const channel = supabase
-      .channel('orders-realtime-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders'
-        },
-        (payload) => {
-          console.log('Real-time order update received:', payload);
-          
-          if (payload.eventType === 'UPDATE' && payload.old && payload.new) {
-            // Optimistically update the local state
-            setAllOrders(currentOrders => {
-              const updatedOrders = currentOrders.map(order => 
-                order.id === payload.new.id 
-                  ? { ...order, ...payload.new }
-                  : order
-              );
-              console.log('Updated orders state:', updatedOrders.length);
-              return updatedOrders;
-            });
-            
-            // Show toast notification for status changes
-            if (payload.old.status !== payload.new.status) {
-              const newStatus = payload.new?.status?.replace('_', ' ') || 'unknown';
-              toast({
-                title: "Order Status Updated",
-                description: `Order ${payload.new?.order_number || 'unknown'} status changed to ${newStatus}`,
-              });
-            }
-          } else if (payload.eventType === 'INSERT') {
-            // Add new order to the list
-            fetchAllOrders(); // Refresh to get complete data with relations
-          } else if (payload.eventType === 'DELETE') {
-            // Remove deleted order
-            setAllOrders(currentOrders => 
-              currentOrders.filter(order => order.id !== payload.old.id)
-            );
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
-      });
-
-    return () => {
-      console.log('Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
-    };
-  };
 
   const fetchAllOrders = async () => {
     setIsLoading(true);
@@ -182,7 +124,6 @@ const OrdersPage = () => {
 
   const handleOrderUpdated = () => {
     console.log('Order updated, refreshing data...');
-    // Refresh all orders to ensure consistency
     fetchAllOrders();
   };
 
@@ -203,17 +144,6 @@ const OrdersPage = () => {
               <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            {stats.pendingCount > 0 && (
-              <Button variant="outline" asChild className="relative">
-                <Link to="/orders/pending">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Pending Approvals
-                  <span className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {stats.pendingCount}
-                  </span>
-                </Link>
-              </Button>
-            )}
             <Button asChild>
               <Link to="/orders/new">
                 <PlusCircle className="h-4 w-4 mr-2" />
@@ -272,11 +202,10 @@ const OrdersPage = () => {
 
               {['pending', 'process', 'delivered'].map((tab) => (
                 <TabsContent key={tab} value={tab} className="mt-0">
-                  <OrdersTable 
+                  <SimpleOrdersTable 
                     orders={getOrdersForTab(tab)} 
                     isLoading={isLoading} 
                     onOrderUpdated={handleOrderUpdated}
-                    onViewOrder={(id) => navigate(`/orders/${id}`)}
                     currentTab={tab}
                   />
                 </TabsContent>
