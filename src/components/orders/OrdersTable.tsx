@@ -13,6 +13,8 @@ import {
 import { useOrderStatusHistory } from '@/hooks/useOrderStatusHistory';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 import OrderActionButtons from '@/components/orders/OrderActionButtons';
+import PrintManager from '@/components/orders/print/PrintManager';
+import { Link } from 'react-router-dom';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -109,11 +111,44 @@ const OrderRow = ({ order, onOrderUpdated, onViewOrder }: {
     return new Intl.NumberFormat('en-US').format(amount) + ' Kyats';
   };
 
+  // Convert order to the format needed for PrintManager
+  const getOrderForPrinting = () => {
+    return {
+      id: order.id,
+      order_number: order.order_number,
+      order_date: order.order_date,
+      delivery_date_scheduled: order.delivery_date_scheduled || order.order_date,
+      delivery_date_actual: order.delivery_date_actual || new Date().toISOString(),
+      total_amount_kyats: order.total_amount_kyats || 0,
+      notes: order.notes || '',
+      restaurant: {
+        id: order.restaurant?.id || '',
+        name: order.restaurant?.name || 'Unknown Restaurant',
+        township: order.restaurant?.township || '',
+        contact_person: order.restaurant?.contact_person || '',
+        phone: order.restaurant?.phone || '',
+      },
+      created_by_user: {
+        full_name: 'Current User',
+      },
+      order_items: order.order_items?.map(item => ({
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price_kyats: item.unit_price_kyats,
+        sub_total_kyats: item.sub_total_kyats,
+      })) || []
+    };
+  };
+
+  const orderForPrinting = getOrderForPrinting();
+
   return (
     <TableRow className="hover:bg-gray-50">
       <TableCell>
         <div>
-          <div className="font-medium text-blue-600">{order.order_number}</div>
+          <Link to={`/orders/${order.id}`} className="font-medium text-blue-600 hover:text-blue-800">
+            {order.order_number}
+          </Link>
           {order.delivery_date_scheduled && (
             <div className="text-sm text-gray-500">
               Due: {formatDate(order.delivery_date_scheduled)}
@@ -139,12 +174,15 @@ const OrderRow = ({ order, onOrderUpdated, onViewOrder }: {
         <OrderStatusBadge status={order.status} />
       </TableCell>
       <TableCell className="text-right">
-        <OrderActionButtons
-          status={order.status}
-          onStatusChange={handleStatusChange}
-          onViewOrder={() => onViewOrder(order.id)}
-          isUpdating={isUpdating}
-        />
+        <div className="flex items-center gap-2 justify-end">
+          <PrintManager order={orderForPrinting} variant="icon" size="sm" />
+          <OrderActionButtons
+            status={order.status}
+            onStatusChange={handleStatusChange}
+            onViewOrder={() => onViewOrder(order.id)}
+            isUpdating={isUpdating}
+          />
+        </div>
       </TableCell>
     </TableRow>
   );

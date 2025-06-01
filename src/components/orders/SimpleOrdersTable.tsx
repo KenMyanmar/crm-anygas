@@ -13,7 +13,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { useSimpleOrderStatus } from '@/hooks/useSimpleOrderStatus';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
+import PrintManager from '@/components/orders/print/PrintManager';
 import { CheckCircle, Truck, Package, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface SimpleOrdersTableProps {
   orders: Order[];
@@ -104,6 +106,35 @@ const SimpleOrderRow = ({ order, onOrderUpdated }: {
     return new Intl.NumberFormat('en-US').format(amount) + ' Kyats';
   };
 
+  // Convert order to the format needed for PrintManager
+  const getOrderForPrinting = () => {
+    return {
+      id: order.id,
+      order_number: order.order_number,
+      order_date: order.order_date,
+      delivery_date_scheduled: order.delivery_date_scheduled || order.order_date,
+      delivery_date_actual: order.delivery_date_actual || new Date().toISOString(),
+      total_amount_kyats: order.total_amount_kyats || 0,
+      notes: order.notes || '',
+      restaurant: {
+        id: order.restaurant?.id || '',
+        name: order.restaurant?.name || 'Unknown Restaurant',
+        township: order.restaurant?.township || '',
+        contact_person: order.restaurant?.contact_person || '',
+        phone: order.restaurant?.phone || '',
+      },
+      created_by_user: {
+        full_name: 'Current User',
+      },
+      order_items: order.order_items?.map(item => ({
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price_kyats: item.unit_price_kyats,
+        sub_total_kyats: item.sub_total_kyats,
+      })) || []
+    };
+  };
+
   const getStatusActions = () => {
     switch (order.status) {
       case 'PENDING_CONFIRMATION':
@@ -160,6 +191,8 @@ const SimpleOrderRow = ({ order, onOrderUpdated }: {
     }
   };
 
+  const orderForPrinting = getOrderForPrinting();
+
   return (
     <TableRow className="hover:bg-gray-50">
       <TableCell>
@@ -191,10 +224,15 @@ const SimpleOrderRow = ({ order, onOrderUpdated }: {
       </TableCell>
       <TableCell className="text-right">
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm">
-            <Eye className="h-4 w-4 mr-1" />
-            View
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/orders/${order.id}`}>
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Link>
           </Button>
+          
+          <PrintManager order={orderForPrinting} variant="icon" size="sm" />
+          
           {getStatusActions()}
         </div>
       </TableCell>
