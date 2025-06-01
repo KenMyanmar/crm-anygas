@@ -4,7 +4,6 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Order } from '@/types/orders';
-import { formatDate } from '@/lib/supabase';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useOrderStatusHistory } from '@/hooks/useOrderStatusHistory';
 import OrderDashboardStats from '@/components/orders/OrderDashboardStats';
 import OrdersTable from '@/components/orders/OrdersTable';
 
@@ -46,8 +44,10 @@ const OrdersPage = () => {
   }, []);
 
   const setupRealtimeSubscription = () => {
+    console.log('Setting up real-time subscription for orders');
+    
     const channel = supabase
-      .channel('orders-main-page')
+      .channel('orders-realtime-updates')
       .on(
         'postgres_changes',
         {
@@ -56,33 +56,45 @@ const OrdersPage = () => {
           table: 'orders'
         },
         (payload) => {
-          console.log('Order updated in main page:', payload);
+          console.log('Real-time order update received:', payload);
           
           if (payload.eventType === 'UPDATE' && payload.old && payload.new) {
             // Optimistically update the local state
-            setAllOrders(currentOrders => 
-              currentOrders.map(order => 
+            setAllOrders(currentOrders => {
+              const updatedOrders = currentOrders.map(order => 
                 order.id === payload.new.id 
                   ? { ...order, ...payload.new }
                   : order
-              )
-            );
-            
-            // Show toast notification
-            const newStatus = payload.new?.status?.replace('_', ' ') || 'unknown';
-            toast({
-              title: "Order Updated",
-              description: `Order ${payload.new?.order_number || 'unknown'} status changed to ${newStatus}`,
+              );
+              console.log('Updated orders state:', updatedOrders.length);
+              return updatedOrders;
             });
-          } else {
-            // For INSERT/DELETE or if we can't do optimistic updates, refresh
-            fetchAllOrders();
+            
+            // Show toast notification for status changes
+            if (payload.old.status !== payload.new.status) {
+              const newStatus = payload.new?.status?.replace('_', ' ') || 'unknown';
+              toast({
+                title: "Order Status Updated",
+                description: `Order ${payload.new?.order_number || 'unknown'} status changed to ${newStatus}`,
+              });
+            }
+          } else if (payload.eventType === 'INSERT') {
+            // Add new order to the list
+            fetchAllOrders(); // Refresh to get complete data with relations
+          } else if (payload.eventType === 'DELETE') {
+            // Remove deleted order
+            setAllOrders(currentOrders => 
+              currentOrders.filter(order => order.id !== payload.old.id)
+            );
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   };
@@ -90,7 +102,8 @@ const OrdersPage = () => {
   const fetchAllOrders = async () => {
     setIsLoading(true);
     try {
-      // Always fetch ALL orders regardless of tab
+      console.log('Fetching all orders from database...');
+      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -103,7 +116,12 @@ const OrdersPage = () => {
         throw error;
       }
 
-      console.log(`Fetched ${data?.length || 0} total orders`);
+      console.log(`Successfully fetched ${data?.length || 0} orders`);
+      console.log('Orders by status:', data?.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>));
+      
       setAllOrders(data || []);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
@@ -127,26 +145,34 @@ const OrdersPage = () => {
 
   // Filter by tab status
   const getOrdersForTab = (tab: string) => {
-    switch (tab) {
-      case 'pending':
-        return searchFilteredOrders.filter(order => order.status === 'PENDING_CONFIRMATION');
-      case 'process':
-        return searchFilteredOrders.filter(order => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(order.status));
-      case 'delivered':
-        return searchFilteredOrders.filter(order => order.status === 'DELIVERED');
-      default:
-        return searchFilteredOrders;
-    }
+    const filtered = (() => {
+      switch (tab) {
+        case 'pending':
+          return searchFilteredOrders.filter(order => order.status === 'PENDING_CONFIRMATION');
+        case 'process':
+          return searchFilteredOrders.filter(order => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(order.status));
+        case 'delivered':
+          return searchFilteredOrders.filter(order => order.status === 'DELIVERED');
+        default:
+          return searchFilteredOrders;
+      }
+    })();
+    
+    console.log(`Orders for ${tab} tab:`, filtered.length);
+    return filtered;
   };
 
   // Calculate stats from ALL orders (not filtered)
   const getOrderStats = () => {
-    return {
+    const stats = {
       pendingCount: allOrders.filter(o => o.status === 'PENDING_CONFIRMATION').length,
       confirmedCount: allOrders.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
       deliveredCount: allOrders.filter(o => o.status === 'DELIVERED').length,
       totalRevenue: allOrders.reduce((sum, o) => sum + (o.total_amount_kyats || 0), 0)
     };
+    
+    console.log('Order stats:', stats);
+    return stats;
   };
 
   const getTownships = () => {
@@ -155,6 +181,7 @@ const OrdersPage = () => {
   };
 
   const handleOrderUpdated = () => {
+    console.log('Order updated, refreshing data...');
     // Refresh all orders to ensure consistency
     fetchAllOrders();
   };
