@@ -1,19 +1,43 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
 import { formatDate } from '@/lib/supabase';
-import { getCompanyLogoUrl } from '@/utils/logoUpload';
+import { getCompanyLogoUrl, getCompanyLogoUrlSync } from '@/utils/logoUpload';
 
 interface DeliveryOrderPrintProps {
   order: DeliveredOrder;
 }
 
 const DeliveryOrderPrint = ({ order }: DeliveryOrderPrintProps) => {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        const url = await getCompanyLogoUrl();
+        if (url) {
+          setLogoUrl(url);
+        } else {
+          setLogoUrl(getCompanyLogoUrlSync());
+        }
+      } catch (error) {
+        console.error('Error loading logo:', error);
+        setLogoUrl(getCompanyLogoUrlSync());
+      }
+    };
+
+    loadLogo();
+  }, []);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US').format(amount) + ' Kyats';
   };
 
-  const logoUrl = getCompanyLogoUrl();
+  const handleLogoError = () => {
+    setLogoError(true);
+  };
 
   return (
     <PrintLayout title="DELIVERY ORDER" className="delivery-order">
@@ -36,6 +60,20 @@ const DeliveryOrderPrint = ({ order }: DeliveryOrderPrintProps) => {
           width: 60px;
           height: 60px;
           object-fit: contain;
+        }
+        
+        .company-logo-fallback {
+          width: 60px;
+          height: 60px;
+          border: 2px solid #1e40af;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          color: #1e40af;
+          font-size: 12px;
+          text-align: center;
+          border-radius: 8px;
         }
         
         .company-details-text {
@@ -114,7 +152,18 @@ const DeliveryOrderPrint = ({ order }: DeliveryOrderPrintProps) => {
 
       <div className="delivery-header">
         <div className="company-info">
-          <img src={logoUrl} alt="ANY GAS Logo" className="company-logo" />
+          {logoUrl && !logoError ? (
+            <img 
+              src={logoUrl} 
+              alt="ANY GAS Logo" 
+              className="company-logo"
+              onError={handleLogoError}
+            />
+          ) : (
+            <div className="company-logo-fallback">
+              ANY GAS
+            </div>
+          )}
           <div className="company-details-text">
             <div className="company-name">ANY GAS</div>
             <div className="company-tagline">Your Trusted Gas Partner</div>

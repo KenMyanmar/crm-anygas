@@ -1,19 +1,44 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
 import { formatDate } from '@/lib/supabase';
-import { getCompanyLogoUrl } from '@/utils/logoUpload';
+import { getCompanyLogoUrl, getCompanyLogoUrlSync } from '@/utils/logoUpload';
 
 interface ReceiptPrintProps {
   order: DeliveredOrder;
 }
 
 const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        const url = await getCompanyLogoUrl();
+        if (url) {
+          setLogoUrl(url);
+        } else {
+          // Fallback to sync method
+          setLogoUrl(getCompanyLogoUrlSync());
+        }
+      } catch (error) {
+        console.error('Error loading logo:', error);
+        setLogoUrl(getCompanyLogoUrlSync());
+      }
+    };
+
+    loadLogo();
+  }, []);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US').format(amount);
   };
 
-  const logoUrl = getCompanyLogoUrl();
+  const handleLogoError = () => {
+    setLogoError(true);
+  };
 
   return (
     <PrintLayout title="PAYMENT RECEIPT" className="receipt">
@@ -42,6 +67,19 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
           background: white;
           border-radius: 50%;
           padding: 5px;
+        }
+        
+        .receipt-logo-fallback {
+          width: 50px;
+          height: 50px;
+          background: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          color: #1976d2;
+          font-size: 10px;
         }
         
         .receipt-header-text {
@@ -132,7 +170,18 @@ const ReceiptPrint = ({ order }: ReceiptPrintProps) => {
       `}</style>
 
       <div className="receipt-header">
-        <img src={logoUrl} alt="ANY GAS Logo" className="receipt-logo" />
+        {logoUrl && !logoError ? (
+          <img 
+            src={logoUrl} 
+            alt="ANY GAS Logo" 
+            className="receipt-logo"
+            onError={handleLogoError}
+          />
+        ) : (
+          <div className="receipt-logo-fallback">
+            ANY GAS
+          </div>
+        )}
         <div className="receipt-header-text">
           <div className="receipt-title">ANY GAS</div>
           <div className="receipt-subtitle">Payment Receipt</div>

@@ -1,14 +1,36 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import PrintLayout from './PrintLayout';
 import { DeliveredOrder } from '@/hooks/useDeliveredOrders';
 import { formatDate } from '@/lib/supabase';
-import { getCompanyLogoUrl } from '@/utils/logoUpload';
+import { getCompanyLogoUrl, getCompanyLogoUrlSync } from '@/utils/logoUpload';
 
 interface InvoicePrintProps {
   order: DeliveredOrder;
 }
 
 const InvoicePrint = ({ order }: InvoicePrintProps) => {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        const url = await getCompanyLogoUrl();
+        if (url) {
+          setLogoUrl(url);
+        } else {
+          setLogoUrl(getCompanyLogoUrlSync());
+        }
+      } catch (error) {
+        console.error('Error loading logo:', error);
+        setLogoUrl(getCompanyLogoUrlSync());
+      }
+    };
+
+    loadLogo();
+  }, []);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US').format(amount);
   };
@@ -18,10 +40,13 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
     return amount * 0.05;
   };
 
+  const handleLogoError = () => {
+    setLogoError(true);
+  };
+
   const subtotal = order.total_amount_kyats;
   const tax = calculateTax(subtotal);
   const total = subtotal + tax;
-  const logoUrl = getCompanyLogoUrl();
 
   return (
     <PrintLayout title="INVOICE" className="invoice">
@@ -46,6 +71,20 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
           width: 60px;
           height: 60px;
           object-fit: contain;
+        }
+        
+        .invoice-logo-fallback {
+          width: 60px;
+          height: 60px;
+          border: 2px solid #333;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          color: #333;
+          font-size: 12px;
+          text-align: center;
+          border-radius: 8px;
         }
         
         .invoice-company-text {
@@ -160,7 +199,18 @@ const InvoicePrint = ({ order }: InvoicePrintProps) => {
 
       <div className="invoice-header">
         <div className="invoice-company">
-          <img src={logoUrl} alt="ANY GAS Logo" className="invoice-logo" />
+          {logoUrl && !logoError ? (
+            <img 
+              src={logoUrl} 
+              alt="ANY GAS Logo" 
+              className="invoice-logo"
+              onError={handleLogoError}
+            />
+          ) : (
+            <div className="invoice-logo-fallback">
+              ANY GAS
+            </div>
+          )}
           <div className="invoice-company-text">
             <div className="invoice-company-name">ANY GAS</div>
             <div className="invoice-company-details">
