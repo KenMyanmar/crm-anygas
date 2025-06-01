@@ -39,3 +39,12 @@ export const canViewAllData = (role: string): boolean => {
 export const canManageUsers = (role: string): boolean => {
   return role === 'admin';
 };
+
+// Adding the missing functions that components are trying to import
+export const hasAdminAccess = (role: string | undefined): boolean => {
+  return role === 'admin';
+};
+
+export const isAdminOrManager = (role: string | undefined): boolean => {
+  return ['admin', 'manager'].includes(role || '');
+};
