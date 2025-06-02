@@ -4,8 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from 'next-themes';
-import AuthWrapper from '@/components/AuthWrapper';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import AppLayout from '@/components/layouts/AppLayout';
 
 // Page imports
 import Login from '@/pages/Login';
@@ -75,67 +74,65 @@ function App() {
       <ThemeProvider attribute="class" defaultTheme="light">
         <Router>
           <AuthProvider>
-            <AuthWrapper>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/set-new-password" element={<SetNewPassword />} />
+            <Routes>
+              {/* Public routes - no layout wrapper */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/set-new-password" element={<SetNewPassword />} />
 
-                {/* Protected routes */}
-                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              {/* Protected routes - wrapped with AppLayout */}
+              <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+              <Route path="/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
+              <Route path="/notifications" element={<AppLayout><Notifications /></AppLayout>} />
 
-                {/* Restaurant routes */}
-                <Route path="/restaurants" element={<ProtectedRoute><RestaurantsPage /></ProtectedRoute>} />
-                <Route path="/restaurants/new" element={<ProtectedRoute><NewRestaurantPage /></ProtectedRoute>} />
-                <Route path="/restaurants/:id" element={<ProtectedRoute><RestaurantDetailPage /></ProtectedRoute>} />
-                <Route path="/restaurants/:id/edit" element={<ProtectedRoute><RestaurantEditPage /></ProtectedRoute>} />
+              {/* Restaurant routes */}
+              <Route path="/restaurants" element={<AppLayout><RestaurantsPage /></AppLayout>} />
+              <Route path="/restaurants/new" element={<AppLayout><NewRestaurantPage /></AppLayout>} />
+              <Route path="/restaurants/:id" element={<AppLayout><RestaurantDetailPage /></AppLayout>} />
+              <Route path="/restaurants/:id/edit" element={<AppLayout><RestaurantEditPage /></AppLayout>} />
 
-                {/* Lead routes */}
-                <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
-                <Route path="/leads/assigned" element={<ProtectedRoute><AssignedLeadsPage /></ProtectedRoute>} />
-                <Route path="/leads/meetings" element={<ProtectedRoute><MeetingsPage /></ProtectedRoute>} />
-                <Route path="/leads/new" element={<ProtectedRoute><NewLeadPage /></ProtectedRoute>} />
-                <Route path="/leads/call/new" element={<ProtectedRoute><NewCallPage /></ProtectedRoute>} />
-                <Route path="/leads/meetings/new" element={<ProtectedRoute><NewMeetingPage /></ProtectedRoute>} />
-                <Route path="/leads/calls/:id" element={<ProtectedRoute><CallDetailPage /></ProtectedRoute>} />
-                <Route path="/leads/meetings/:id" element={<ProtectedRoute><MeetingDetailPage /></ProtectedRoute>} />
+              {/* Lead routes */}
+              <Route path="/leads" element={<AppLayout><LeadsPage /></AppLayout>} />
+              <Route path="/leads/assigned" element={<AppLayout><AssignedLeadsPage /></AppLayout>} />
+              <Route path="/leads/meetings" element={<AppLayout><MeetingsPage /></AppLayout>} />
+              <Route path="/leads/new" element={<AppLayout><NewLeadPage /></AppLayout>} />
+              <Route path="/leads/call/new" element={<AppLayout><NewCallPage /></AppLayout>} />
+              <Route path="/leads/meetings/new" element={<AppLayout><NewMeetingPage /></AppLayout>} />
+              <Route path="/leads/calls/:id" element={<AppLayout><CallDetailPage /></AppLayout>} />
+              <Route path="/leads/meetings/:id" element={<AppLayout><MeetingDetailPage /></AppLayout>} />
 
-                {/* Visit routes */}
-                <Route path="/visits" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
-                <Route path="/visits/today" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
-                <Route path="/visits/new" element={<ProtectedRoute><VisitPlannerPage /></ProtectedRoute>} />
-                <Route path="/visits/plans/:id" element={<ProtectedRoute><VisitPlanDetailPage /></ProtectedRoute>} />
-                <Route path="/visits/tasks/:id/outcome" element={<ProtectedRoute><TaskOutcomePage /></ProtectedRoute>} />
+              {/* Visit routes */}
+              <Route path="/visits" element={<AppLayout><VisitPlannerPage /></AppLayout>} />
+              <Route path="/visits/today" element={<AppLayout><VisitPlannerPage /></AppLayout>} />
+              <Route path="/visits/new" element={<AppLayout><VisitPlannerPage /></AppLayout>} />
+              <Route path="/visits/plans/:id" element={<AppLayout><VisitPlanDetailPage /></AppLayout>} />
+              <Route path="/visits/tasks/:id/outcome" element={<AppLayout><TaskOutcomePage /></AppLayout>} />
 
-                {/* Order routes - Fixed to use the main OrdersPage with tabs */}
-                <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-                <Route path="/orders/new" element={<ProtectedRoute><NewOrderPage /></ProtectedRoute>} />
-                <Route path="/orders/pending" element={<ProtectedRoute><PendingOrdersPage /></ProtectedRoute>} />
-                <Route path="/orders/process" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-                <Route path="/orders/delivered" element={<ProtectedRoute><DeliveredOrdersPage /></ProtectedRoute>} />
-                <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+              {/* Order routes */}
+              <Route path="/orders" element={<AppLayout><OrdersPage /></AppLayout>} />
+              <Route path="/orders/new" element={<AppLayout><NewOrderPage /></AppLayout>} />
+              <Route path="/orders/pending" element={<AppLayout><PendingOrdersPage /></AppLayout>} />
+              <Route path="/orders/process" element={<AppLayout><OrdersPage /></AppLayout>} />
+              <Route path="/orders/delivered" element={<AppLayout><DeliveredOrdersPage /></AppLayout>} />
+              <Route path="/orders/:id" element={<AppLayout><OrderDetailPage /></AppLayout>} />
 
-                {/* Report routes */}
-                <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-                <Route path="/reports/leads" element={<ProtectedRoute><LeadReportsPage /></ProtectedRoute>} />
-                <Route path="/reports/performance" element={<ProtectedRoute><PerformancePage /></ProtectedRoute>} />
+              {/* Report routes */}
+              <Route path="/reports" element={<AppLayout><ReportsPage /></AppLayout>} />
+              <Route path="/reports/leads" element={<AppLayout><LeadReportsPage /></AppLayout>} />
+              <Route path="/reports/performance" element={<AppLayout><PerformancePage /></AppLayout>} />
 
-                {/* Admin routes */}
-                <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-                <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-                <Route path="/admin/import" element={<ProtectedRoute><ImportPage /></ProtectedRoute>} />
-                <Route path="/admin/restaurants" element={<ProtectedRoute><RestaurantManagementPage /></ProtectedRoute>} />
-                <Route path="/admin/migration" element={<ProtectedRoute><RestaurantMigrationPage /></ProtectedRoute>} />
-                <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+              {/* Admin routes */}
+              <Route path="/admin/users" element={<AppLayout><UsersPage /></AppLayout>} />
+              <Route path="/admin/products" element={<AppLayout><ProductsPage /></AppLayout>} />
+              <Route path="/admin/import" element={<AppLayout><ImportPage /></AppLayout>} />
+              <Route path="/admin/restaurants" element={<AppLayout><RestaurantManagementPage /></AppLayout>} />
+              <Route path="/admin/migration" element={<AppLayout><RestaurantMigrationPage /></AppLayout>} />
+              <Route path="/admin/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
 
-                {/* 404 route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthWrapper>
+              {/* 404 route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
             <Toaster />
           </AuthProvider>
         </Router>

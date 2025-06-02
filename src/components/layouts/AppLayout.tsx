@@ -1,13 +1,14 @@
 
+import { ReactNode } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
-import DashboardLayout from './layouts/DashboardLayout';
+import DashboardLayout from './DashboardLayout';
 
-interface AuthWrapperProps {
-  children: React.ReactNode;
+interface AppLayoutProps {
+  children: ReactNode;
 }
 
-const AuthWrapper = ({ children }: AuthWrapperProps) => {
+const AppLayout = ({ children }: AppLayoutProps) => {
   const { user, profile, isLoading } = useAuth();
   const location = useLocation();
 
@@ -38,4 +39,4 @@ const AuthWrapper = ({ children }: AuthWrapperProps) => {
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
-export default AuthWrapper;
+export default AppLayout;

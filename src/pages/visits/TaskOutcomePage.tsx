@@ -1,10 +1,8 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useTaskOutcomes } from '@/hooks/useTaskOutcomes';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
 import TaskOutcomeForm from '@/components/visits/TaskOutcomeForm';
 import VisitCommentsSection from '@/components/visits/VisitCommentsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -164,125 +162,119 @@ const TaskOutcomePage = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="container mx-auto p-6 max-w-7xl">
-          <div className="flex items-center justify-center h-40">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading task details...</p>
-              <p className="text-sm text-gray-500 mt-2">Task ID: {id}</p>
-            </div>
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="flex items-center justify-center h-40">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading task details...</p>
+            <p className="text-sm text-gray-500 mt-2">Task ID: {id}</p>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (error || !task) {
     return (
-      <DashboardLayout>
-        <div className="container mx-auto p-6 max-w-7xl">
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Task</h3>
-            <p className="text-muted-foreground mb-4">{error || 'Task not found'}</p>
-            <p className="text-sm text-gray-500 mb-4">Task ID: {id}</p>
-            <div className="space-x-2">
-              <Button onClick={() => navigate('/visits')} className="mr-2">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Visits
-              </Button>
-              <Button variant="outline" onClick={fetchTask}>
-                Try Again
-              </Button>
-            </div>
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Task</h3>
+          <p className="text-muted-foreground mb-4">{error || 'Task not found'}</p>
+          <p className="text-sm text-gray-500 mb-4">Task ID: {id}</p>
+          <div className="space-x-2">
+            <Button onClick={() => navigate('/visits')} className="mr-2">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Visits
+            </Button>
+            <Button variant="outline" onClick={fetchTask}>
+              Try Again
+            </Button>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Record Visit Outcome</h1>
-            <p className="text-muted-foreground">Record the outcome of your visit and update lead status</p>
-          </div>
-          <Button variant="outline" onClick={() => navigate('/visits')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Visits
-          </Button>
+    <div className="container mx-auto p-6 max-w-7xl">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Record Visit Outcome</h1>
+          <p className="text-muted-foreground">Record the outcome of your visit and update lead status</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/visits')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Visits
+        </Button>
+      </div>
+
+      {/* Main Content - Responsive Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column - Task Details (4fr on desktop) */}
+        <div className="lg:col-span-4 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Visit Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-medium">{task.restaurant?.name || 'Unknown Restaurant'}</h3>
+                {task.restaurant?.township && (
+                  <div className="flex items-center text-sm text-muted-foreground mt-1">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {task.restaurant.township}
+                  </div>
+                )}
+                {task.restaurant?.address && (
+                  <p className="text-sm text-muted-foreground mt-1">{task.restaurant.address}</p>
+                )}
+              </div>
+
+              {task.restaurant?.contact_person && (
+                <div className="flex items-center text-sm">
+                  <User className="h-4 w-4 mr-2" />
+                  {task.restaurant.contact_person}
+                </div>
+              )}
+
+              {task.restaurant?.phone && (
+                <div className="flex items-center text-sm">
+                  <Phone className="h-4 w-4 mr-2" />
+                  {task.restaurant.phone}
+                </div>
+              )}
+
+              {task.visit_time && (
+                <div className="flex items-center text-sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {new Date(task.visit_time).toLocaleString()}
+                </div>
+              )}
+
+              {task.notes && (
+                <div>
+                  <p className="text-sm font-medium">Visit Notes:</p>
+                  <p className="text-sm text-muted-foreground">{task.notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Comments Section */}
+          <VisitCommentsSection visitTaskId={id!} />
         </div>
 
-        {/* Main Content - Responsive Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column - Task Details (4fr on desktop) */}
-          <div className="lg:col-span-4 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Visit Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-medium">{task.restaurant?.name || 'Unknown Restaurant'}</h3>
-                  {task.restaurant?.township && (
-                    <div className="flex items-center text-sm text-muted-foreground mt-1">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {task.restaurant.township}
-                    </div>
-                  )}
-                  {task.restaurant?.address && (
-                    <p className="text-sm text-muted-foreground mt-1">{task.restaurant.address}</p>
-                  )}
-                </div>
-
-                {task.restaurant?.contact_person && (
-                  <div className="flex items-center text-sm">
-                    <User className="h-4 w-4 mr-2" />
-                    {task.restaurant.contact_person}
-                  </div>
-                )}
-
-                {task.restaurant?.phone && (
-                  <div className="flex items-center text-sm">
-                    <Phone className="h-4 w-4 mr-2" />
-                    {task.restaurant.phone}
-                  </div>
-                )}
-
-                {task.visit_time && (
-                  <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {new Date(task.visit_time).toLocaleString()}
-                  </div>
-                )}
-
-                {task.notes && (
-                  <div>
-                    <p className="text-sm font-medium">Visit Notes:</p>
-                    <p className="text-sm text-muted-foreground">{task.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Comments Section */}
-            <VisitCommentsSection visitTaskId={id!} />
-          </div>
-
-          {/* Right Column - Outcome Form (8fr on desktop) */}
-          <div className="lg:col-span-8">
-            <TaskOutcomeForm
-              task={task}
-              onSubmit={handleSubmitOutcome}
-              isSubmitting={isSubmitting}
-            />
-          </div>
+        {/* Right Column - Outcome Form (8fr on desktop) */}
+        <div className="lg:col-span-8">
+          <TaskOutcomeForm
+            task={task}
+            onSubmit={handleSubmitOutcome}
+            isSubmitting={isSubmitting}
+          />
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
