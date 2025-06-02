@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import QuickMapAccess from '@/components/visits/QuickMapAccess';
 import { 
   Calendar, 
   Clock,
@@ -66,13 +67,16 @@ const TodaysVisitsPage = () => {
             {format(new Date(), 'EEEE, MMMM dd, yyyy')} • {todaysTasks.length} visits scheduled
           </p>
         </div>
-        <Button 
-          variant="outline"
-          onClick={() => navigate('/visits')}
-        >
-          <Calendar className="h-4 w-4 mr-2" />
-          View All Plans
-        </Button>
+        <div className="flex items-center space-x-3">
+          <QuickMapAccess tasks={todaysTasks} />
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/visits')}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            View All Plans
+          </Button>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -141,7 +145,7 @@ const TodaysVisitsPage = () => {
           <Alert>
             <Navigation className="h-4 w-4" />
             <AlertDescription>
-              <strong>Today's Route:</strong> You have {todaysTasks.length} visits scheduled. Plan your route efficiently to maximize productivity.
+              <strong>Today's Route:</strong> You have {todaysTasks.length} visits scheduled. Use the Route Map to plan your journey efficiently.
             </AlertDescription>
           </Alert>
 
