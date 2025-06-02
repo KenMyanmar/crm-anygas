@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { useVisitPlans } from '@/hooks/useVisitPlans';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,8 @@ import {
   Users, 
   Clock,
   ArrowRight,
-  Info
+  Info,
+  User
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +34,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const VisitPlannerPage = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const { plans, isLoading, createVisitPlan } = useVisitPlans();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -59,6 +62,10 @@ const VisitPlannerPage = () => {
     navigate(`/visits/plans/${planId}`);
   };
 
+  const isMyPlan = (plan: any) => {
+    return plan.created_by === profile?.id;
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -79,7 +86,7 @@ const VisitPlannerPage = () => {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Visit Planner</h1>
             <p className="text-muted-foreground">
-              Plan and manage your field visits efficiently
+              Plan and manage field visits - now visible to all team members
             </p>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -93,7 +100,7 @@ const VisitPlannerPage = () => {
               <DialogHeader>
                 <DialogTitle>Create New Visit Plan</DialogTitle>
                 <DialogDescription>
-                  Set up a new visit plan for your field activities.
+                  Set up a new visit plan for your field activities. This will be visible to all team members.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -144,7 +151,7 @@ const VisitPlannerPage = () => {
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>How to add restaurants:</strong> Create a visit plan, then click on it to open the plan details where you can use our bulk restaurant selector to add multiple restaurants at once with filtering options.
+            <strong>Team Collaboration:</strong> All visit plans are now visible to all team members for better coordination. You can view everyone's plans and add restaurants to your own plans.
           </AlertDescription>
         </Alert>
 
@@ -169,15 +176,24 @@ const VisitPlannerPage = () => {
             {plans.map((plan) => (
               <Card 
                 key={plan.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className={`cursor-pointer hover:shadow-md transition-shadow ${
+                  isMyPlan(plan) ? 'ring-2 ring-primary/20' : ''
+                }`}
                 onClick={() => handleNavigateToDetail(plan.id)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{plan.title}</CardTitle>
-                    <Badge variant="outline">
-                      {format(new Date(plan.plan_date), 'MMM dd')}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {isMyPlan(plan) && (
+                        <Badge variant="default" className="text-xs">
+                          My Plan
+                        </Badge>
+                      )}
+                      <Badge variant="outline">
+                        {format(new Date(plan.plan_date), 'MMM dd')}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -205,7 +221,8 @@ const VisitPlannerPage = () => {
                           handleNavigateToDetail(plan.id);
                         }}
                       >
-                        Add Restaurants <ArrowRight className="ml-1 h-3 w-3" />
+                        {isMyPlan(plan) ? 'Add Restaurants' : 'View Plan'} 
+                        <ArrowRight className="ml-1 h-3 w-3" />
                       </Button>
                     </div>
                   </div>

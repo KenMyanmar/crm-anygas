@@ -14,7 +14,14 @@ export const useVisitPlans = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('visit_plans')
-        .select('*')
+        .select(`
+          *,
+          creator:users!visit_plans_created_by_fkey (
+            id,
+            full_name,
+            role
+          )
+        `)
         .order('plan_date', { ascending: false });
 
       if (error) throw error;
@@ -42,7 +49,14 @@ export const useVisitPlans = () => {
           ...planData,
           created_by: user.id
         })
-        .select()
+        .select(`
+          *,
+          creator:users!visit_plans_created_by_fkey (
+            id,
+            full_name,
+            role
+          )
+        `)
         .single();
 
       if (error) throw error;
@@ -71,7 +85,14 @@ export const useVisitPlans = () => {
         .from('visit_plans')
         .update(updates)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          creator:users!visit_plans_created_by_fkey (
+            id,
+            full_name,
+            role
+          )
+        `)
         .single();
 
       if (error) throw error;

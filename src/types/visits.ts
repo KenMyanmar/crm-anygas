@@ -1,4 +1,3 @@
-
 export interface VisitPlan {
   id: string;
   plan_date: string;
@@ -9,6 +8,11 @@ export interface VisitPlan {
   updated_at: string;
   team_visible?: boolean;
   estimated_total_duration_minutes?: number;
+  creator?: {
+    id: string;
+    full_name: string;
+    role: string;
+  };
 }
 
 export interface VisitTask {
