@@ -100,111 +100,109 @@ const RestaurantsPage = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Restaurants</h1>
-          <div className="flex items-center space-x-2">
-            {isAdmin && (
-              <Button 
-                variant="outline" 
-                onClick={handleImportClick}
-                className="flex items-center"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </Button>
-            )}
-            <Button className="flex items-center">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Restaurant
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Restaurants</h1>
+        <div className="flex items-center space-x-2">
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              onClick={handleImportClick}
+              className="flex items-center"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import
             </Button>
-          </div>
+          )}
+          <Button className="flex items-center">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Restaurant
+          </Button>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Restaurant Management</CardTitle>
-            <CardDescription>
-              View, search and manage your restaurants database. Create new restaurants or generate leads from existing ones.
-            </CardDescription>
-            <div className="mt-4 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search by name, township or phone..." 
-                className="pl-10"
-                value={searchQuery}
-                onChange={handleSearch}
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="py-10 text-center text-muted-foreground">Loading restaurants...</div>
-            ) : filteredRestaurants.length === 0 ? (
-              <div className="py-10 text-center text-muted-foreground">
-                {searchQuery ? "No restaurants found matching your search" : "No restaurants found"}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Township</TableHead>
-                      <TableHead>Contact Person</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead className="w-[80px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRestaurants.map((restaurant) => (
-                      <TableRow key={restaurant.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell 
-                          className="font-medium" 
-                          onClick={() => handleViewRestaurant(restaurant.id)}
-                        >
-                          {restaurant.name}
-                        </TableCell>
-                        <TableCell onClick={() => handleViewRestaurant(restaurant.id)}>
-                          {restaurant.township || "-"}
-                        </TableCell>
-                        <TableCell onClick={() => handleViewRestaurant(restaurant.id)}>
-                          {restaurant.contact_person || "-"}
-                        </TableCell>
-                        <TableCell onClick={() => handleViewRestaurant(restaurant.id)}>
-                          <div className="flex items-center">
-                            <Phone className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                            {restaurant.phone || "-"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewRestaurant(restaurant.id)}>
-                                View details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCreateLead(restaurant.id)}>
-                                Create lead
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
-    </DashboardLayout>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Restaurant Management</CardTitle>
+          <CardDescription>
+            View, search and manage your restaurants database. Create new restaurants or generate leads from existing ones.
+          </CardDescription>
+          <div className="mt-4 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search by name, township or phone..." 
+              className="pl-10"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="py-10 text-center text-muted-foreground">Loading restaurants...</div>
+          ) : filteredRestaurants.length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground">
+              {searchQuery ? "No restaurants found matching your search" : "No restaurants found"}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Township</TableHead>
+                    <TableHead>Contact Person</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead className="w-[80px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRestaurants.map((restaurant) => (
+                    <TableRow key={restaurant.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableCell 
+                        className="font-medium" 
+                        onClick={() => handleViewRestaurant(restaurant.id)}
+                      >
+                        {restaurant.name}
+                      </TableCell>
+                      <TableCell onClick={() => handleViewRestaurant(restaurant.id)}>
+                        {restaurant.township || "-"}
+                      </TableCell>
+                      <TableCell onClick={() => handleViewRestaurant(restaurant.id)}>
+                        {restaurant.contact_person || "-"}
+                      </TableCell>
+                      <TableCell onClick={() => handleViewRestaurant(restaurant.id)}>
+                        <div className="flex items-center">
+                          <Phone className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                          {restaurant.phone || "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewRestaurant(restaurant.id)}>
+                              View details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCreateLead(restaurant.id)}>
+                              Create lead
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

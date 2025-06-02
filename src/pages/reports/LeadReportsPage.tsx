@@ -4,7 +4,7 @@ import { BarChart } from "lucide-react";
 
 const LeadReportsPage = () => {
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center space-x-2">
         <BarChart className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold tracking-tight">Lead Reports</h1>

@@ -1,11 +1,9 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useUsers } from '@/hooks/useLeads';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
 import RestaurantSelector from '@/components/restaurant/RestaurantSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,83 +108,81 @@ const NewLeadPage = () => {
     (selectedRestaurant.isNew ? selectedRestaurant.name && selectedRestaurant.township : true);
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto py-6 max-w-2xl">
-        <div className="space-y-6">
-          <div className="flex items-center">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/leads')}>
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back to Leads
-            </Button>
-            <h1 className="text-2xl font-bold tracking-tight ml-4">New Lead</h1>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Restaurant Selection</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RestaurantSelector
-                  onRestaurantSelect={setSelectedRestaurant}
-                  selectedRestaurant={selectedRestaurant}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Lead Assignment</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label htmlFor="assigned_to">Assign To *</Label>
-                  {usersLoading ? (
-                    <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
-                      Loading users...
-                    </div>
-                  ) : (
-                    <Select
-                      value={assignedToUserId}
-                      onValueChange={setAssignedToUserId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a user to assign this lead to" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.full_name} ({user.role})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-2 pt-4">
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || !isFormValid || usersLoading} 
-                className="flex-1"
-              >
-                {isSubmitting ? 'Creating Lead...' : 'Create Lead'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/leads')}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
+    <div className="container mx-auto py-6 max-w-2xl">
+      <div className="space-y-6">
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/leads')}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back to Leads
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight ml-4">New Lead</h1>
         </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Restaurant Selection</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RestaurantSelector
+                onRestaurantSelect={setSelectedRestaurant}
+                selectedRestaurant={selectedRestaurant}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Lead Assignment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="assigned_to">Assign To *</Label>
+                {usersLoading ? (
+                  <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                    Loading users...
+                  </div>
+                ) : (
+                  <Select
+                    value={assignedToUserId}
+                    onValueChange={setAssignedToUserId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a user to assign this lead to" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name} ({user.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-2 pt-4">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !isFormValid || usersLoading} 
+              className="flex-1"
+            >
+              {isSubmitting ? 'Creating Lead...' : 'Create Lead'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/leads')}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

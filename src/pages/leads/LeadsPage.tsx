@@ -1,7 +1,5 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { useLeads } from '@/hooks/useLeads';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -58,146 +56,144 @@ const LeadsPage = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p>Loading leads...</p>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <div className="container mx-auto p-6">
         <div className="text-center py-8">
           <p className="text-red-600">Error loading leads: {error}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             Retry
           </Button>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">All Leads</h1>
-            <p className="text-muted-foreground">
-              Manage and track all leads in your pipeline
-            </p>
-          </div>
-          <Button onClick={() => navigate('/leads/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Lead
-          </Button>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">All Leads</h1>
+          <p className="text-muted-foreground">
+            Manage and track all leads in your pipeline
+          </p>
         </div>
+        <Button onClick={() => navigate('/leads/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Lead
+        </Button>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search leads by name, restaurant, or township..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="ALL">All Statuses</option>
-                {LEAD_STATUSES.map(status => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search leads by name, restaurant, or township..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardHeader>
-          <CardContent>
-            {filteredLeads.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  {searchTerm || statusFilter !== 'ALL' 
-                    ? 'No leads match your filters' 
-                    : 'No leads found'
-                  }
-                </p>
-                {!searchTerm && statusFilter === 'ALL' && (
-                  <Button onClick={() => navigate('/leads/new')}>
-                    Create Your First Lead
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Lead Name</TableHead>
-                    <TableHead>Restaurant</TableHead>
-                    <TableHead>Township</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLeads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-medium">{lead.name}</TableCell>
-                      <TableCell>{lead.restaurant.name}</TableCell>
-                      <TableCell>{lead.restaurant.township || 'N/A'}</TableCell>
-                      <TableCell>{getStatusBadge(lead.status)}</TableCell>
-                      <TableCell>
-                        <LeadAssignmentSelect
-                          currentAssignedUserId={lead.assigned_to_user_id}
-                          currentAssignedUserName={lead.assigned_user.full_name}
-                          onAssignmentUpdate={(newUserId) => 
-                            updateLeadAssignment(lead.id, newUserId)
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="ALL">All Statuses</option>
+              {LEAD_STATUSES.map(status => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredLeads.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || statusFilter !== 'ALL' 
+                  ? 'No leads match your filters' 
+                  : 'No leads found'
+                }
+              </p>
+              {!searchTerm && statusFilter === 'ALL' && (
+                <Button onClick={() => navigate('/leads/new')}>
+                  Create Your First Lead
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Lead Name</TableHead>
+                  <TableHead>Restaurant</TableHead>
+                  <TableHead>Township</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLeads.map((lead) => (
+                  <TableRow key={lead.id}>
+                    <TableCell className="font-medium">{lead.name}</TableCell>
+                    <TableCell>{lead.restaurant.name}</TableCell>
+                    <TableCell>{lead.restaurant.township || 'N/A'}</TableCell>
+                    <TableCell>{getStatusBadge(lead.status)}</TableCell>
+                    <TableCell>
+                      <LeadAssignmentSelect
+                        currentAssignedUserId={lead.assigned_to_user_id}
+                        currentAssignedUserName={lead.assigned_user.full_name}
+                        onAssignmentUpdate={(newUserId) => 
+                          updateLeadAssignment(lead.id, newUserId)
+                        }
+                        leadName={lead.name}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(lead.created_at), 'MMM dd, yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <LeadStatusSelect
+                          currentStatus={lead.status}
+                          onStatusUpdate={(newStatus, notes) => 
+                            updateLeadStatus(lead.id, newStatus, notes)
                           }
                           leadName={lead.name}
                         />
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(lead.created_at), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <LeadStatusSelect
-                            currentStatus={lead.status}
-                            onStatusUpdate={(newStatus, notes) => 
-                              updateLeadStatus(lead.id, newStatus, notes)
-                            }
-                            leadName={lead.name}
-                          />
-                          <ConvertToOrderButton
-                            leadId={lead.id}
-                            restaurantId={lead.restaurant_id}
-                            restaurantName={lead.restaurant.name}
-                            isWonLead={lead.status === 'CLOSED_WON'}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+                        <ConvertToOrderButton
+                          leadId={lead.id}
+                          restaurantId={lead.restaurant_id}
+                          restaurantName={lead.restaurant.name}
+                          isWonLead={lead.status === 'CLOSED_WON'}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

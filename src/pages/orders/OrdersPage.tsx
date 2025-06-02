@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Order } from '@/types/orders';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,34 +76,36 @@ const OrdersPage = () => {
   };
 
   // Filter orders by search and township
-  const searchFilteredOrders = allOrders.filter(order => {
-    const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.restaurant?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTownship = townshipFilter === 'all' || order.restaurant?.township === townshipFilter;
-    return matchesSearch && matchesTownship;
-  });
+  function searchFilteredOrders() {
+    return allOrders.filter(order => {
+      const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           order.restaurant?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTownship = townshipFilter === 'all' || order.restaurant?.township === townshipFilter;
+      return matchesSearch && matchesTownship;
+    });
+  }
 
   // Filter by tab status
-  const getOrdersForTab = (tab: string) => {
+  function getOrdersForTab(tab: string) {
     const filtered = (() => {
       switch (tab) {
         case 'pending':
-          return searchFilteredOrders.filter(order => order.status === 'PENDING_CONFIRMATION');
+          return searchFilteredOrders().filter(order => order.status === 'PENDING_CONFIRMATION');
         case 'process':
-          return searchFilteredOrders.filter(order => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(order.status));
+          return searchFilteredOrders().filter(order => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(order.status));
         case 'delivered':
-          return searchFilteredOrders.filter(order => order.status === 'DELIVERED');
+          return searchFilteredOrders().filter(order => order.status === 'DELIVERED');
         default:
-          return searchFilteredOrders;
+          return searchFilteredOrders();
       }
     })();
     
     console.log(`Orders for ${tab} tab:`, filtered.length);
     return filtered;
-  };
+  }
 
   // Calculate stats from ALL orders (not filtered)
-  const getOrderStats = () => {
+  function getOrderStats() {
     const stats = {
       pendingCount: allOrders.filter(o => o.status === 'PENDING_CONFIRMATION').length,
       confirmedCount: allOrders.filter(o => ['CONFIRMED', 'OUT_FOR_DELIVERY'].includes(o.status)).length,
@@ -115,7 +115,7 @@ const OrdersPage = () => {
     
     console.log('Order stats:', stats);
     return stats;
-  };
+  }
 
   const getTownships = () => {
     const townships = [...new Set(allOrders.map(o => o.restaurant?.township).filter(Boolean))];
@@ -130,91 +130,89 @@ const OrdersPage = () => {
   const stats = getOrderStats();
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage orders through their workflow: Pending → In Process → Delivered
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={fetchAllOrders} disabled={isLoading}>
-              <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button asChild>
-              <Link to="/orders/new">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create Order
-              </Link>
-            </Button>
-          </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage orders through their workflow: Pending → In Process → Delivered
+          </p>
         </div>
-
-        <OrderDashboardStats stats={stats} />
-
-        <Card className="border-2">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">Order Workflow Management</CardTitle>
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search orders..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 w-64"
-                  />
-                </div>
-                <Select value={townshipFilter} onValueChange={setTownshipFilter}>
-                  <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by township" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Townships</SelectItem>
-                    {getTownships().map((township) => (
-                      <SelectItem key={township} value={township}>
-                        {township}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="pending" className="data-[state=active]:bg-amber-100">
-                  Pending Orders ({stats.pendingCount})
-                </TabsTrigger>
-                <TabsTrigger value="process" className="data-[state=active]:bg-blue-100">
-                  In Process ({stats.confirmedCount})
-                </TabsTrigger>
-                <TabsTrigger value="delivered" className="data-[state=active]:bg-green-100">
-                  Delivered ({stats.deliveredCount})
-                </TabsTrigger>
-              </TabsList>
-
-              {['pending', 'process', 'delivered'].map((tab) => (
-                <TabsContent key={tab} value={tab} className="mt-0">
-                  <SimpleOrdersTable 
-                    orders={getOrdersForTab(tab)} 
-                    isLoading={isLoading} 
-                    onOrderUpdated={handleOrderUpdated}
-                    currentTab={tab}
-                  />
-                </TabsContent>
-              ))}
-            </Tabs>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={fetchAllOrders} disabled={isLoading}>
+            <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button asChild>
+            <Link to="/orders/new">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create Order
+            </Link>
+          </Button>
+        </div>
       </div>
-    </DashboardLayout>
+
+      <OrderDashboardStats stats={stats} />
+
+      <Card className="border-2">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">Order Workflow Management</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search orders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 w-64"
+                />
+              </div>
+              <Select value={townshipFilter} onValueChange={setTownshipFilter}>
+                <SelectTrigger className="w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by township" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Townships</SelectItem>
+                  {getTownships().map((township) => (
+                    <SelectItem key={township} value={township}>
+                      {township}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="pending" className="data-[state=active]:bg-amber-100">
+                Pending Orders ({stats.pendingCount})
+              </TabsTrigger>
+              <TabsTrigger value="process" className="data-[state=active]:bg-blue-100">
+                In Process ({stats.confirmedCount})
+              </TabsTrigger>
+              <TabsTrigger value="delivered" className="data-[state=active]:bg-green-100">
+                Delivered ({stats.deliveredCount})
+              </TabsTrigger>
+            </TabsList>
+
+            {['pending', 'process', 'delivered'].map((tab) => (
+              <TabsContent key={tab} value={tab} className="mt-0">
+                <SimpleOrdersTable 
+                  orders={getOrdersForTab(tab)} 
+                  isLoading={isLoading} 
+                  onOrderUpdated={handleOrderUpdated}
+                  currentTab={tab}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
