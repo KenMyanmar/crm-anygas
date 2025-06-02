@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -5,6 +6,7 @@ import { useVisitPlans } from '@/hooks/useVisitPlans';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, 
   Plus, 
@@ -16,7 +18,6 @@ import {
   User
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -219,16 +220,16 @@ const VisitPlannerPage = () => {
                         handleNavigateToDetail(plan.id);
                       }}
                     >
-                        {isMyPlan(plan) ? 'Add Restaurants' : 'View Plan'} 
+                      {isMyPlan(plan) ? 'Add Restaurants' : 'View Plan'} 
                       <ArrowRight className="ml-1 h-3 w-3" />
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
