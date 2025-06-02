@@ -44,6 +44,7 @@ import {
 import { VisitTask } from '@/types/visits';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
+import { isAdminOrManager } from '@/utils/roleUtils';
 import VisitCommentsSection from './VisitCommentsSection';
 
 interface VisitTasksTableProps {
@@ -67,12 +68,23 @@ const VisitTasksTable = ({
 
   const canEditTask = (task: VisitTask) => {
     if (!profile) return false;
-    // Can edit if: assigned salesperson, plan creator, or admin
-    return (
-      task.salesperson_uid === profile.id ||
-      planCreatedBy === profile.id ||
-      profile.role === 'admin'
-    );
+    
+    // Admins and managers can edit all tasks
+    if (isAdminOrManager(profile.role)) {
+      return true;
+    }
+    
+    // Plan creator can edit their own plan's tasks
+    if (planCreatedBy === profile.id) {
+      return true;
+    }
+    
+    // Assigned salesperson can edit their tasks
+    if (task.salesperson_uid === profile.id) {
+      return true;
+    }
+    
+    return false;
   };
 
   const getStatusIcon = (status: VisitTask['status']) => {
@@ -268,7 +280,7 @@ const VisitTasksTable = ({
                                 <Lock className="h-3 w-3 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>View only - Contact plan creator or assigned salesperson to edit</p>
+                                <p>View only - Managers, plan creators, and assigned salespersons can edit</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
