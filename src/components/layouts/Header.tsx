@@ -1,5 +1,5 @@
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +34,9 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [upcomingMeetings, setUpcomingMeetings] = useState(0);
+  
+  // React Strict Mode guard
+  const hasInitialized = useRef(false);
 
   const handleSignOut = async () => {
     try {
@@ -48,6 +51,10 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
   };
 
   useEffect(() => {
+    // Prevent double mounting in React Strict Mode
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const fetchUpcomingMeetings = async () => {
       if (!profile?.id) return;
       
@@ -73,6 +80,10 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
     };
     
     fetchUpcomingMeetings();
+
+    return () => {
+      hasInitialized.current = false;
+    };
   }, [profile?.id]);
 
   const initials = profile?.full_name

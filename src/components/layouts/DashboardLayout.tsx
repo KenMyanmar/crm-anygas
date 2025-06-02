@@ -1,5 +1,5 @@
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Sidebar, SidebarContent, SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar';
@@ -17,18 +17,38 @@ const DashboardLayoutContent = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const sidebar = useSidebar();
+  
+  // React Strict Mode guard for effects
+  const hasInitializedNotifications = useRef(false);
+  const hasInitializedAuth = useRef(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
+    // Prevent double mounting in React Strict Mode
+    if (hasInitializedAuth.current) return;
+    hasInitializedAuth.current = true;
+
     if (!isLoading && !profile) {
       navigate('/login');
     }
+
+    return () => {
+      hasInitializedAuth.current = false;
+    };
   }, [profile, isLoading, navigate]);
 
   // Mock data for unread notifications count
   useEffect(() => {
+    // Prevent double mounting in React Strict Mode
+    if (hasInitializedNotifications.current) return;
+    hasInitializedNotifications.current = true;
+
     // In production, this would fetch from the database
     setUnreadNotifications(3);
+
+    return () => {
+      hasInitializedNotifications.current = false;
+    };
   }, []);
 
   if (isLoading || !profile) {
@@ -74,9 +94,7 @@ const DashboardLayoutContent = ({ children }: DashboardLayoutProps) => {
         <Header unreadNotifications={unreadNotifications} />
         
         <main className="flex-1 overflow-auto p-0">
-          <div className="container mx-auto p-6 max-w-7xl">
-            {children}
-          </div>
+          {children}
         </main>
       </div>
     </div>

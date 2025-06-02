@@ -1,11 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useTaskOutcomes } from '@/hooks/useTaskOutcomes';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import PageContainer from '@/components/layouts/PageContainer';
 import TaskOutcomeForm from '@/components/visits/TaskOutcomeForm';
 import VisitCommentsSection from '@/components/visits/VisitCommentsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +19,15 @@ const TaskOutcomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { recordTaskOutcome, isSubmitting } = useTaskOutcomes();
+  
+  // React Strict Mode guard
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
+    // Prevent double mounting in React Strict Mode
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     console.log('TaskOutcomePage mounted with id:', id);
     if (id) {
       fetchTask();
@@ -30,6 +36,11 @@ const TaskOutcomePage = () => {
       setError('No task ID provided');
       setIsLoading(false);
     }
+
+    // Cleanup function
+    return () => {
+      hasInitialized.current = false;
+    };
   }, [id]);
 
   const fetchTask = async () => {
@@ -154,7 +165,7 @@ const TaskOutcomePage = () => {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <PageContainer>
+        <div className="container mx-auto p-6 max-w-7xl">
           <div className="flex items-center justify-center h-40">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -162,7 +173,7 @@ const TaskOutcomePage = () => {
               <p className="text-sm text-gray-500 mt-2">Task ID: {id}</p>
             </div>
           </div>
-        </PageContainer>
+        </div>
       </DashboardLayout>
     );
   }
@@ -170,7 +181,7 @@ const TaskOutcomePage = () => {
   if (error || !task) {
     return (
       <DashboardLayout>
-        <PageContainer>
+        <div className="container mx-auto p-6 max-w-7xl">
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Task</h3>
             <p className="text-muted-foreground mb-4">{error || 'Task not found'}</p>
@@ -185,26 +196,30 @@ const TaskOutcomePage = () => {
               </Button>
             </div>
           </div>
-        </PageContainer>
+        </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <PageContainer
-        title="Record Visit Outcome"
-        description="Record the outcome of your visit and update lead status"
-        action={
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Record Visit Outcome</h1>
+            <p className="text-muted-foreground">Record the outcome of your visit and update lead status</p>
+          </div>
           <Button variant="outline" onClick={() => navigate('/visits')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Visits
           </Button>
-        }
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Task Details */}
-          <div className="lg:col-span-1 space-y-6">
+        </div>
+
+        {/* Main Content - Responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column - Task Details (4fr on desktop) */}
+          <div className="lg:col-span-4 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Visit Details</CardTitle>
@@ -257,8 +272,8 @@ const TaskOutcomePage = () => {
             <VisitCommentsSection visitTaskId={id!} />
           </div>
 
-          {/* Right Column - Outcome Form */}
-          <div className="lg:col-span-2">
+          {/* Right Column - Outcome Form (8fr on desktop) */}
+          <div className="lg:col-span-8">
             <TaskOutcomeForm
               task={task}
               onSubmit={handleSubmitOutcome}
@@ -266,7 +281,7 @@ const TaskOutcomePage = () => {
             />
           </div>
         </div>
-      </PageContainer>
+      </div>
     </DashboardLayout>
   );
 };
