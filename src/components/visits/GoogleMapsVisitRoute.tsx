@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +23,9 @@ interface GoogleMapsVisitRouteProps {
   tasks: VisitTask[];
 }
 
+// Default Google Maps API key for all users
+const DEFAULT_GOOGLE_MAPS_API_KEY = 'AIzaSyA7nrAwDyBVjOQWnSZJoHlBIY6dDOnMUX8';
+
 const GoogleMapsVisitRoute = ({ tasks }: GoogleMapsVisitRouteProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -38,16 +40,13 @@ const GoogleMapsVisitRoute = ({ tasks }: GoogleMapsVisitRouteProps) => {
     distance: string;
     duration: string;
   } | null>(null);
-  const [apiKey, setApiKey] = useState<string>('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
+  const [apiKey, setApiKey] = useState<string>(DEFAULT_GOOGLE_MAPS_API_KEY);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
-  // Check if we have an API key in localStorage
+  // Auto-initialize with default API key
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('google_maps_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-      setShowApiKeyInput(false);
-      initializeMap(savedApiKey);
+    if (DEFAULT_GOOGLE_MAPS_API_KEY) {
+      initializeMap(DEFAULT_GOOGLE_MAPS_API_KEY);
     }
   }, []);
 
@@ -108,7 +107,7 @@ const GoogleMapsVisitRoute = ({ tasks }: GoogleMapsVisitRouteProps) => {
       setIsLoading(false);
     } catch (err) {
       console.error('Error initializing Google Maps:', err);
-      setError('Failed to load Google Maps. Please check your API key.');
+      setError('Failed to load Google Maps. The default API key may have issues.');
       setIsLoading(false);
     }
   };
@@ -295,14 +294,14 @@ const GoogleMapsVisitRoute = ({ tasks }: GoogleMapsVisitRouteProps) => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <MapIcon className="h-5 w-5" />
-            <span>Google Maps Setup</span>
+            <span>Custom Google Maps API Key</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              To enable Google Maps route visualization, please enter your Google Maps API key.
+              The default API key encountered an issue. Please enter your own Google Maps API key.
               You can get one from the <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console</a>.
             </AlertDescription>
           </Alert>
@@ -376,7 +375,7 @@ const GoogleMapsVisitRoute = ({ tasks }: GoogleMapsVisitRouteProps) => {
                 onClick={() => setShowApiKeyInput(true)}
                 className="ml-2 p-0 h-auto"
               >
-                Update API Key
+                Use Custom API Key
               </Button>
             </AlertDescription>
           </Alert>
