@@ -102,10 +102,10 @@ function App() {
               <Route path="/leads/calls/:id" element={<AppLayout><CallDetailPage /></AppLayout>} />
               <Route path="/leads/meetings/:id" element={<AppLayout><MeetingDetailPage /></AppLayout>} />
 
-              {/* Visit routes */}
+              {/* Visit routes - Updated with separate components */}
               <Route path="/visits" element={<AppLayout><VisitPlannerPage /></AppLayout>} />
-              <Route path="/visits/today" element={<AppLayout><VisitPlannerPage /></AppLayout>} />
-              <Route path="/visits/new" element={<AppLayout><VisitPlannerPage /></AppLayout>} />
+              <Route path="/visits/today" element={<AppLayout><TodaysVisitsPage /></AppLayout>} />
+              <Route path="/visits/new" element={<AppLayout><NewVisitPlanPage /></AppLayout>} />
               <Route path="/visits/plans/:id" element={<AppLayout><VisitPlanDetailPage /></AppLayout>} />
               <Route path="/visits/tasks/:id/outcome" element={<AppLayout><TaskOutcomePage /></AppLayout>} />
 
