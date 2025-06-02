@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useUsers } from '@/hooks/useLeads';
+import { hasAdminAccess } from '@/utils/roleUtils';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,9 @@ const NewRestaurantPage = () => {
   const { profile } = useAuth();
   const { users, isLoading: usersLoading } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const isAdmin = hasAdminAccess(profile?.role);
+  
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -37,7 +41,14 @@ const NewRestaurantPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to create restaurants",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -149,12 +160,19 @@ const NewRestaurantPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="salesperson">Assign Salesperson *</Label>
+                  <Label htmlFor="salesperson">
+                    Assign Salesperson *
+                    {!isAdmin && (
+                      <span className="text-sm text-muted-foreground ml-2">
+                        (Automatically assigned to you)
+                      </span>
+                    )}
+                  </Label>
                   {usersLoading ? (
                     <div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
                       Loading users...
                     </div>
-                  ) : (
+                  ) : isAdmin ? (
                     <Select
                       value={formData.salesperson_id}
                       onValueChange={(value) => setFormData({ ...formData, salesperson_id: value })}
@@ -170,6 +188,12 @@ const NewRestaurantPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  ) : (
+                    <Input
+                      value={profile?.full_name || 'Current User'}
+                      disabled
+                      className="bg-muted"
+                    />
                   )}
                 </div>
 
@@ -187,7 +211,7 @@ const NewRestaurantPage = () => {
                 <div className="flex gap-2 pt-4">
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || !formData.salesperson_id || usersLoading} 
+                    disabled={isSubmitting || !formData.salesperson_id || (isAdmin && usersLoading)} 
                     className="flex-1"
                   >
                     {isSubmitting ? 'Creating Restaurant...' : 'Create Restaurant'}
