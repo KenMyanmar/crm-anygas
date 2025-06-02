@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import BulkRestaurantSelector from '@/components/visits/BulkRestaurantSelector';
 import VisitTasksTable from '@/components/visits/VisitTasksTable';
 import VisitPlanMapPreview from '@/components/visits/VisitPlanMapPreview';
@@ -19,7 +20,7 @@ import VisitPlanStatusSummary from '@/components/visits/VisitPlanStatusSummary';
 import VisitPlanNotes from '@/components/visits/VisitPlanNotes';
 import EmptyVisitPlan from '@/components/visits/EmptyVisitPlan';
 import { VisitTask } from '@/types/visits';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info, Users } from 'lucide-react';
 
 const VisitPlanDetailPage = () => {
   const { id: planId } = useParams<{ id: string }>();
@@ -32,6 +33,7 @@ const VisitPlanDetailPage = () => {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
 
   const currentPlan = plans.find(plan => plan.id === planId);
+  const isMyPlan = currentPlan && currentPlan.created_by === profile?.id;
 
   // Debug logging
   useEffect(() => {
@@ -39,11 +41,12 @@ const VisitPlanDetailPage = () => {
     console.log('Plan ID from params:', planId);
     console.log('Current plan:', currentPlan);
     console.log('Tasks:', tasks);
-  }, [planId, currentPlan, tasks]);
+    console.log('Is my plan:', isMyPlan);
+  }, [planId, currentPlan, tasks, isMyPlan]);
 
-  // Show bulk selector dialog immediately if plan has no restaurants
+  // Show bulk selector dialog immediately if plan has no restaurants and user owns the plan
   useEffect(() => {
-    if (currentPlan && tasks.length === 0) {
+    if (currentPlan && tasks.length === 0 && isMyPlan) {
       // Small timeout to ensure UI is rendered first
       const timer = setTimeout(() => {
         setIsAddRestaurantsDialogOpen(true);
@@ -51,7 +54,7 @@ const VisitPlanDetailPage = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [currentPlan, tasks.length]);
+  }, [currentPlan, tasks.length, isMyPlan]);
 
   const handleBulkAddRestaurants = async () => {
     try {
@@ -136,6 +139,23 @@ const VisitPlanDetailPage = () => {
           onAddRestaurants={handleAddRestaurants}
         />
 
+        {/* Collaboration Info */}
+        {!isMyPlan && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span>
+                  <strong>Viewing {currentPlan.creator?.full_name || 'team member'}'s plan.</strong> 
+                  You can view all details and add comments. 
+                  {currentPlan.creator?.full_name && ` Contact ${currentPlan.creator.full_name} to modify restaurants or settings.`}
+                </span>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <VisitPlanStats tasks={tasks} />
 
         {/* Map Preview - Show only when there are tasks */}
@@ -149,33 +169,36 @@ const VisitPlanDetailPage = () => {
 
         {/* Visit Tasks Table or Empty State */}
         {tasks.length === 0 ? (
-          <EmptyVisitPlan onAddRestaurants={handleAddRestaurants} />
+          <EmptyVisitPlan onAddRestaurants={isMyPlan ? handleAddRestaurants : undefined} />
         ) : (
           <VisitTasksTable
             tasks={tasks}
             onStatusChange={handleStatusChange}
             onPriorityChange={handlePriorityChange}
             onRecordOutcome={handleRecordOutcome}
+            planCreatedBy={currentPlan.created_by}
           />
         )}
 
-        {/* Bulk Restaurant Selector Dialog */}
-        <Dialog 
-          open={isAddRestaurantsDialogOpen} 
-          onOpenChange={setIsAddRestaurantsDialogOpen}
-        >
-          <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
-            <BulkRestaurantSelector
-              selectedRestaurants={selectedRestaurants}
-              onSelectionChange={setSelectedRestaurants}
-              onConfirm={handleBulkAddRestaurants}
-              onCancel={() => {
-                setIsAddRestaurantsDialogOpen(false);
-                setSelectedRestaurants([]);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        {/* Bulk Restaurant Selector Dialog - Only show if user owns the plan */}
+        {isMyPlan && (
+          <Dialog 
+            open={isAddRestaurantsDialogOpen} 
+            onOpenChange={setIsAddRestaurantsDialogOpen}
+          >
+            <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
+              <BulkRestaurantSelector
+                selectedRestaurants={selectedRestaurants}
+                onSelectionChange={setSelectedRestaurants}
+                onConfirm={handleBulkAddRestaurants}
+                onCancel={() => {
+                  setIsAddRestaurantsDialogOpen(false);
+                  setSelectedRestaurants([]);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </DashboardLayout>
   );
