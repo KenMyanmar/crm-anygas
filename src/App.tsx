@@ -42,6 +42,8 @@ import MeetingDetailPage from '@/pages/leads/MeetingDetailPage';
 
 // Visit pages
 import VisitPlannerPage from '@/pages/visits/VisitPlannerPage';
+import TodaysVisitsPage from '@/pages/visits/TodaysVisitsPage';
+import NewVisitPlanPage from '@/pages/visits/NewVisitPlanPage';
 import VisitPlanDetailPage from '@/pages/visits/VisitPlanDetailPage';
 import TaskOutcomePage from '@/pages/visits/TaskOutcomePage';
 
