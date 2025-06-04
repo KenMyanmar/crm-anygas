@@ -1,53 +1,17 @@
+
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
-import { formatDate } from '@/lib/supabase';
 import { canApproveOrders, getUserRole, hasAdminAccess } from '@/utils/roleUtils';
 import { useOrderDeletion } from '@/hooks/useOrderDeletion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  Search,
-  Filter,
-  RefreshCw,
-  Clock,
-  ArrowLeft,
-  Trash2
-} from 'lucide-react';
-import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
+import { AlertTriangle, Clock } from 'lucide-react';
+import PendingOrdersHeader from '@/components/orders/pending/PendingOrdersHeader';
+import PendingOrdersFilters from '@/components/orders/pending/PendingOrdersFilters';
+import PendingOrdersTable from '@/components/orders/pending/PendingOrdersTable';
+import PendingOrdersEmptyState from '@/components/orders/pending/PendingOrdersEmptyState';
+import PendingOrdersDialogs from '@/components/orders/pending/PendingOrdersDialogs';
 
 interface PendingOrder {
   id: string;
@@ -103,7 +67,7 @@ const PendingOrdersPage = () => {
         },
         (payload) => {
           console.log('Order updated in pending page:', payload);
-          fetchPendingOrders(); // Refresh pending orders
+          fetchPendingOrders();
         }
       )
       .subscribe();
@@ -280,34 +244,10 @@ const PendingOrdersPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/orders">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Orders
-              </Link>
-            </Button>
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <AlertTriangle className="h-6 w-6 text-amber-600" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Orders Awaiting Approval</h1>
-              <p className="text-muted-foreground">
-                Review and approve orders to process them for delivery
-              </p>
-            </div>
-            {filteredOrders.length > 0 && (
-              <Badge variant="outline" className="ml-4 bg-amber-50 text-amber-700 border-amber-200">
-                {filteredOrders.length} orders pending
-              </Badge>
-            )}
-          </div>
-          <Button onClick={fetchPendingOrders} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+        <PendingOrdersHeader 
+          ordersCount={filteredOrders.length}
+          onRefresh={fetchPendingOrders}
+        />
 
         {!canApprove && (
           <Card className="border-2 border-amber-200 bg-amber-50">
@@ -330,208 +270,49 @@ const PendingOrdersPage = () => {
                 <Clock className="h-5 w-5 text-amber-600" />
                 Pending Orders Review
               </CardTitle>
-              <div className="flex gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search orders..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 w-64"
-                  />
-                </div>
-                <Select value={townshipFilter} onValueChange={setTownshipFilter}>
-                  <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by township" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Townships</SelectItem>
-                    {getTownships().map((township) => (
-                      <SelectItem key={township} value={township}>
-                        {township}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <PendingOrdersFilters
+                searchTerm={searchTerm}
+                townshipFilter={townshipFilter}
+                townships={getTownships()}
+                onSearchChange={setSearchTerm}
+                onTownshipChange={setTownshipFilter}
+              />
             </div>
           </CardHeader>
           <CardContent>
             {filteredOrders.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">All caught up!</h3>
-                <p className="text-gray-500 mb-4">
-                  {orders.length === 0 
-                    ? "No orders are waiting for approval" 
-                    : "All orders matching your filters have been processed"}
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" onClick={fetchPendingOrders}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Check for new orders
-                  </Button>
-                  <Button asChild>
-                    <Link to="/orders">
-                      View All Orders
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+              <PendingOrdersEmptyState 
+                totalOrders={orders.length}
+                onRefresh={fetchPendingOrders}
+              />
             ) : (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-amber-50">
-                    <TableRow>
-                      <TableHead className="font-semibold">Order Details</TableHead>
-                      <TableHead className="font-semibold">Restaurant</TableHead>
-                      <TableHead className="font-semibold">Township</TableHead>
-                      <TableHead className="font-semibold">Order Date</TableHead>
-                      <TableHead className="font-semibold">Amount</TableHead>
-                      <TableHead className="font-semibold">Created By</TableHead>
-                      <TableHead className="text-right font-semibold">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOrders.map((order) => (
-                      <TableRow key={order.id} className="hover:bg-amber-50/50">
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <OrderStatusBadge status={order.status} size="sm" />
-                            <span className="font-medium text-blue-600">{order.order_number}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{order.restaurant.name}</TableCell>
-                        <TableCell>{order.restaurant.township || 'N/A'}</TableCell>
-                        <TableCell>{formatDate(order.order_date)}</TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-green-600">
-                            {order.total_amount_kyats.toLocaleString()} Kyats
-                          </span>
-                        </TableCell>
-                        <TableCell>{order.created_by_user?.full_name || 'Unknown'}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link to={`/orders/${order.id}`}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Link>
-                            </Button>
-                            {canApprove && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => handleApprove(order)}
-                                  disabled={isUpdating || isDeleting}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Approve
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleReject(order)}
-                                  disabled={isUpdating || isDeleting}
-                                >
-                                  <XCircle className="h-4 w-4 mr-1" />
-                                  Reject
-                                </Button>
-                              </>
-                            )}
-                            {isAdmin && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleDelete(order)}
-                                disabled={isUpdating || isDeleting}
-                                className="text-red-600 border-red-200 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <PendingOrdersTable
+                orders={filteredOrders}
+                canApprove={canApprove}
+                isAdmin={isAdmin}
+                isUpdating={isUpdating}
+                isDeleting={isDeleting}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onDelete={handleDelete}
+              />
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Approve Dialog */}
-      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Approve Order</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to approve order {selectedOrder?.order_number}? 
-              This will move the order to confirmed status and allow it to proceed to delivery.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CONFIRMED')}
-              className="bg-green-500 hover:bg-green-600"
-            >
-              Yes, approve order
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reject Dialog */}
-      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reject Order</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to reject order {selectedOrder?.order_number}? 
-              This will cancel the order and it cannot be easily undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CANCELLED')}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Yes, reject order
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Order</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete order {selectedOrder?.order_number}? 
-              This action cannot be undone and will remove all order data including items.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Yes, delete permanently
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <PendingOrdersDialogs
+        selectedOrder={selectedOrder}
+        showApproveDialog={showApproveDialog}
+        showRejectDialog={showRejectDialog}
+        showDeleteDialog={showDeleteDialog}
+        onApproveDialogChange={setShowApproveDialog}
+        onRejectDialogChange={setShowRejectDialog}
+        onDeleteDialogChange={setShowDeleteDialog}
+        onConfirmApprove={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CONFIRMED')}
+        onConfirmReject={() => selectedOrder && updateOrderStatus(selectedOrder.id, 'CANCELLED')}
+        onConfirmDelete={confirmDelete}
+      />
     </DashboardLayout>
   );
 };
