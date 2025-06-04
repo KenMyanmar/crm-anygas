@@ -6,8 +6,11 @@ import { useDeliveredOrders } from "@/hooks/useDeliveredOrders";
 import DeliveredOrdersFilters from "@/components/orders/DeliveredOrdersFilters";
 import DeliveredOrdersTable from "@/components/orders/DeliveredOrdersTable";
 import DeliveredOrdersStats from "@/components/orders/DeliveredOrdersStats";
+import { getUserRole } from "@/utils/roleUtils";
+import { useEffect, useState } from "react";
 
 const DeliveredOrdersPage = () => {
+  const [userRole, setUserRole] = useState<string | null>(null);
   const {
     orders,
     isLoading,
@@ -22,6 +25,21 @@ const DeliveredOrdersPage = () => {
     clearFilters,
     refetch
   } = useDeliveredOrders();
+
+  // Debug user role on page load
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const role = await getUserRole();
+        console.log('🌟 DeliveredOrdersPage: Current user role:', role);
+        setUserRole(role);
+      } catch (error) {
+        console.error('❌ DeliveredOrdersPage: Error getting user role:', error);
+      }
+    };
+    
+    checkUserRole();
+  }, []);
 
   const handleExport = () => {
     // Create CSV content
@@ -53,6 +71,13 @@ const DeliveredOrdersPage = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Debug rendering info
+  console.log('🧩 DeliveredOrdersPage rendering:', {
+    userRole,
+    ordersCount: orders.length,
+    isLoading
+  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">

@@ -41,9 +41,38 @@ const DeliveredOrdersTable = ({ orders, isLoading, onOrdersDeleted }: DeliveredO
   }, []);
 
   const checkDeletePermissions = async () => {
-    const userRole = await getUserRole();
-    setCanDelete(canDeleteDeliveredOrders(userRole));
+    console.log('🔍 Starting permission check for delete buttons...');
+    
+    try {
+      const userRole = await getUserRole();
+      console.log('👤 Current user role:', userRole);
+      
+      const deletePermission = canDeleteDeliveredOrders(userRole);
+      console.log('🔐 canDeleteDeliveredOrders result:', deletePermission);
+      console.log('📋 Permission check details:', {
+        userRole,
+        deletePermission,
+        expectedForAdmin: userRole === 'admin'
+      });
+      
+      setCanDelete(deletePermission);
+      console.log('✅ Setting canDelete state to:', deletePermission);
+      
+    } catch (error) {
+      console.error('❌ Error in checkDeletePermissions:', error);
+      setCanDelete(false);
+    }
   };
+
+  // Debug logging for canDelete state changes
+  useEffect(() => {
+    console.log('🔄 canDelete state changed to:', canDelete);
+    console.log('🎛️ Current component state:', {
+      canDelete,
+      ordersCount: orders.length,
+      selectedOrdersCount: selectedOrders.length
+    });
+  }, [canDelete, orders.length, selectedOrders.length]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US').format(amount) + ' Kyats';
@@ -119,6 +148,14 @@ const DeliveredOrdersTable = ({ orders, isLoading, onOrdersDeleted }: DeliveredO
     );
   }
 
+  // Debug logging for render
+  console.log('🎨 Rendering DeliveredOrdersTable with:', {
+    canDelete,
+    ordersCount: orders.length,
+    selectedOrdersCount: selectedOrders.length,
+    showingBulkActions: canDelete && selectedOrders.length > 0
+  });
+
   return (
     <div className="space-y-4">
       {canDelete && selectedOrders.length > 0 && (
@@ -167,6 +204,13 @@ const DeliveredOrdersTable = ({ orders, isLoading, onOrdersDeleted }: DeliveredO
                 order.delivery_date_scheduled,
                 order.delivery_date_actual
               );
+              
+              // Debug logging for each row render
+              console.log(`🔍 Rendering row for order ${order.order_number}:`, {
+                canDelete,
+                showCheckbox: canDelete,
+                showDeleteButton: canDelete
+              });
               
               return (
                 <TableRow key={order.id} className="hover:bg-green-50/50">
