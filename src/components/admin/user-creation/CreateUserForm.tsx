@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,16 +23,44 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [lastSubmitTime, setLastSubmitTime] = useState(0);
 
   const handleGeneratePassword = () => {
     const password = generateRandomPassword();
     setFormData(prev => ({ ...prev, password }));
   };
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Debouncing: prevent rapid submissions
+    const now = Date.now();
+    if (now - lastSubmitTime < 2000) {
+      console.log('Preventing rapid submission');
+      return;
+    }
+    setLastSubmitTime(now);
+
+    // Enhanced validation
+    if (!formData.email.trim() || !formData.full_name.trim()) {
+      return;
+    }
+
+    if (!validateEmail(formData.email.trim())) {
+      return;
+    }
+
     onSubmit(formData);
   };
+
+  const isFormValid = formData.email.trim() && 
+                     formData.full_name.trim() && 
+                     validateEmail(formData.email.trim());
 
   return (
     <form onSubmit={handleSubmit}>
@@ -44,6 +73,7 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
             onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
             placeholder="John Doe"
             required
+            disabled={isProcessing}
           />
         </div>
         <div className="space-y-2">
@@ -55,13 +85,18 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             placeholder="user@example.com"
             required
+            disabled={isProcessing}
           />
+          {formData.email && !validateEmail(formData.email) && (
+            <p className="text-xs text-red-500">Please enter a valid email address</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="role">Role</Label>
           <Select
             value={formData.role}
             onValueChange={(value: UserRole) => setFormData(prev => ({ ...prev, role: value }))}
+            disabled={isProcessing}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a role" />
@@ -84,6 +119,7 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 placeholder="Leave blank to auto-generate"
+                disabled={isProcessing}
               />
               <Button
                 type="button"
@@ -91,11 +127,17 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isProcessing}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
-            <Button type="button" variant="outline" onClick={handleGeneratePassword}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleGeneratePassword}
+              disabled={isProcessing}
+            >
               Generate
             </Button>
           </div>
@@ -105,11 +147,20 @@ const CreateUserForm = ({ onSubmit, isProcessing, onCancel }: CreateUserFormProp
         </div>
       </div>
       <div className="flex gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isProcessing}>
+        <Button 
+          type="submit" 
+          disabled={isProcessing || !isFormValid}
+          className="flex-1"
+        >
           {isProcessing ? 'Creating User...' : 'Create User'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isProcessing}
+        >
+          Cancel
         </Button>
       </div>
     </form>

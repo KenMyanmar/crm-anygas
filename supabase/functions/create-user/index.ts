@@ -14,9 +14,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('=== USER CREATION EDGE FUNCTION START ===');
+  console.log('=== SIMPLIFIED USER CREATION EDGE FUNCTION ===');
   console.log('Method:', req.method);
-  console.log('URL:', req.url);
 
   try {
     // Validate request method
@@ -45,11 +44,7 @@ serve(async (req) => {
 
     // Validate required fields
     if (!email || !full_name || !role) {
-      console.error('Missing required fields:', { 
-        email: !!email, 
-        full_name: !!full_name, 
-        role: !!role 
-      });
+      console.error('Missing required fields');
       return new Response(
         JSON.stringify({
           success: false,
@@ -67,10 +62,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing environment variables:', {
-        hasUrl: !!supabaseUrl,
-        hasServiceKey: !!supabaseServiceKey
-      });
+      console.error('Missing environment variables');
       return new Response(
         JSON.stringify({
           success: false,
@@ -83,11 +75,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('=== ENVIRONMENT CHECK ===');
-    console.log('Supabase URL:', supabaseUrl);
-    console.log('Has Service Key:', !!supabaseServiceKey);
-
-    // Create Supabase admin client using service role key
+    // Create Supabase admin client
     const supabaseAdmin = createClient(
       supabaseUrl,
       supabaseServiceKey,
@@ -101,19 +89,16 @@ serve(async (req) => {
 
     // Generate password if not provided
     const userPassword = password || generateRandomPassword();
-    console.log('Password length:', userPassword.length);
-
-    // Clean email
     const cleanEmail = email.trim().toLowerCase();
     const cleanFullName = full_name.trim();
 
-    console.log('=== CHECKING FOR EXISTING USER ===');
+    console.log('=== SIMPLIFIED CONFLICT CHECK ===');
     
-    // Check if user already exists in auth.users
+    // Simple check: only look for existing users by email
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
-      console.error('Error listing users:', listError);
+      console.error('Error checking existing users:', listError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -126,61 +111,26 @@ serve(async (req) => {
       );
     }
 
-    console.log('Total users in system:', existingUsers.users.length);
-    
     const existingUser = existingUsers.users.find(user => 
       user.email?.toLowerCase() === cleanEmail
     );
     
     if (existingUser) {
-      console.log('=== EXISTING USER FOUND ===');
-      console.log('Existing user ID:', existingUser.id);
-      console.log('Existing user email:', existingUser.email);
-      
-      // Delete from custom users table first (if exists)
-      console.log('Attempting to delete existing user profile...');
-      const { error: deleteProfileError } = await supabaseAdmin
-        .from('users')
-        .delete()
-        .eq('id', existingUser.id);
-
-      if (deleteProfileError) {
-        console.log('Profile deletion note:', deleteProfileError.message);
-        // Continue anyway as the profile might not exist
-      } else {
-        console.log('Successfully deleted existing user profile');
-      }
-
-      // Delete from auth.users
-      console.log('Attempting to delete existing auth user...');
-      const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(
-        existingUser.id
+      console.log('User already exists with email:', cleanEmail);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `A user with email ${cleanEmail} already exists`,
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
       );
-      
-      if (deleteAuthError) {
-        console.error('Error deleting auth user:', deleteAuthError);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Failed to delete existing user: ${deleteAuthError.message}`,
-          }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-      
-      console.log('Successfully deleted existing auth user');
-      
-      // Wait a moment for deletion to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } else {
-      console.log('No existing user found with email:', cleanEmail);
     }
 
-    // Create user using admin client
-    console.log('=== CREATING NEW AUTH USER ===');
+    // Create auth user
+    console.log('=== CREATING AUTH USER ===');
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: cleanEmail,
       password: userPassword,
@@ -220,7 +170,7 @@ serve(async (req) => {
 
     console.log('Auth user created successfully:', authData.user.id);
 
-    // Insert user profile
+    // Create user profile with retry logic
     console.log('=== CREATING USER PROFILE ===');
     const profileData = {
       id: authData.user.id,
@@ -243,14 +193,14 @@ serve(async (req) => {
       console.error('=== PROFILE CREATION FAILED ===');
       console.error('Profile error:', profileError);
       
-      // Don't delete the auth user - let admin handle it manually
-      console.log('Auth user created but profile failed. Auth user ID:', authData.user.id);
+      // Clean up auth user if profile creation fails
+      console.log('Cleaning up auth user due to profile failure...');
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       
       return new Response(
         JSON.stringify({
           success: false,
           error: `Profile creation failed: ${profileError.message}`,
-          authUserId: authData.user.id,
         }),
         {
           status: 500,
@@ -280,9 +230,7 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('=== UNEXPECTED ERROR ===');
-    console.error('Error type:', typeof error);
     console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
     console.error('Full error:', error);
     
     return new Response(
