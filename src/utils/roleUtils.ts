@@ -53,3 +53,8 @@ export const isAdminOrManager = (role: string | undefined): boolean => {
 export const canDeleteDeliveredOrders = (role: string | undefined): boolean => {
   return role === 'admin';
 };
+
+// New function for deleting pending orders - admin only  
+export const canDeletePendingOrders = (role: string | undefined): boolean => {
+  return role === 'admin';
+};

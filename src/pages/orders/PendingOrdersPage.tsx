@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/supabase';
-import { canApproveOrders, getUserRole } from '@/utils/roleUtils';
+import { canApproveOrders, getUserRole, hasAdminAccess } from '@/utils/roleUtils';
+import { useOrderDeletion } from '@/hooks/useOrderDeletion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +44,8 @@ import {
   Filter,
   RefreshCw,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from 'lucide-react';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 
@@ -70,15 +71,19 @@ const PendingOrdersPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [canApprove, setCanApprove] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [townshipFilter, setTownshipFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<PendingOrder | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const { deleteOrder, isDeleting } = useOrderDeletion();
 
   useEffect(() => {
     fetchPendingOrders();
-    checkApprovalPermissions();
+    checkPermissions();
     setupRealtimeSubscription();
   }, []);
 
@@ -108,9 +113,11 @@ const PendingOrdersPage = () => {
     };
   };
 
-  const checkApprovalPermissions = async () => {
+  const checkPermissions = async () => {
     const userRole = await getUserRole();
+    console.log('User role in pending orders:', userRole);
     setCanApprove(canApproveOrders(userRole));
+    setIsAdmin(hasAdminAccess(userRole));
   };
 
   const fetchPendingOrders = async () => {
@@ -234,6 +241,22 @@ const PendingOrdersPage = () => {
   const handleReject = (order: PendingOrder) => {
     setSelectedOrder(order);
     setShowRejectDialog(true);
+  };
+
+  const handleDelete = (order: PendingOrder) => {
+    setSelectedOrder(order);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedOrder) return;
+    
+    const success = await deleteOrder(selectedOrder.id, selectedOrder.order_number);
+    if (success) {
+      setOrders(orders.filter(order => order.id !== selectedOrder.id));
+    }
+    setShowDeleteDialog(false);
+    setSelectedOrder(null);
   };
 
   const getTownships = () => {
@@ -403,7 +426,7 @@ const PendingOrdersPage = () => {
                                 <Button 
                                   size="sm" 
                                   onClick={() => handleApprove(order)}
-                                  disabled={isUpdating}
+                                  disabled={isUpdating || isDeleting}
                                   className="bg-green-600 hover:bg-green-700 text-white"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-1" />
@@ -413,12 +436,24 @@ const PendingOrdersPage = () => {
                                   variant="destructive" 
                                   size="sm"
                                   onClick={() => handleReject(order)}
-                                  disabled={isUpdating}
+                                  disabled={isUpdating || isDeleting}
                                 >
                                   <XCircle className="h-4 w-4 mr-1" />
                                   Reject
                                 </Button>
                               </>
+                            )}
+                            {isAdmin && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDelete(order)}
+                                disabled={isUpdating || isDeleting}
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
                             )}
                           </div>
                         </TableCell>
@@ -454,6 +489,7 @@ const PendingOrdersPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Reject Dialog */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -470,6 +506,28 @@ const PendingOrdersPage = () => {
               className="bg-red-500 hover:bg-red-600"
             >
               Yes, reject order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete order {selectedOrder?.order_number}? 
+              This action cannot be undone and will remove all order data including items.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Yes, delete permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
