@@ -33,6 +33,18 @@ const UserMenu = () => {
         .substring(0, 2)
     : 'U';
 
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -63,7 +75,7 @@ const UserMenu = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={() => navigate('/profile')}
+          onClick={() => handleNavigation('/profile')}
           className="flex items-center px-3 py-2.5 text-sm cursor-pointer hover:bg-accent transition-colors"
         >
           <User className="w-4 h-4 mr-3" />
@@ -71,7 +83,7 @@ const UserMenu = () => {
         </DropdownMenuItem>
         {profile?.role === 'admin' && (
           <DropdownMenuItem 
-            onClick={() => navigate('/admin/users')}
+            onClick={() => handleNavigation('/admin/users')}
             className="flex items-center px-3 py-2.5 text-sm cursor-pointer hover:bg-accent transition-colors"
           >
             <UserPlus className="w-4 h-4 mr-3" />
@@ -79,7 +91,7 @@ const UserMenu = () => {
           </DropdownMenuItem>
         )}
         <DropdownMenuItem 
-          onClick={() => navigate('/settings')}
+          onClick={() => handleNavigation('/settings')}
           className="flex items-center px-3 py-2.5 text-sm cursor-pointer hover:bg-accent transition-colors"
         >
           <Settings className="w-4 h-4 mr-3" />
@@ -87,7 +99,7 @@ const UserMenu = () => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={signOut}
+          onClick={handleSignOut}
           className="flex items-center px-3 py-2.5 text-sm cursor-pointer hover:bg-accent transition-colors"
         >
           <LogOut className="w-4 h-4 mr-3" />

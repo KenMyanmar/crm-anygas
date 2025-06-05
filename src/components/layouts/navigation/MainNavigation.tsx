@@ -26,7 +26,13 @@ const MainNavigation = () => {
   
   const isAdminOrManager = profile?.role === 'admin' || profile?.role === 'manager';
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  // Fixed isActive function to prevent navigation loops
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
 
   const restaurantItems = [
     { label: 'All Restaurants', icon: Search, path: '/restaurants' },
@@ -66,7 +72,7 @@ const MainNavigation = () => {
         to="/"
         className={cn(
           "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-          isActive("/") && location.pathname === "/" 
+          isActive("/")
             ? "bg-accent text-accent-foreground" 
             : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
         )}

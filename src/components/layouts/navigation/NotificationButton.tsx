@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
 
@@ -10,12 +10,20 @@ interface NotificationButtonProps {
 
 const NotificationButton = ({ unreadCount }: NotificationButtonProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleClick = () => {
+    // Prevent navigation if already on notifications page
+    if (location.pathname !== '/notifications') {
+      navigate('/notifications');
+    }
+  };
 
   return (
     <Button 
       variant="ghost" 
       size="icon" 
-      onClick={() => navigate('/notifications')} 
+      onClick={handleClick} 
       className="relative"
     >
       <Bell className="h-5 w-5" />

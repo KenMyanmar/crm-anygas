@@ -28,7 +28,17 @@ const NavigationDropdown = ({ label, icon: Icon, items, basePath }: NavigationDr
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  // Simplified isActive function to prevent loops
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
+  const handleItemClick = (path: string) => {
+    // Prevent navigation if already on the same path
+    if (location.pathname !== path) {
+      navigate(path);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -55,7 +65,7 @@ const NavigationDropdown = ({ label, icon: Icon, items, basePath }: NavigationDr
         {items.map((item) => (
           <DropdownMenuItem 
             key={item.path}
-            onClick={() => navigate(item.path)}
+            onClick={() => handleItemClick(item.path)}
             className="flex items-center px-3 py-2.5 text-sm cursor-pointer hover:bg-accent transition-colors"
           >
             <item.icon className="h-4 w-4 mr-3 text-muted-foreground" />
