@@ -5,38 +5,38 @@ import { Toaster } from '@/components/ui/toaster';
 import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 
-// Import pages
+// Import pages - using correct file names
 import Dashboard from '@/pages/Dashboard';
-import Login from '@/pages/auth/Login';
-import ForgotPassword from '@/pages/auth/ForgotPassword';
-import ResetPassword from '@/pages/auth/ResetPassword';
-import SetNewPassword from '@/pages/auth/SetNewPassword';
+import Login from '@/pages/Login';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import SetNewPassword from '@/pages/SetNewPassword';
 import Notifications from '@/pages/Notifications';
 import NotFound from '@/pages/NotFound';
-import LeadsList from '@/pages/leads/LeadsList';
-import LeadDetails from '@/pages/leads/LeadDetails';
-import CreateLead from '@/pages/leads/CreateLead';
-import EditLead from '@/pages/leads/EditLead';
-import AssignedLeads from '@/pages/leads/AssignedLeads';
-import LeadMeetings from '@/pages/leads/LeadMeetings';
-import RestaurantsList from '@/pages/restaurants/RestaurantsList';
-import RestaurantDetails from '@/pages/restaurants/RestaurantDetails';
-import CreateRestaurant from '@/pages/restaurants/CreateRestaurant';
-import EditRestaurant from '@/pages/restaurants/EditRestaurant';
-import VisitPlanner from '@/pages/visits/VisitPlanner';
-import TodayVisits from '@/pages/visits/TodayVisits';
-import CreateVisit from '@/pages/visits/CreateVisit';
-import OrdersList from '@/pages/orders/OrdersList';
-import CreateOrder from '@/pages/orders/CreateOrder';
-import OrderDetails from '@/pages/orders/OrderDetails';
-import SalesReports from '@/pages/reports/SalesReports';
-import LeadReports from '@/pages/reports/LeadReports';
-import PerformanceReports from '@/pages/reports/PerformanceReports';
-import UserManagement from '@/pages/admin/UserManagement';
-import ProductManagement from '@/pages/admin/ProductManagement';
-import ImportData from '@/pages/admin/ImportData';
-import Settings from '@/pages/admin/Settings';
-import UserProfile from '@/pages/profile/UserProfile';
+import LeadsList from '@/pages/leads/LeadsPage';
+import LeadDetails from '@/pages/RestaurantDetailPage';
+import CreateLead from '@/pages/leads/NewLeadPage';
+import EditLead from '@/pages/leads/NewLeadPage';
+import AssignedLeads from '@/pages/leads/AssignedLeadsPage';
+import LeadMeetings from '@/pages/leads/MeetingsPage';
+import RestaurantsList from '@/pages/placeholder/RestaurantsPage';
+import RestaurantDetails from '@/pages/RestaurantDetailPage';
+import CreateRestaurant from '@/pages/restaurants/NewRestaurantPage';
+import EditRestaurant from '@/pages/RestaurantEditPage';
+import VisitPlanner from '@/pages/visits/VisitPlannerPage';
+import TodayVisits from '@/pages/visits/TodaysVisitsPage';
+import CreateVisit from '@/pages/visits/NewVisitPlanPage';
+import OrdersList from '@/pages/placeholder/OrdersPage';
+import CreateOrder from '@/pages/orders/NewOrderPage';
+import OrderDetails from '@/pages/orders/OrderDetailPage';
+import SalesReports from '@/pages/placeholder/ReportsPage';
+import LeadReports from '@/pages/reports/LeadReportsPage';
+import PerformanceReports from '@/pages/reports/PerformancePage';
+import UserManagement from '@/pages/admin/UsersPage';
+import ProductManagement from '@/pages/admin/ProductsPage';
+import ImportData from '@/pages/admin/ImportPage';
+import Settings from '@/pages/SettingsPage';
+import UserProfile from '@/pages/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -32,29 +33,7 @@ const Dashboard = () => {
       activitiesLength: dashboardData?.recent_activity?.length,
       notificationsLength: dashboardData?.notifications?.length
     });
-
-    // Get current user role for AI context
-    getCurrentUserRole();
   }, [dashboardData, isLoading, error]);
-
-  const getCurrentUserRole = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserRole(profile.role);
-        }
-      }
-    } catch (err) {
-      console.error('Error getting user role:', err);
-    }
-  };
 
   // Handle notification mark as read
   const handleMarkAsRead = async (id: string) => {
