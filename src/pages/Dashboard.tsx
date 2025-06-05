@@ -5,6 +5,7 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 import DashboardError from '@/components/dashboard/DashboardError';
+import DashboardWithAI from '@/components/dashboard/DashboardWithAI';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [userRole, setUserRole] = useState<string>('user');
 
   useEffect(() => {
     console.log('Dashboard render state:', { 
@@ -32,7 +34,29 @@ const Dashboard = () => {
       activitiesLength: dashboardData?.recent_activity?.length,
       notificationsLength: dashboardData?.notifications?.length
     });
+
+    // Get current user role for AI context
+    getCurrentUserRole();
   }, [dashboardData, isLoading, error]);
+
+  const getCurrentUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserRole(profile.role);
+        }
+      }
+    } catch (err) {
+      console.error('Error getting user role:', err);
+    }
+  };
 
   // Handle notification mark as read
   const handleMarkAsRead = async (id: string) => {
@@ -67,12 +91,20 @@ const Dashboard = () => {
 
   // Loading state
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <DashboardWithAI userRole={userRole}>
+        <DashboardSkeleton />
+      </DashboardWithAI>
+    );
   }
 
   // Error state - only show if we have an error and no data
   if (error && !dashboardData) {
-    return <DashboardError error={error} onRetry={fetchDashboardData} />;
+    return (
+      <DashboardWithAI userRole={userRole}>
+        <DashboardError error={error} onRetry={fetchDashboardData} />
+      </DashboardWithAI>
+    );
   }
 
   // Handle empty data state
@@ -85,138 +117,142 @@ const Dashboard = () => {
   // If we have no data but also no error, show empty state
   if (isEmpty && !isLoading) {
     return (
-      <div className="space-y-6">
-        <DashboardHeader onRefresh={fetchDashboardData} />
-        
-        <Alert>
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>No Dashboard Data</AlertTitle>
-          <AlertDescription>
-            Your dashboard is empty. This might be because you haven't been assigned any leads yet
-            or there is no activity in the system. Contact your administrator if you believe this is a mistake.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <DashboardWithAI userRole={userRole}>
+        <div className="space-y-6 ml-84 mr-4">
+          <DashboardHeader onRefresh={fetchDashboardData} />
+          
+          <Alert>
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>No Dashboard Data</AlertTitle>
+            <AlertDescription>
+              Your dashboard is empty. This might be because you haven't been assigned any leads yet
+              or there is no activity in the system. Contact your administrator if you believe this is a mistake.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </DashboardWithAI>
     );
   }
 
   // If we have data, show the dashboard
   return (
-    <div className="space-y-6">
-      <DashboardHeader onRefresh={fetchDashboardData} />
-      
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="leads">My Leads</TabsTrigger>
-            <TabsTrigger value="tasks">My Tasks</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-          </TabsList>
-        </div>
+    <DashboardWithAI userRole={userRole}>
+      <div className="space-y-6 ml-84 mr-4">
+        <DashboardHeader onRefresh={fetchDashboardData} />
         
-        <TabsContent value="overview" className="space-y-6">
-          {/* Stats Summary Cards */}
-          {dashboardData?.lead_summary && dashboardData.lead_summary.length > 0 && (
-            <StatsSummary statusCounts={dashboardData.lead_summary} />
-          )}
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Tasks Panel */}
-            <div className="lg:col-span-5">
-              {dashboardData?.upcoming_actions && dashboardData.upcoming_actions.length > 0 ? (
-                <TaskList 
-                  tasks={dashboardData.upcoming_actions} 
-                  onTaskClick={(leadId) => navigate(`/leads/${leadId}`)}
-                />
-              ) : (
-                <Alert>
-                  <InfoIcon className="h-4 w-4" />
-                  <AlertTitle>No Tasks</AlertTitle>
-                  <AlertDescription>
-                    You don't have any upcoming tasks scheduled.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-            
-            {/* Recent Activity Panel */}
-            <div className="lg:col-span-4">
-              {dashboardData?.recent_activity && dashboardData.recent_activity.length > 0 ? (
-                <ActivityTable activities={dashboardData.recent_activity} />
-              ) : (
-                <Alert>
-                  <InfoIcon className="h-4 w-4" />
-                  <AlertTitle>No Recent Activity</AlertTitle>
-                  <AlertDescription>
-                    There has been no recent activity recorded.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-            
-            {/* Notifications Panel */}
-            <div className="lg:col-span-3">
-              {dashboardData?.notifications && dashboardData.notifications.length > 0 ? (
-                <NotificationsPanel 
-                  notifications={dashboardData.notifications}
-                  onMarkAsRead={handleMarkAsRead}
-                />
-              ) : (
-                <Alert>
-                  <InfoIcon className="h-4 w-4" />
-                  <AlertTitle>No Notifications</AlertTitle>
-                  <AlertDescription>
-                    You don't have any notifications at this time.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="leads">My Leads</TabsTrigger>
+              <TabsTrigger value="tasks">My Tasks</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+            </TabsList>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="leads">
-          {dashboardData?.lead_summary && (
-            <LeadTable upcomingActions={dashboardData.upcoming_actions || []} />
-          )}
-        </TabsContent>
-        
-        <TabsContent value="tasks">
-          {dashboardData?.upcoming_actions && dashboardData.upcoming_actions.length > 0 ? (
-            <TaskList 
-              tasks={dashboardData.upcoming_actions} 
-              onTaskClick={(leadId) => navigate(`/leads/${leadId}`)}
-              showFilters={true}
-            />
-          ) : (
-            <Alert>
-              <InfoIcon className="h-4 w-4" />
-              <AlertTitle>No Tasks</AlertTitle>
-              <AlertDescription>
-                You don't have any upcoming tasks scheduled.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="activity">
-          {dashboardData?.recent_activity && dashboardData.recent_activity.length > 0 ? (
-            <ActivityTable 
-              activities={dashboardData.recent_activity} 
-              showFilters={true}
-            />
-          ) : (
-            <Alert>
-              <InfoIcon className="h-4 w-4" />
-              <AlertTitle>No Activity</AlertTitle>
-              <AlertDescription>
-                There has been no recent activity recorded.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+          
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Summary Cards */}
+            {dashboardData?.lead_summary && dashboardData.lead_summary.length > 0 && (
+              <StatsSummary statusCounts={dashboardData.lead_summary} />
+            )}
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Tasks Panel */}
+              <div className="lg:col-span-5">
+                {dashboardData?.upcoming_actions && dashboardData.upcoming_actions.length > 0 ? (
+                  <TaskList 
+                    tasks={dashboardData.upcoming_actions} 
+                    onTaskClick={(leadId) => navigate(`/leads/${leadId}`)}
+                  />
+                ) : (
+                  <Alert>
+                    <InfoIcon className="h-4 w-4" />
+                    <AlertTitle>No Tasks</AlertTitle>
+                    <AlertDescription>
+                      You don't have any upcoming tasks scheduled.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+              
+              {/* Recent Activity Panel */}
+              <div className="lg:col-span-4">
+                {dashboardData?.recent_activity && dashboardData.recent_activity.length > 0 ? (
+                  <ActivityTable activities={dashboardData.recent_activity} />
+                ) : (
+                  <Alert>
+                    <InfoIcon className="h-4 w-4" />
+                    <AlertTitle>No Recent Activity</AlertTitle>
+                    <AlertDescription>
+                      There has been no recent activity recorded.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+              
+              {/* Notifications Panel */}
+              <div className="lg:col-span-3">
+                {dashboardData?.notifications && dashboardData.notifications.length > 0 ? (
+                  <NotificationsPanel 
+                    notifications={dashboardData.notifications}
+                    onMarkAsRead={handleMarkAsRead}
+                  />
+                ) : (
+                  <Alert>
+                    <InfoIcon className="h-4 w-4" />
+                    <AlertTitle>No Notifications</AlertTitle>
+                    <AlertDescription>
+                      You don't have any notifications at this time.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="leads">
+            {dashboardData?.lead_summary && (
+              <LeadTable upcomingActions={dashboardData.upcoming_actions || []} />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="tasks">
+            {dashboardData?.upcoming_actions && dashboardData.upcoming_actions.length > 0 ? (
+              <TaskList 
+                tasks={dashboardData.upcoming_actions} 
+                onTaskClick={(leadId) => navigate(`/leads/${leadId}`)}
+                showFilters={true}
+              />
+            ) : (
+              <Alert>
+                <InfoIcon className="h-4 w-4" />
+                <AlertTitle>No Tasks</AlertTitle>
+                <AlertDescription>
+                  You don't have any upcoming tasks scheduled.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="activity">
+            {dashboardData?.recent_activity && dashboardData.recent_activity.length > 0 ? (
+              <ActivityTable 
+                activities={dashboardData.recent_activity} 
+                showFilters={true}
+              />
+            ) : (
+              <Alert>
+                <InfoIcon className="h-4 w-4" />
+                <AlertTitle>No Activity</AlertTitle>
+                <AlertDescription>
+                  There has been no recent activity recorded.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </DashboardWithAI>
   );
 };
 
