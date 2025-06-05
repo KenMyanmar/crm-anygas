@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
@@ -176,17 +175,44 @@ class DatabaseService {
 
   async querySpecificData(query: string): Promise<any> {
     try {
-      // Simple query router based on user request
+      console.log('Processing specific query:', query);
+
+      // Enhanced restaurant by township query
       if (query.toLowerCase().includes('restaurant') && query.toLowerCase().includes('township')) {
-        const { data, error } = await this.supabase
+        console.log('Fetching restaurant counts by township...');
+        
+        const { data: restaurants, error } = await this.supabase
           .from('restaurants')
-          .select('name, township, contact_person, phone')
-          .order('township');
+          .select('township');
         
         if (error) throw error;
-        return data;
+
+        // Aggregate restaurants by township
+        const townshipCounts = restaurants?.reduce((acc: any, restaurant: any) => {
+          const township = restaurant.township || 'Unknown';
+          acc[township] = (acc[township] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Convert to sorted array format
+        const formattedData = Object.entries(townshipCounts || {})
+          .map(([township, count]) => ({ 
+            township, 
+            restaurantCount: count as number 
+          }))
+          .sort((a, b) => b.restaurantCount - a.restaurantCount);
+
+        console.log('Restaurant township aggregation:', formattedData);
+        
+        return {
+          type: 'restaurant_township_counts',
+          data: formattedData,
+          total_restaurants: restaurants?.length || 0,
+          summary: `Found ${restaurants?.length || 0} restaurants across ${formattedData.length} townships`
+        };
       }
 
+      // Recent orders query
       if (query.toLowerCase().includes('order') && query.toLowerCase().includes('recent')) {
         const { data, error } = await this.supabase
           .from('orders')
@@ -195,9 +221,14 @@ class DatabaseService {
           .limit(10);
         
         if (error) throw error;
-        return data;
+        return {
+          type: 'recent_orders',
+          data: data || [],
+          summary: `Found ${data?.length || 0} recent orders`
+        };
       }
 
+      // Lead pipeline query
       if (query.toLowerCase().includes('lead') && query.toLowerCase().includes('pipeline')) {
         const { data, error } = await this.supabase
           .from('leads')
@@ -205,7 +236,11 @@ class DatabaseService {
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        return data;
+        return {
+          type: 'lead_pipeline',
+          data: data || [],
+          summary: `Found ${data?.length || 0} leads in pipeline`
+        };
       }
 
       return null;
@@ -295,6 +330,22 @@ class GeminiAIService {
       .map(o => `${o.status}: ${o.count}`)
       .join(', ');
 
+    // Add specific query data context if available
+    let specificDataContext = '';
+    if (context.specificQueryData) {
+      const queryData = context.specificQueryData;
+      if (queryData.type === 'restaurant_township_counts') {
+        specificDataContext = `\n\nSPECIFIC RESTAURANT TOWNSHIP DATA (${queryData.total_restaurants} total restaurants):\n`;
+        queryData.data.forEach((item: any) => {
+          specificDataContext += `- ${item.township}: ${item.restaurantCount} restaurants\n`;
+        });
+      } else if (queryData.type === 'recent_orders') {
+        specificDataContext = `\n\nRECENT ORDERS DATA:\n${queryData.summary}\n`;
+      } else if (queryData.type === 'lead_pipeline') {
+        specificDataContext = `\n\nLEAD PIPELINE DATA:\n${queryData.summary}\n`;
+      }
+    }
+
     return `You are an expert AI business advisor for ANY GAS Myanmar - a UCO (Used Cooking Oil) collection and gas cylinder supply chain company operating across Myanmar.
 
 REAL BUSINESS DATA (Current):
@@ -308,7 +359,7 @@ TOP PERFORMING TOWNSHIPS: ${topTownshipsText}
 
 LEADS PIPELINE: ${leadsStatusText}
 
-ORDERS STATUS: ${ordersStatusText}
+ORDERS STATUS: ${ordersStatusText}${specificDataContext}
 
 BUSINESS CONTEXT:
 - Company: ANY GAS Myanmar - UCO collection and gas cylinder delivery
@@ -355,6 +406,7 @@ Provide actionable insights using the REAL business data above to help optimize:
 
 RESPONSE GUIDELINES:
 - ALWAYS reference the actual business numbers in your responses
+- When asked about restaurant counts by township, use the SPECIFIC RESTAURANT TOWNSHIP DATA provided above
 - Provide practical, actionable advice based on real data
 - Consider Myanmar cultural context and business traditions
 - Include specific next steps when possible
