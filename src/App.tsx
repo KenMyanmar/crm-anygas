@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
@@ -26,7 +27,7 @@ import EditRestaurant from '@/pages/RestaurantEditPage';
 import VisitPlanner from '@/pages/visits/VisitPlannerPage';
 import TodayVisits from '@/pages/visits/TodaysVisitsPage';
 import CreateVisit from '@/pages/visits/NewVisitPlanPage';
-import OrdersList from '@/pages/placeholder/OrdersPage';
+import OrdersList from '@/pages/orders/OrdersPage';
 import CreateOrder from '@/pages/orders/NewOrderPage';
 import OrderDetails from '@/pages/orders/OrderDetailPage';
 import SalesReports from '@/pages/placeholder/ReportsPage';
