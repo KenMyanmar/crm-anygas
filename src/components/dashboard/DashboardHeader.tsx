@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, RefreshCw, Calendar, Download, Search } from 'lucide-react';
+import { Plus, RefreshCw, Download, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -57,19 +57,6 @@ const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Refresh data</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                  <Calendar className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>View calendar</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
