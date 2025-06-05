@@ -9,16 +9,9 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuLabel 
 } from '@/components/ui/dropdown-menu';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
 import { 
   Home, 
   Users, 
@@ -35,7 +28,8 @@ import {
   Search,
   CalendarDays,
   Package,
-  UserPlus
+  UserPlus,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,205 +67,203 @@ const TopNavigation = () => {
           </Link>
 
           {/* Main Navigation */}
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
-              {/* Dashboard */}
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    to="/"
-                    className={cn(
-                      "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
-                      isActive("/") && location.pathname === "/" && "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    <Home className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+          <nav className="hidden md:flex items-center space-x-1">
+            {/* Dashboard */}
+            <Link
+              to="/"
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                isActive("/") && location.pathname === "/" 
+                  ? "bg-accent text-accent-foreground" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Dashboard
+            </Link>
 
-              {/* Restaurants */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={isActive("/restaurants") ? "bg-accent text-accent-foreground" : ""}>
+            {/* Restaurants */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                    isActive("/restaurants") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   <Users className="h-4 w-4 mr-2" />
                   Restaurants
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px]">
-                    <NavigationMenuLink asChild>
-                      <Link to="/restaurants" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <Search className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">All Restaurants</div>
-                        </div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                          View and manage all restaurant partners
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link to="/restaurants/new" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <Plus className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">New Restaurant</div>
-                        </div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                          Add a new restaurant partner
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={8} className="w-56 z-50">
+                <DropdownMenuItem onClick={() => navigate('/restaurants')}>
+                  <Search className="h-4 w-4 mr-2" />
+                  All Restaurants
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/restaurants/new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Restaurant
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Leads */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={isActive("/leads") ? "bg-accent text-accent-foreground" : ""}>
+            {/* Leads */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                    isActive("/leads") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   <FileText className="h-4 w-4 mr-2" />
                   Leads
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px]">
-                    <NavigationMenuLink asChild>
-                      <Link to="/leads" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <FileText className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">All Leads</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link to="/leads/assigned" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">Assigned to Me</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link to="/leads/meetings" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <CalendarDays className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">Meetings</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={8} className="w-56 z-50">
+                <DropdownMenuItem onClick={() => navigate('/leads')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  All Leads
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/leads/assigned')}>
+                  <User className="h-4 w-4 mr-2" />
+                  Assigned to Me
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/leads/meetings')}>
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  Meetings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Visits */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={isActive("/visits") ? "bg-accent text-accent-foreground" : ""}>
+            {/* Visits */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                    isActive("/visits") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   <MapPin className="h-4 w-4 mr-2" />
                   Visits
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px]">
-                    <NavigationMenuLink asChild>
-                      <Link to="/visits" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">Visit Planner</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link to="/visits/today" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">Today's Visits</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={8} className="w-56 z-50">
+                <DropdownMenuItem onClick={() => navigate('/visits')}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Visit Planner
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/visits/today')}>
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Today's Visits
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Orders */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={isActive("/orders") ? "bg-accent text-accent-foreground" : ""}>
+            {/* Orders */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                    isActive("/orders") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Orders
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px]">
-                    <NavigationMenuLink asChild>
-                      <Link to="/orders" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">Order Management</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link to="/orders/new" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center">
-                          <Plus className="h-4 w-4 mr-2" />
-                          <div className="text-sm font-medium leading-none">Create Order</div>
-                        </div>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={8} className="w-56 z-50">
+                <DropdownMenuItem onClick={() => navigate('/orders')}>
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Order Management
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/orders/new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Order
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Reports */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={isActive("/reports") ? "bg-accent text-accent-foreground" : ""}>
+            {/* Reports */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                    isActive("/reports") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   <BarChart className="h-4 w-4 mr-2" />
                   Reports
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px]">
-                    <NavigationMenuLink asChild>
-                      <Link to="/reports" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="text-sm font-medium leading-none">Sales Reports</div>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link to="/reports/performance" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="text-sm font-medium leading-none">Performance</div>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={8} className="w-56 z-50">
+                <DropdownMenuItem onClick={() => navigate('/reports')}>
+                  <BarChart className="h-4 w-4 mr-2" />
+                  Sales Reports
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/reports/performance')}>
+                  <BarChart className="h-4 w-4 mr-2" />
+                  Performance
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Admin */}
-              {isAdminOrManager && (
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className={isActive("/admin") ? "bg-accent text-accent-foreground" : ""}>
+            {/* Admin */}
+            {isAdminOrManager && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className={cn(
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                      isActive("/admin") 
+                        ? "bg-accent text-accent-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
                     <Settings className="h-4 w-4 mr-2" />
                     Admin
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid gap-3 p-4 w-[400px]">
-                      {profile?.role === 'admin' && (
-                        <NavigationMenuLink asChild>
-                          <Link to="/admin/users" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-2" />
-                              <div className="text-sm font-medium leading-none">Users</div>
-                            </div>
-                          </Link>
-                        </NavigationMenuLink>
-                      )}
-                      <NavigationMenuLink asChild>
-                        <Link to="/admin/products" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <Package className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">Products</div>
-                          </div>
-                        </Link>
-                      </NavigationMenuLink>
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              )}
-            </NavigationMenuList>
-          </NavigationMenu>
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" sideOffset={8} className="w-56 z-50">
+                  {profile?.role === 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin/users')}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Users
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => navigate('/admin/products')}>
+                    <Package className="h-4 w-4 mr-2" />
+                    Products
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </nav>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
@@ -304,15 +296,16 @@ const TopNavigation = () => {
                     <span className="font-medium">{profile?.full_name}</span>
                     <span className="text-xs text-muted-foreground capitalize">{profile?.role}</span>
                   </div>
+                  <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="flex items-center justify-start p-2">
+              <DropdownMenuContent align="end" sideOffset={8} className="w-56 z-50">
+                <DropdownMenuLabel>
                   <div className="flex flex-col space-y-0.5">
                     <span className="font-medium text-sm">{profile?.full_name}</span>
                     <span className="text-xs text-muted-foreground">{profile?.email}</span>
                   </div>
-                </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="w-4 h-4 mr-2" />
