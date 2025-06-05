@@ -22,12 +22,16 @@ interface ChatResponse {
   error?: string;
 }
 
-class AIProviderService {
+class GeminiAIService {
   private async callGemini(prompt: string, context: any): Promise<string> {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!apiKey) throw new Error('Gemini API key not configured');
+    if (!apiKey) {
+      throw new Error('Gemini API key not configured');
+    }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    console.log('Calling Gemini API with model: gemini-1.5-flash');
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,7 +39,7 @@ class AIProviderService {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: prompt
+            text: this.getMyanmarSystemPrompt(context) + '\n\nUser Question: ' + prompt
           }]
         }],
         generationConfig: {
@@ -43,111 +47,98 @@ class AIProviderService {
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
-        }
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${data.error?.message || 'Unknown error'}`);
-    }
-
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
-  }
-
-  private async callOpenAI(prompt: string, context: any): Promise<string> {
-    const apiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey) throw new Error('OpenAI API key not configured');
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: this.getMyanmarSystemPrompt(context) },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
-    }
-
-    return data.choices[0].message.content;
-  }
-
-  private async callAnthropic(prompt: string, context: any): Promise<string> {
-    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-    if (!apiKey) throw new Error('Anthropic API key not configured');
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
-        max_tokens: 1000,
-        system: this.getMyanmarSystemPrompt(context),
-        messages: [
-          { role: 'user', content: prompt }
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          }
         ]
       }),
     });
 
-    const data = await response.json();
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${data.error?.message || 'Unknown error'}`);
+      const errorData = await response.text();
+      console.error('Gemini API Error Response:', errorData);
+      throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
     }
 
-    return data.content[0].text;
+    const data = await response.json();
+    console.log('Gemini API Success - Response received');
+
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+
+    return data.candidates[0].content.parts[0].text || 'No response generated';
   }
 
   private getMyanmarSystemPrompt(context: any): string {
     const currentSeason = this.getCurrentSeason();
     const isMonsonSeason = currentSeason === 'monsoon';
 
-    return `You are an AI business advisor for ANY GAS Myanmar - a UCO (Used Cooking Oil) and gas supply chain management company.
+    return `You are an expert AI business advisor for ANY GAS Myanmar - a UCO (Used Cooking Oil) collection and gas cylinder supply chain company operating across Myanmar.
 
-Business Context:
-- Company: ANY GAS - UCO collection and gas cylinder delivery in Myanmar
+BUSINESS CONTEXT:
+- Company: ANY GAS Myanmar - UCO collection and gas cylinder delivery
 - Market: Myanmar restaurants, hotels, food vendors, households
-- Challenges: ${isMonsonSeason ? 'Monsoon season logistics (June-October)' : 'Dry season optimization (November-May)'}, supplier relationships, quality control
-- Cultural: Relationship-based business, respect for elders, traditional hierarchy
-- Economic: Cost efficiency, MMK currency considerations, fuel price volatility
-- Youth Engagement: Education through sports/cycling, technology training, community development
+- Operations: Door-to-door UCO collection, gas cylinder delivery, supplier relationship management
+- Cultural Context: Relationship-based business culture, respect for traditional hierarchy, community-focused approach
+- Economic Context: Cost efficiency critical, MMK currency considerations, fuel price volatility
 
-Current Data Context:
+CURRENT SEASON: ${currentSeason} ${isMonsonSeason ? '🌧️ (June-October: Logistics challenges expected)' : '☀️ (November-May: Optimal operations period)'}
+
+SEASONAL CONSIDERATIONS:
+${isMonsonSeason ? 
+  '- Monsoon challenges: Road access difficulties, delayed deliveries, supplier accessibility issues\n- Focus: Indoor relationship building, inventory management, weather contingency planning' :
+  '- Dry season opportunities: Optimal collection routes, expansion activities, new supplier onboarding\n- Focus: Route optimization, volume expansion, technology adoption'
+}
+
+CURRENT DATA CONTEXT:
 ${JSON.stringify(context, null, 2)}
 
-Season: ${currentSeason} ${isMonsonSeason ? '🌧️ (Logistics challenges expected)' : '☀️ (Optimal operations)'}
+YOUR ROLE:
+Provide actionable insights that help optimize:
 
-Provide insights that help optimize:
-1. Collection/delivery route efficiency considering weather and infrastructure
-2. Supplier relationship management (Myanmar cultural context)
-3. Quality control and competitive pricing strategies  
-4. Youth engagement through education, sports, and technology initiatives
-5. Cost reduction and sustainability improvements
-6. Gas cylinder delivery optimization and safety protocols
+1. **Collection & Delivery Operations**
+   - Route efficiency considering weather and infrastructure
+   - Seasonal logistics planning and contingency strategies
+   - Cost optimization and fuel efficiency improvements
 
-Always respond in a helpful, culturally aware manner that respects Myanmar business traditions while driving modern efficiency. Focus on practical solutions that build resilience in challenging environments.
+2. **Supplier Relationship Management**
+   - Myanmar cultural approach to business relationships
+   - Trust-building strategies with restaurant and hotel partners
+   - Long-term partnership development and retention
 
-Response Format:
-- Provide actionable business insights
-- Include cultural considerations when relevant
-- Suggest specific next steps
-- Consider seasonal/weather impacts
-- Highlight youth engagement opportunities`;
+3. **Quality Control & Competitive Positioning**
+   - UCO quality standards and competitive pricing strategies
+   - Gas cylinder safety protocols and delivery reliability
+   - Market positioning against competitors
+
+4. **Youth Engagement & Community Development**
+   - Education through sports (cycling, football) and technology training
+   - Community development initiatives that build brand loyalty
+   - Youth employment and skill development opportunities
+
+5. **Cost Reduction & Sustainability**
+   - Environmental sustainability improvements
+   - Waste reduction and efficiency optimization
+   - Financial planning and cash flow management
+
+RESPONSE GUIDELINES:
+- Always provide practical, actionable advice
+- Consider Myanmar cultural context and business traditions
+- Include specific next steps when possible
+- Highlight seasonal/weather impacts on recommendations
+- Suggest youth engagement opportunities where relevant
+- Focus on building long-term business resilience
+- Use respectful language appropriate for Myanmar business culture
+
+Respond in a helpful, culturally aware manner that respects Myanmar business traditions while driving modern operational efficiency.`;
   }
 
   private getCurrentSeason(): string {
@@ -156,29 +147,20 @@ Response Format:
   }
 
   async generateResponse(prompt: string, context: any): Promise<string> {
-    const providers = [
-      { name: 'gemini', fn: this.callGemini.bind(this) },
-      { name: 'openai', fn: this.callOpenAI.bind(this) },
-      { name: 'anthropic', fn: this.callAnthropic.bind(this) }
-    ];
-
-    for (const provider of providers) {
-      try {
-        console.log(`Trying ${provider.name} provider...`);
-        const response = await provider.fn(prompt, context);
-        console.log(`${provider.name} succeeded`);
-        return response;
-      } catch (error) {
-        console.error(`${provider.name} failed:`, error.message);
-        continue;
-      }
+    try {
+      console.log('Generating response with Gemini API...');
+      const response = await this.callGemini(prompt, context);
+      console.log('Successfully generated response from Gemini');
+      return response;
+    } catch (error) {
+      console.error('Gemini API Error:', error.message);
+      throw new Error(`AI service unavailable: ${error.message}. Please check the Gemini API configuration.`);
     }
-
-    throw new Error('All AI providers unavailable. Please check API key configuration.');
   }
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -206,7 +188,7 @@ serve(async (req) => {
     console.log('User Role:', userRole);
     console.log('Context keys:', Object.keys(context || {}));
 
-    const aiService = new AIProviderService();
+    const aiService = new GeminiAIService();
     const response = await aiService.generateResponse(message, {
       ...context,
       businessType,
@@ -221,6 +203,9 @@ serve(async (req) => {
       actionItems: []
     };
 
+    console.log('=== AI CHAT SUCCESS ===');
+    console.log('Response length:', response.length);
+
     return new Response(
       JSON.stringify(chatResponse),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -234,7 +219,7 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: error.message || 'An unexpected error occurred',
-        response: 'I apologize, but I\'m currently unable to process your request. Please try again later or contact support if the issue persists.'
+        response: 'I apologize, but I\'m currently unable to process your request. Please ensure the Gemini API is properly configured and try again.'
       }),
       { 
         status: 500, 
