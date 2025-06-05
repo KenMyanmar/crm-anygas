@@ -2,13 +2,24 @@
 import { adminClient } from './supabaseAdmin';
 import { DataInconsistency } from '../types/consistencyTypes';
 
+// Define proper types for auth users and profiles
+interface AuthUser {
+  id: string;
+  email?: string;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+}
+
 export const scanForInconsistencies = async (): Promise<DataInconsistency[]> => {
   console.log('=== ENHANCED CONSISTENCY SCAN ===');
   const found: DataInconsistency[] = [];
 
   try {
     // Get all auth users
-    const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
+    const { data: authUsersData, error: authError } = await adminClient.auth.admin.listUsers();
     if (authError) {
       throw new Error(`Failed to fetch auth users: ${authError.message}`);
     }
@@ -21,20 +32,23 @@ export const scanForInconsistencies = async (): Promise<DataInconsistency[]> => 
       throw new Error(`Failed to fetch profiles: ${profileError.message}`);
     }
 
-    console.log('Auth users found:', authUsers.users.length);
+    // Type the auth users properly
+    const authUsers: AuthUser[] = authUsersData.users || [];
+    
+    console.log('Auth users found:', authUsers.length);
     console.log('Profiles found:', profiles?.length || 0);
 
     // Check for orphaned auth users (auth exists but no profile with matching UUID)
-    for (const authUser of authUsers.users) {
+    for (const authUser of authUsers) {
       if (!authUser.email) continue;
       
-      const hasMatchingProfile = profiles?.some(profile => 
+      const hasMatchingProfile = profiles?.some((profile: UserProfile) => 
         profile.id === authUser.id
       );
       
       if (!hasMatchingProfile) {
         // Check if there's a profile with same email but different UUID
-        const emailProfile = profiles?.find(profile => 
+        const emailProfile = profiles?.find((profile: UserProfile) => 
           profile.email.toLowerCase() === authUser.email?.toLowerCase()
         );
         
@@ -60,14 +74,14 @@ export const scanForInconsistencies = async (): Promise<DataInconsistency[]> => 
     }
 
     // Check for orphaned profiles (profile exists but no auth with matching UUID)
-    for (const profile of profiles || []) {
-      const hasMatchingAuthUser = authUsers.users.some(authUser => 
+    for (const profile of (profiles as UserProfile[]) || []) {
+      const hasMatchingAuthUser = authUsers.some((authUser: AuthUser) => 
         authUser.id === profile.id
       );
       
       if (!hasMatchingAuthUser) {
         // Check if there's an auth user with same email but different UUID
-        const emailAuthUser = authUsers.users.find(authUser => 
+        const emailAuthUser = authUsers.find((authUser: AuthUser) => 
           authUser.email?.toLowerCase() === profile.email.toLowerCase()
         );
         
@@ -93,10 +107,10 @@ export const scanForInconsistencies = async (): Promise<DataInconsistency[]> => 
     }
 
     // Check for email mismatches (same UUID but different emails)
-    for (const authUser of authUsers.users) {
+    for (const authUser of authUsers) {
       if (!authUser.email) continue;
       
-      const matchingProfile = profiles?.find(profile => profile.id === authUser.id);
+      const matchingProfile = profiles?.find((profile: UserProfile) => profile.id === authUser.id);
       if (matchingProfile && matchingProfile.email.toLowerCase() !== authUser.email.toLowerCase()) {
         found.push({
           type: 'EMAIL_MISMATCH',

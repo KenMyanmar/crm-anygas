@@ -17,6 +17,17 @@ interface DataInconsistency {
   severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
+// Define proper types for auth users and profiles
+interface AuthUser {
+  id: string;
+  email?: string;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+}
+
 const SUPABASE_URL = 'https://fblcilccdjicyosmuome.supabase.co';
 const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibGNpbGNjZGppY3lvc211b21lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Njk3NzMzMywiZXhwIjoyMDYyNTUzMzMzfQ.CaTkwECtJrGNvSFcM00Y8WZvDvqHNw6CsdJF2LB3qM8';
 
@@ -49,21 +60,22 @@ const DataConsistencyChecker = () => {
       }
 
       // Step 1: Get ALL auth users with this email
-      const { data: authUsers } = await adminClient.auth.admin.listUsers();
-      const matchingAuthUsers = authUsers.users.filter((user: any) => 
+      const { data: authUsersData } = await adminClient.auth.admin.listUsers();
+      const authUsers: AuthUser[] = authUsersData.users || [];
+      const matchingAuthUsers = authUsers.filter((user: AuthUser) => 
         user.email?.toLowerCase() === cleanEmail
       );
 
       // Step 2: Get ALL profiles with this email or matching UUIDs
       const uuidsToClean = new Set<string>();
-      matchingAuthUsers.forEach((user: any) => uuidsToClean.add(user.id));
+      matchingAuthUsers.forEach((user: AuthUser) => uuidsToClean.add(user.id));
 
       const { data: emailProfiles } = await adminClient
         .from('users')
         .select('*')
         .ilike('email', cleanEmail);
 
-      emailProfiles?.forEach(profile => uuidsToClean.add(profile.id));
+      emailProfiles?.forEach((profile: UserProfile) => uuidsToClean.add(profile.id));
 
       console.log('Found to delete:', {
         authUsers: matchingAuthUsers.length,
@@ -91,8 +103,9 @@ const DataConsistencyChecker = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Verification
-      const { data: verifyAuth } = await adminClient.auth.admin.listUsers();
-      const remainingAuth = verifyAuth.users.filter((user: any) => 
+      const { data: verifyAuthData } = await adminClient.auth.admin.listUsers();
+      const verifyAuthUsers: AuthUser[] = verifyAuthData.users || [];
+      const remainingAuth = verifyAuthUsers.filter((user: AuthUser) => 
         user.email?.toLowerCase() === cleanEmail
       );
 
@@ -138,7 +151,7 @@ const DataConsistencyChecker = () => {
       const found: DataInconsistency[] = [];
 
       // Get all auth users
-      const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
+      const { data: authUsersData, error: authError } = await adminClient.auth.admin.listUsers();
       if (authError) {
         throw new Error(`Failed to fetch auth users: ${authError.message}`);
       }
@@ -151,20 +164,23 @@ const DataConsistencyChecker = () => {
         throw new Error(`Failed to fetch profiles: ${profileError.message}`);
       }
 
-      console.log('Auth users found:', authUsers.users.length);
+      // Type the auth users properly
+      const authUsers: AuthUser[] = authUsersData.users || [];
+
+      console.log('Auth users found:', authUsers.length);
       console.log('Profiles found:', profiles?.length || 0);
 
       // Check for orphaned auth users (auth exists but no profile with matching UUID)
-      for (const authUser of authUsers.users) {
+      for (const authUser of authUsers) {
         if (!authUser.email) continue;
         
-        const hasMatchingProfile = profiles?.some(profile => 
+        const hasMatchingProfile = profiles?.some((profile: UserProfile) => 
           profile.id === authUser.id
         );
         
         if (!hasMatchingProfile) {
           // Check if there's a profile with same email but different UUID
-          const emailProfile = profiles?.find(profile => 
+          const emailProfile = profiles?.find((profile: UserProfile) => 
             profile.email.toLowerCase() === authUser.email?.toLowerCase()
           );
           
@@ -190,14 +206,14 @@ const DataConsistencyChecker = () => {
       }
 
       // Check for orphaned profiles (profile exists but no auth with matching UUID)
-      for (const profile of profiles || []) {
-        const hasMatchingAuthUser = authUsers.users.some(authUser => 
+      for (const profile of (profiles as UserProfile[]) || []) {
+        const hasMatchingAuthUser = authUsers.some((authUser: AuthUser) => 
           authUser.id === profile.id
         );
         
         if (!hasMatchingAuthUser) {
           // Check if there's an auth user with same email but different UUID
-          const emailAuthUser = authUsers.users.find((authUser: any) => 
+          const emailAuthUser = authUsers.find((authUser: AuthUser) => 
             authUser.email?.toLowerCase() === profile.email.toLowerCase()
           );
           
@@ -223,10 +239,10 @@ const DataConsistencyChecker = () => {
       }
 
       // Check for email mismatches (same UUID but different emails)
-      for (const authUser of authUsers.users) {
+      for (const authUser of authUsers) {
         if (!authUser.email) continue;
         
-        const matchingProfile = profiles?.find(profile => profile.id === authUser.id);
+        const matchingProfile = profiles?.find((profile: UserProfile) => profile.id === authUser.id);
         if (matchingProfile && matchingProfile.email.toLowerCase() !== authUser.email.toLowerCase()) {
           found.push({
             type: 'EMAIL_MISMATCH',
@@ -317,8 +333,9 @@ const DataConsistencyChecker = () => {
             .ilike('email', inconsistency.email);
           
           // Delete all auth users with this email
-          const { data: authUsers } = await adminClient.auth.admin.listUsers();
-          const matchingAuthUsers = authUsers.users.filter((user: any) => 
+          const { data: authUsersData } = await adminClient.auth.admin.listUsers();
+          const authUsers: AuthUser[] = authUsersData.users || [];
+          const matchingAuthUsers = authUsers.filter((user: AuthUser) => 
             user.email?.toLowerCase() === inconsistency.email.toLowerCase()
           );
           
