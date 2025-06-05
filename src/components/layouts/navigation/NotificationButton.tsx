@@ -24,11 +24,11 @@ const NotificationButton = ({ unreadCount }: NotificationButtonProps) => {
       variant="ghost" 
       size="icon" 
       onClick={handleClick} 
-      className="relative"
+      className="relative h-9 w-9 md:h-10 md:w-10"
     >
-      <Bell className="h-5 w-5" />
+      <Bell className="h-4 w-4 md:h-5 md:w-5" />
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+        <span className="absolute -top-1 -right-1 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full bg-destructive text-[9px] md:text-[10px] text-destructive-foreground font-medium">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}

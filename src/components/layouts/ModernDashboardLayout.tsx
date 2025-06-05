@@ -37,7 +37,7 @@ const ModernDashboardLayout = ({ children }: ModernDashboardLayoutProps) => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopNavigation />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6">
         {children}
       </main>
 
