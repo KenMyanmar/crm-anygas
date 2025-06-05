@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -13,7 +12,7 @@ import AvatarUpload from '@/components/profile/AvatarUpload';
 import { User, Settings, Mail, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 
 const ProfilePage = () => {
-  const { profile, signOut, user } = useAuth();
+  const { profile, signOut, user, refreshProfile } = useAuth();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isChangingEmail, setIsChangingEmail] = useState(false);
@@ -65,6 +64,9 @@ const ProfilePage = () => {
         throw error;
       }
 
+      // Refresh profile to sync changes
+      await refreshProfile();
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
@@ -81,6 +83,11 @@ const ProfilePage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAvatarUpdate = (url: string) => {
+    // Update local state to immediately reflect the change
+    setProfileData(prev => ({ ...prev, profile_pic_url: url }));
   };
 
   const handleChangePassword = async () => {
@@ -212,9 +219,9 @@ const ProfilePage = () => {
           <CardContent className="space-y-6">
             {/* Avatar Upload */}
             <AvatarUpload
-              currentAvatarUrl={profileData.profile_pic_url}
+              currentAvatarUrl={profile?.profile_pic_url || ''}
               userInitials={initials}
-              onAvatarUpdate={(url) => setProfileData(prev => ({ ...prev, profile_pic_url: url }))}
+              onAvatarUpdate={handleAvatarUpdate}
             />
 
             <Separator />

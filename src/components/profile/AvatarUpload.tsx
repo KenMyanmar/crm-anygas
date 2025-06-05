@@ -18,7 +18,7 @@ const AvatarUpload = ({ currentAvatarUrl, userInitials, onAvatarUpdate }: Avatar
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,6 +55,21 @@ const AvatarUpload = ({ currentAvatarUrl, userInitials, onAvatarUpdate }: Avatar
     uploadAvatar(file);
   };
 
+  const extractFilePathFromUrl = (url: string): string | null => {
+    try {
+      // Extract the file path from the Supabase storage URL
+      // URL format: https://project.supabase.co/storage/v1/object/public/avatars/user-id/filename.ext
+      const urlParts = url.split('/avatars/');
+      if (urlParts.length > 1) {
+        return urlParts[1]; // This gives us "user-id/filename.ext"
+      }
+      return null;
+    } catch (error) {
+      console.error('Error extracting file path from URL:', error);
+      return null;
+    }
+  };
+
   const uploadAvatar = async (file: File) => {
     if (!user?.id) return;
 
@@ -64,13 +79,25 @@ const AvatarUpload = ({ currentAvatarUrl, userInitials, onAvatarUpdate }: Avatar
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${timestamp}.${fileExt}`;
 
+      console.log('=== Starting avatar upload ===');
+      console.log('File name:', fileName);
+      console.log('Current avatar URL:', currentAvatarUrl);
+
       // Delete old avatar if exists
       if (currentAvatarUrl) {
-        const oldPath = currentAvatarUrl.split('/').pop();
-        if (oldPath) {
-          await supabase.storage
+        const oldFilePath = extractFilePathFromUrl(currentAvatarUrl);
+        console.log('Extracted old file path:', oldFilePath);
+        
+        if (oldFilePath) {
+          const { error: deleteError } = await supabase.storage
             .from('avatars')
-            .remove([`${user.id}/${oldPath}`]);
+            .remove([oldFilePath]);
+          
+          if (deleteError) {
+            console.warn('Failed to delete old avatar:', deleteError);
+          } else {
+            console.log('Successfully deleted old avatar');
+          }
         }
       }
 
@@ -83,25 +110,38 @@ const AvatarUpload = ({ currentAvatarUrl, userInitials, onAvatarUpdate }: Avatar
         });
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
+
+      console.log('=== File uploaded successfully ===');
 
       // Get public URL
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
 
-      // Update user profile
+      console.log('=== Generated public URL ===', data.publicUrl);
+
+      // Update user profile in database
       const { error: updateError } = await supabase
         .from('users')
         .update({ profile_pic_url: data.publicUrl })
         .eq('id', user.id);
 
       if (updateError) {
+        console.error('Database update error:', updateError);
         throw updateError;
       }
 
+      console.log('=== Database updated successfully ===');
+
+      // Update local state
       onAvatarUpdate(data.publicUrl);
+      
+      // Refresh the profile in auth context to ensure sync
+      await refreshProfile();
+      
       toast({
         description: "Profile picture updated successfully",
       });
@@ -124,15 +164,26 @@ const AvatarUpload = ({ currentAvatarUrl, userInitials, onAvatarUpdate }: Avatar
 
     setIsUploading(true);
     try {
+      console.log('=== Starting avatar removal ===');
+      console.log('Current avatar URL:', currentAvatarUrl);
+
       // Delete from storage
-      const fileName = currentAvatarUrl.split('/').pop();
-      if (fileName) {
-        await supabase.storage
+      const filePath = extractFilePathFromUrl(currentAvatarUrl);
+      console.log('Extracted file path for deletion:', filePath);
+
+      if (filePath) {
+        const { error: deleteError } = await supabase.storage
           .from('avatars')
-          .remove([`${user.id}/${fileName}`]);
+          .remove([filePath]);
+
+        if (deleteError) {
+          console.warn('Failed to delete avatar file:', deleteError);
+        } else {
+          console.log('Successfully deleted avatar file');
+        }
       }
 
-      // Update user profile
+      // Update user profile in database
       const { error } = await supabase
         .from('users')
         .update({ profile_pic_url: null })
@@ -142,8 +193,15 @@ const AvatarUpload = ({ currentAvatarUrl, userInitials, onAvatarUpdate }: Avatar
         throw error;
       }
 
+      console.log('=== Database updated - avatar removed ===');
+
+      // Update local state
       onAvatarUpdate('');
       setPreviewUrl(null);
+      
+      // Refresh the profile in auth context to ensure sync
+      await refreshProfile();
+      
       toast({
         description: "Profile picture removed successfully",
       });
