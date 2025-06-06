@@ -1,38 +1,55 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart } from "lucide-react";
+import { useState } from 'react';
+import { usePerformanceAnalytics } from '@/hooks/usePerformanceAnalytics';
+import { PerformanceReportHeader } from '@/components/reports/PerformanceReportHeader';
+import { PerformanceSkeleton } from '@/components/reports/PerformanceSkeleton';
+import { PerformanceMetricsCards } from '@/components/reports/PerformanceMetricsCards';
+import { SalespersonProfileCards } from '@/components/reports/SalespersonProfileCards';
+import { ActivityHeatmap } from '@/components/reports/ActivityHeatmap';
+import { VisitEfficiencyCharts } from '@/components/reports/VisitEfficiencyCharts';
+import { GoalTrackingSection } from '@/components/reports/GoalTrackingSection';
 
 const PerformancePage = () => {
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center space-x-2">
-        <BarChart className="h-6 w-6 text-blue-500" />
-        <h1 className="text-2xl font-bold tracking-tight">Performance Reports</h1>
+  const [timeRange, setTimeRange] = useState('30');
+  const { data, loading } = usePerformanceAnalytics(timeRange);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <PerformanceSkeleton />
       </div>
-      <p className="text-muted-foreground">
-        Track sales team performance metrics, goals, and achievement rates.
-      </p>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold mb-2">No performance data available</h2>
+          <p className="text-muted-foreground">Unable to load performance analytics at this time.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-8">
+      <PerformanceReportHeader timeRange={timeRange} onTimeRangeChange={setTimeRange} />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance Analytics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="border border-dashed rounded-lg p-8 text-center">
-            <h2 className="text-lg font-semibold mb-2">Sales Performance Dashboard Coming Soon</h2>
-            <p className="text-muted-foreground">
-              This section will provide comprehensive analytics on sales team performance and goal achievement.
-            </p>
-            <ul className="list-disc list-inside text-left max-w-lg mx-auto mt-4 text-muted-foreground">
-              <li>Individual salesperson performance metrics</li>
-              <li>Team-based performance comparisons</li>
-              <li>Goal tracking and achievement rates</li>
-              <li>Time-based performance trends</li>
-              <li>Opportunity analysis and forecasting tools</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <PerformanceMetricsCards metrics={data.metrics} />
+
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Individual Performance Profiles</h2>
+          <SalespersonProfileCards profiles={data.salespersonProfiles} />
+        </div>
+
+        <ActivityHeatmap activityPatterns={data.activityPatterns} />
+
+        <VisitEfficiencyCharts visitEfficiency={data.visitEfficiency} />
+
+        <GoalTrackingSection goalTracking={data.goalTracking} />
+      </div>
     </div>
   );
 };
