@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,7 +69,7 @@ const OrdersSalesReportPage = () => {
 
       // Top townships by revenue
       const townshipRevenue = orders?.reduce((acc: any, order) => {
-        const township = order.restaurants?.township || 'Unknown';
+        const township = (order.restaurants as any)?.township || 'Unknown';
         if (!acc[township]) {
           acc[township] = { revenue: 0, orders: 0 };
         }
