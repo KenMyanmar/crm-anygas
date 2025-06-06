@@ -1,38 +1,52 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart } from "lucide-react";
+import { useState } from 'react';
+import { useLeadAnalytics } from '@/hooks/useLeadAnalytics';
+import { LeadAnalyticsHeader } from '@/components/reports/LeadAnalyticsHeader';
+import { LeadAnalyticsSkeleton } from '@/components/reports/LeadAnalyticsSkeleton';
+import { LeadMetricsCards } from '@/components/reports/LeadMetricsCards';
+import { LeadPipelineFunnel } from '@/components/reports/LeadPipelineFunnel';
+import { LeadConversionCharts } from '@/components/reports/LeadConversionCharts';
+import { SalespersonPerformance } from '@/components/reports/SalespersonPerformance';
+import { LeadTrendsCharts } from '@/components/reports/LeadTrendsCharts';
+import { LeadActivityTable } from '@/components/reports/LeadActivityTable';
 
 const LeadReportsPage = () => {
+  const [timeRange, setTimeRange] = useState('30');
+  const { data, loading } = useLeadAnalytics(timeRange);
+
+  if (loading) {
+    return <LeadAnalyticsSkeleton />;
+  }
+
+  if (!data) return <div>No data available</div>;
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center space-x-2">
-        <BarChart className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold tracking-tight">Lead Reports</h1>
-      </div>
-      <p className="text-muted-foreground">
-        Analyze lead generation, conversion rates, and sales pipeline metrics.
-      </p>
+    <div className="space-y-8">
+      <LeadAnalyticsHeader timeRange={timeRange} onTimeRangeChange={setTimeRange} />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Lead Analytics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="border border-dashed rounded-lg p-8 text-center">
-            <h2 className="text-lg font-semibold mb-2">Lead Analytics Dashboard Coming Soon</h2>
-            <p className="text-muted-foreground">
-              This section will provide detailed analytics and reporting on lead activity and conversion metrics.
-            </p>
-            <ul className="list-disc list-inside text-left max-w-lg mx-auto mt-4 text-muted-foreground">
-              <li>Track lead sources and acquisition channels</li>
-              <li>Measure conversion rates across each pipeline stage</li>
-              <li>Analyze performance by salesperson and region</li>
-              <li>View time-based trends in lead generation</li>
-              <li>Export detailed reports for management review</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <LeadMetricsCards
+        totalLeads={data.totalLeads}
+        conversionRate={data.conversionRate}
+        avgDealValue={data.avgDealValue}
+        pipelineVelocity={data.pipelineVelocity}
+      />
+
+      <LeadPipelineFunnel conversionFunnel={data.conversionFunnel} />
+
+      <LeadConversionCharts
+        leadsByStatus={data.leadsByStatus}
+        leadsBySource={data.leadsBySource}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SalespersonPerformance performanceBySalesperson={data.performanceBySalesperson} />
+        <LeadActivityTable recentActivity={data.recentActivity} />
+      </div>
+
+      <LeadTrendsCharts
+        trendData={data.trendData}
+        leadsByTownship={data.leadsByTownship}
+      />
     </div>
   );
 };
