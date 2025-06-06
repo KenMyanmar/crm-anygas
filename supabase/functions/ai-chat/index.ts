@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
@@ -33,6 +34,14 @@ interface BusinessMetrics {
   ordersByStatus: { status: string; count: number }[];
   avgOrderValue: number;
   topTownships: { township: string; orders: number; revenue: number }[];
+  // Enhanced with visit metrics
+  totalVisits: number;
+  visitsByStatus: { status: string; count: number }[];
+  visitCompletionRate: number;
+  avgVisitDuration: number;
+  recentVisits: any[];
+  visitsByTownship: { township: string; count: number }[];
+  upcomingVisits: any[];
 }
 
 class DatabaseService {
@@ -51,7 +60,7 @@ class DatabaseService {
 
   async getBusinessMetrics(): Promise<BusinessMetrics> {
     try {
-      console.log('Fetching comprehensive business metrics...');
+      console.log('Fetching comprehensive business metrics including visits...');
 
       // Get restaurant metrics
       const { data: restaurants, error: restaurantsError } = await this.supabase
@@ -73,6 +82,13 @@ class DatabaseService {
         .select('status');
       
       if (leadsError) throw leadsError;
+
+      // Get visit metrics
+      const { data: visits, error: visitsError } = await this.supabase
+        .from('visit_tasks_detailed')
+        .select('*');
+
+      if (visitsError) throw visitsError;
 
       // Get recent activity
       const { data: activity, error: activityError } = await this.supabase
@@ -145,6 +161,50 @@ class DatabaseService {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
 
+      // Process visit data
+      const visitsByStatus = visits?.reduce((acc: any, visit: any) => {
+        const status = visit.status || 'PLANNED';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const visitsByStatusArray = Object.entries(visitsByStatus || {})
+        .map(([status, count]) => ({ status, count: count as number }));
+
+      // Calculate visit completion rate
+      const completedVisits = visits?.filter((v: any) => v.status === 'VISITED').length || 0;
+      const totalVisits = visits?.length || 0;
+      const visitCompletionRate = totalVisits > 0 ? (completedVisits / totalVisits) * 100 : 0;
+
+      // Calculate average visit duration
+      const visitsWithDuration = visits?.filter((v: any) => v.estimated_duration_minutes) || [];
+      const avgVisitDuration = visitsWithDuration.length > 0 
+        ? visitsWithDuration.reduce((sum: number, v: any) => sum + (v.estimated_duration_minutes || 0), 0) / visitsWithDuration.length
+        : 60;
+
+      // Get recent visits
+      const recentVisits = visits?.filter((v: any) => v.visit_time)
+        .sort((a: any, b: any) => new Date(b.visit_time).getTime() - new Date(a.visit_time).getTime())
+        .slice(0, 10) || [];
+
+      // Get upcoming visits
+      const now = new Date();
+      const upcomingVisits = visits?.filter((v: any) => 
+        v.visit_time && new Date(v.visit_time) > now && v.status === 'PLANNED'
+      ).sort((a: any, b: any) => new Date(a.visit_time).getTime() - new Date(b.visit_time).getTime())
+        .slice(0, 10) || [];
+
+      // Process visits by township
+      const visitsByTownship = visits?.reduce((acc: any, visit: any) => {
+        const township = visit.township || 'Unknown';
+        acc[township] = (acc[township] || 0) + 1;
+        return acc;
+      }, {});
+
+      const visitsByTownshipArray = Object.entries(visitsByTownship || {})
+        .map(([township, count]) => ({ township, count: count as number }))
+        .sort((a, b) => b.count - a.count);
+
       const metrics: BusinessMetrics = {
         totalRestaurants: restaurants?.length || 0,
         restaurantsByTownship: restaurantsByTownshipArray,
@@ -155,13 +215,23 @@ class DatabaseService {
         activeUsers: users?.length || 0,
         ordersByStatus: ordersByStatusArray,
         avgOrderValue,
-        topTownships
+        topTownships,
+        // Visit metrics
+        totalVisits,
+        visitsByStatus: visitsByStatusArray,
+        visitCompletionRate,
+        avgVisitDuration,
+        recentVisits,
+        visitsByTownship: visitsByTownshipArray,
+        upcomingVisits
       };
 
       console.log('Business metrics calculated:', {
         totalRestaurants: metrics.totalRestaurants,
         totalOrders: metrics.totalOrders,
         totalRevenue: metrics.totalRevenue,
+        totalVisits: metrics.totalVisits,
+        visitCompletionRate: metrics.visitCompletionRate.toFixed(1) + '%',
         topTownshipsCount: metrics.topTownships.length
       });
 
@@ -187,14 +257,12 @@ class DatabaseService {
         
         if (error) throw error;
 
-        // Aggregate restaurants by township
         const townshipCounts = restaurants?.reduce((acc: any, restaurant: any) => {
           const township = restaurant.township || 'Unknown';
           acc[township] = (acc[township] || 0) + 1;
           return acc;
         }, {});
 
-        // Convert to sorted array format
         const formattedData = Object.entries(townshipCounts || {})
           .map(([township, count]) => ({ 
             township, 
@@ -209,6 +277,47 @@ class DatabaseService {
           data: formattedData,
           total_restaurants: restaurants?.length || 0,
           summary: `Found ${restaurants?.length || 0} restaurants across ${formattedData.length} townships`
+        };
+      }
+
+      // Visit reports and analysis
+      if (query.toLowerCase().includes('visit')) {
+        console.log('Fetching visit data...');
+        
+        const { data: visits, error } = await this.supabase
+          .from('visit_tasks_detailed')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+
+        // Analyze visit patterns
+        const visitsByStatus = visits?.reduce((acc: any, visit: any) => {
+          const status = visit.status || 'PLANNED';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {}) || {};
+
+        const visitsByTownship = visits?.reduce((acc: any, visit: any) => {
+          const township = visit.township || 'Unknown';
+          acc[township] = (acc[township] || 0) + 1;
+          return acc;
+        }, {}) || {};
+
+        const completedVisits = visits?.filter((v: any) => v.status === 'VISITED').length || 0;
+        const totalVisits = visits?.length || 0;
+        const completionRate = totalVisits > 0 ? (completedVisits / totalVisits) * 100 : 0;
+
+        return {
+          type: 'visit_analysis',
+          data: {
+            total_visits: totalVisits,
+            visits_by_status: visitsByStatus,
+            visits_by_township: visitsByTownship,
+            completion_rate: completionRate,
+            recent_visits: visits?.slice(0, 10) || []
+          },
+          summary: `Found ${totalVisits} visits with ${completionRate.toFixed(1)}% completion rate across ${Object.keys(visitsByTownship).length} townships`
         };
       }
 
@@ -330,6 +439,16 @@ class GeminiAIService {
       .map(o => `${o.status}: ${o.count}`)
       .join(', ');
 
+    // Enhanced with visit metrics
+    const visitStatusText = businessMetrics.visitsByStatus
+      .map(v => `${v.status}: ${v.count}`)
+      .join(', ');
+
+    const topVisitTownships = businessMetrics.visitsByTownship
+      .slice(0, 5)
+      .map(t => `${t.township}: ${t.count} visits`)
+      .join(', ');
+
     // Add specific query data context if available
     let specificDataContext = '';
     if (context.specificQueryData) {
@@ -343,6 +462,10 @@ class GeminiAIService {
         specificDataContext = `\n\nRECENT ORDERS DATA:\n${queryData.summary}\n`;
       } else if (queryData.type === 'lead_pipeline') {
         specificDataContext = `\n\nLEAD PIPELINE DATA:\n${queryData.summary}\n`;
+      } else if (queryData.type === 'visit_analysis') {
+        specificDataContext = `\n\nVISIT ANALYSIS DATA:\n${queryData.summary}\n`;
+        specificDataContext += `Visit Status Breakdown: ${Object.entries(queryData.data.visits_by_status).map(([status, count]) => `${status}: ${count}`).join(', ')}\n`;
+        specificDataContext += `Top Visit Townships: ${Object.entries(queryData.data.visits_by_township).slice(0, 5).map(([township, count]) => `${township}: ${count}`).join(', ')}\n`;
       }
     }
 
@@ -352,9 +475,14 @@ CURRENT DATA:
 - Restaurants: ${businessMetrics.totalRestaurants.toLocaleString()}
 - Orders: ${businessMetrics.totalOrders.toLocaleString()} 
 - Revenue: ${Math.round(businessMetrics.totalRevenue).toLocaleString()} Kyats
+- Visits: ${businessMetrics.totalVisits.toLocaleString()} (${businessMetrics.visitCompletionRate.toFixed(1)}% completion rate)
 - Top Townships: ${topTownshipsText}
 - Leads: ${leadsStatusText}
-- Orders: ${ordersStatusText}${specificDataContext}
+- Orders: ${ordersStatusText}
+- Visits: ${visitStatusText}
+- Top Visit Areas: ${topVisitTownships}
+- Avg Visit Duration: ${Math.round(businessMetrics.avgVisitDuration)} minutes
+- Upcoming Visits: ${businessMetrics.upcomingVisits.length}${specificDataContext}
 
 SEASON: ${currentSeason} ${isMonsonSeason ? '🌧️' : '☀️'}
 
@@ -367,11 +495,20 @@ RESPONSE STYLE:
 
 BUSINESS FOCUS:
 - UCO collection & gas delivery optimization
+- Visit efficiency and customer interaction analysis
 - Myanmar cultural business relationships
 - Seasonal logistics planning
 - Revenue growth strategies
 
-When asked about restaurant counts by township, use the SPECIFIC RESTAURANT TOWNSHIP DATA above.
+You have FULL ACCESS to:
+- Restaurant data by township
+- Order history and revenue metrics
+- Lead pipeline and conversion data
+- Visit tracking and completion rates
+- Customer interaction frequency
+- Geographical distribution analysis
+
+When asked about visits, restaurant counts, customer interactions, or operational data, use the comprehensive data above to provide accurate insights and recommendations.
 
 Provide direct, executive-level insights based on the actual data.`;
   }
