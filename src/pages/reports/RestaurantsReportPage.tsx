@@ -68,8 +68,8 @@ const RestaurantsReportPage = () => {
       const restaurantsByTownship = Object.entries(townshipCounts)
         .map(([township, count]) => ({
           township,
-          count,
-          percentage: totalRestaurants > 0 ? ((count as number) / totalRestaurants * 100).toFixed(1) : 0
+          count: Number(count),
+          percentage: totalRestaurants > 0 ? ((Number(count)) / totalRestaurants * 100).toFixed(1) : 0
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);

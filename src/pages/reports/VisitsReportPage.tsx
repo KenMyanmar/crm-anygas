@@ -47,12 +47,12 @@ const VisitsReportPage = () => {
       const totalVisits = visits?.length || 0;
       const completedVisits = visits?.filter(v => v.status === 'VISITED').length || 0;
       const plannedVisits = visits?.filter(v => v.status === 'PLANNED').length || 0;
-      const completionRate = totalVisits > 0 ? (completedVisits / totalVisits) * 100 : 0;
+      const completionRate = totalVisits > 0 ? (Number(completedVisits) / Number(totalVisits)) * 100 : 0;
 
       // Average duration
       const visitsWithDuration = visits?.filter(v => v.estimated_duration_minutes) || [];
       const avgDuration = visitsWithDuration.length > 0
-        ? visitsWithDuration.reduce((sum, v) => sum + (v.estimated_duration_minutes || 0), 0) / visitsWithDuration.length
+        ? visitsWithDuration.reduce((sum, v) => sum + (Number(v.estimated_duration_minutes) || 0), 0) / visitsWithDuration.length
         : 60;
 
       // Visits by status
@@ -78,8 +78,8 @@ const VisitsReportPage = () => {
       const visitsByTownship = Object.entries(townshipCounts)
         .map(([township, count]) => ({
           township,
-          count,
-          percentage: totalVisits > 0 ? ((count as number) / totalVisits * 100).toFixed(1) : 0
+          count: Number(count),
+          percentage: totalVisits > 0 ? ((Number(count)) / totalVisits * 100).toFixed(1) : 0
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);

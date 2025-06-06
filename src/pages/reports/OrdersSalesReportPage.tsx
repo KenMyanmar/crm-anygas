@@ -52,7 +52,7 @@ const OrdersSalesReportPage = () => {
       if (error) throw error;
 
       // Process data
-      const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount_kyats || 0), 0) || 0;
+      const totalRevenue = orders?.reduce((sum, order) => sum + (Number(order.total_amount_kyats) || 0), 0) || 0;
       const totalOrders = orders?.length || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
@@ -74,7 +74,7 @@ const OrdersSalesReportPage = () => {
         if (!acc[township]) {
           acc[township] = { revenue: 0, orders: 0 };
         }
-        acc[township].revenue += order.total_amount_kyats || 0;
+        acc[township].revenue += Number(order.total_amount_kyats) || 0;
         acc[township].orders += 1;
         return acc;
       }, {}) || {};
