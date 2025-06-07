@@ -86,6 +86,13 @@ export type Database = {
             foreignKeyName: "calls_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -137,6 +144,91 @@ export type Database = {
         }
         Relationships: []
       }
+      dual_business_visits: {
+        Row: {
+          created_at: string | null
+          gas_objective: string | null
+          gas_outcome: string | null
+          gas_revenue: number | null
+          gas_volume_sold: number | null
+          id: string
+          next_visit_recommendation: string | null
+          priority_level: string | null
+          restaurant_id: string | null
+          salesperson_uid: string | null
+          uco_collected_kg: number | null
+          uco_price_paid: number | null
+          uco_quality_score: number | null
+          uco_status: string | null
+          updated_at: string | null
+          visit_date: string
+          visit_notes: string | null
+          visit_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gas_objective?: string | null
+          gas_outcome?: string | null
+          gas_revenue?: number | null
+          gas_volume_sold?: number | null
+          id?: string
+          next_visit_recommendation?: string | null
+          priority_level?: string | null
+          restaurant_id?: string | null
+          salesperson_uid?: string | null
+          uco_collected_kg?: number | null
+          uco_price_paid?: number | null
+          uco_quality_score?: number | null
+          uco_status?: string | null
+          updated_at?: string | null
+          visit_date: string
+          visit_notes?: string | null
+          visit_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gas_objective?: string | null
+          gas_outcome?: string | null
+          gas_revenue?: number | null
+          gas_volume_sold?: number | null
+          id?: string
+          next_visit_recommendation?: string | null
+          priority_level?: string | null
+          restaurant_id?: string | null
+          salesperson_uid?: string | null
+          uco_collected_kg?: number | null
+          uco_price_paid?: number | null
+          uco_quality_score?: number | null
+          uco_status?: string | null
+          updated_at?: string | null
+          visit_date?: string
+          visit_notes?: string | null
+          visit_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dual_business_visits_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dual_business_visits_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dual_business_visits_salesperson_uid_fkey"
+            columns: ["salesperson_uid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           assigned_to_user_id: string
@@ -186,6 +278,13 @@ export type Database = {
             columns: ["assigned_to_user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
             referencedColumns: ["id"]
           },
           {
@@ -298,6 +397,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "meetings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meetings_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -596,6 +702,13 @@ export type Database = {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -652,38 +765,62 @@ export type Database = {
       restaurants: {
         Row: {
           address: string | null
+          avg_uco_volume_kg: number | null
+          business_types: Json | null
+          competitor_info: Json | null
           contact_person: string | null
           created_at: string
+          gas_consumption_estimate: string | null
+          gas_customer_status: string | null
           id: string
+          last_uco_collection_date: string | null
           name: string
           phone: string | null
           remarks: string | null
           salesperson_id: string
           township: string | null
+          uco_price_per_kg: number | null
+          uco_supplier_status: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          avg_uco_volume_kg?: number | null
+          business_types?: Json | null
+          competitor_info?: Json | null
           contact_person?: string | null
           created_at?: string
+          gas_consumption_estimate?: string | null
+          gas_customer_status?: string | null
           id?: string
+          last_uco_collection_date?: string | null
           name: string
           phone?: string | null
           remarks?: string | null
           salesperson_id: string
           township?: string | null
+          uco_price_per_kg?: number | null
+          uco_supplier_status?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          avg_uco_volume_kg?: number | null
+          business_types?: Json | null
+          competitor_info?: Json | null
           contact_person?: string | null
           created_at?: string
+          gas_consumption_estimate?: string | null
+          gas_customer_status?: string | null
           id?: string
+          last_uco_collection_date?: string | null
           name?: string
           phone?: string | null
           remarks?: string | null
           salesperson_id?: string
           township?: string | null
+          uco_price_per_kg?: number | null
+          uco_supplier_status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -853,6 +990,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
             referencedColumns: ["id"]
           },
           {
@@ -1058,6 +1202,13 @@ export type Database = {
             foreignKeyName: "visit_tasks_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -1167,6 +1318,13 @@ export type Database = {
             foreignKeyName: "voice_notes_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_notes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -1174,6 +1332,89 @@ export type Database = {
       }
     }
     Views: {
+      dual_business_restaurant_view: {
+        Row: {
+          address: string | null
+          avg_uco_volume_kg: number | null
+          business_category: string | null
+          business_types: Json | null
+          competitor_info: Json | null
+          contact_person: string | null
+          created_at: string | null
+          gas_consumption_estimate: string | null
+          gas_customer_status: string | null
+          gas_revenue_last_30_days: number | null
+          id: string | null
+          last_uco_collection_date: string | null
+          name: string | null
+          phone: string | null
+          remarks: string | null
+          salesperson_id: string | null
+          township: string | null
+          uco_collected_last_30_days: number | null
+          uco_price_per_kg: number | null
+          uco_supplier_status: string | null
+          updated_at: string | null
+          visits_last_30_days: number | null
+        }
+        Insert: {
+          address?: string | null
+          avg_uco_volume_kg?: number | null
+          business_category?: never
+          business_types?: Json | null
+          competitor_info?: Json | null
+          contact_person?: string | null
+          created_at?: string | null
+          gas_consumption_estimate?: string | null
+          gas_customer_status?: string | null
+          gas_revenue_last_30_days?: never
+          id?: string | null
+          last_uco_collection_date?: string | null
+          name?: string | null
+          phone?: string | null
+          remarks?: string | null
+          salesperson_id?: string | null
+          township?: string | null
+          uco_collected_last_30_days?: never
+          uco_price_per_kg?: number | null
+          uco_supplier_status?: string | null
+          updated_at?: string | null
+          visits_last_30_days?: never
+        }
+        Update: {
+          address?: string | null
+          avg_uco_volume_kg?: number | null
+          business_category?: never
+          business_types?: Json | null
+          competitor_info?: Json | null
+          contact_person?: string | null
+          created_at?: string | null
+          gas_consumption_estimate?: string | null
+          gas_customer_status?: string | null
+          gas_revenue_last_30_days?: never
+          id?: string | null
+          last_uco_collection_date?: string | null
+          name?: string | null
+          phone?: string | null
+          remarks?: string | null
+          salesperson_id?: string | null
+          township?: string | null
+          uco_collected_last_30_days?: never
+          uco_price_per_kg?: number | null
+          uco_supplier_status?: string | null
+          updated_at?: string | null
+          visits_last_30_days?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visit_tasks_detailed: {
         Row: {
           address: string | null
@@ -1211,6 +1452,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "visit_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
             referencedColumns: ["id"]
           },
           {
@@ -1274,6 +1522,18 @@ export type Database = {
       }
     }
     Enums: {
+      business_type:
+        | "gas_prospect"
+        | "gas_customer"
+        | "uco_supplier"
+        | "dual_business"
+      gas_customer_status:
+        | "prospect"
+        | "contacted"
+        | "interested"
+        | "negotiating"
+        | "active_customer"
+        | "lost_customer"
       lead_status:
         | "CONTACT_STAGE"
         | "MEETING_STAGE"
@@ -1293,6 +1553,13 @@ export type Database = {
         | "OUT_FOR_DELIVERY"
         | "DELIVERED"
         | "CANCELLED"
+      uco_supplier_status:
+        | "not_assessed"
+        | "high_potential"
+        | "medium_potential"
+        | "low_potential"
+        | "active_supplier"
+        | "inactive"
       user_role: "admin" | "salesperson" | "staff" | "manager" | "viewer"
       visit_task_status: "PLANNED" | "VISITED" | "RESCHEDULED" | "CANCELED"
       voice_linked_type: "lead" | "order" | "visit" | "meeting" | "generic"
@@ -1411,6 +1678,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      business_type: [
+        "gas_prospect",
+        "gas_customer",
+        "uco_supplier",
+        "dual_business",
+      ],
+      gas_customer_status: [
+        "prospect",
+        "contacted",
+        "interested",
+        "negotiating",
+        "active_customer",
+        "lost_customer",
+      ],
       lead_status: [
         "CONTACT_STAGE",
         "MEETING_STAGE",
@@ -1432,6 +1713,14 @@ export const Constants = {
         "OUT_FOR_DELIVERY",
         "DELIVERED",
         "CANCELLED",
+      ],
+      uco_supplier_status: [
+        "not_assessed",
+        "high_potential",
+        "medium_potential",
+        "low_potential",
+        "active_supplier",
+        "inactive",
       ],
       user_role: ["admin", "salesperson", "staff", "manager", "viewer"],
       visit_task_status: ["PLANNED", "VISITED", "RESCHEDULED", "CANCELED"],
