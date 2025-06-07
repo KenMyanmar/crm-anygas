@@ -25,6 +25,13 @@ const DualBusinessPlannerPage = () => {
 
   const handleCreateVisitPlan = async (planData: any) => {
     try {
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to create visit plans');
+        return;
+      }
+
       // Create visit plan in visit_plans table
       const { data: plan, error: planError } = await supabase
         .from('visit_plans')
@@ -32,7 +39,7 @@ const DualBusinessPlannerPage = () => {
           title: `${planData.visit_type} visit plan`,
           plan_date: new Date().toISOString().split('T')[0],
           estimated_total_duration_minutes: planData.estimated_duration,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_by: user.id,
         })
         .select()
         .single();
@@ -43,7 +50,7 @@ const DualBusinessPlannerPage = () => {
       const tasks = planData.restaurants.map((restaurant: any, index: number) => ({
         plan_id: plan.id,
         restaurant_id: restaurant.restaurant_id,
-        salesperson_uid: (supabase.auth.getUser()).data.user?.id,
+        salesperson_uid: user.id,
         visit_sequence: index + 1,
         estimated_duration_minutes: planData.visit_type === 'combined' ? 45 : 30,
         notes: JSON.stringify(restaurant.objectives),
