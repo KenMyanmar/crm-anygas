@@ -11,6 +11,9 @@ import { UcoStatusBadge } from './UcoStatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { useUcoCollectionItems } from '@/hooks/useUcoCollectionPlans';
 
+type UcoStatus = 'not_assessed' | 'have_uco' | 'no_uco_reuse_staff' | 'no_uco_not_ready' | 'shop_closed';
+type CollectionPriority = 'skip' | 'low' | 'medium' | 'high' | 'confirmed';
+
 interface UcoCollectionItem {
   id: string;
   restaurant: {
@@ -20,8 +23,8 @@ interface UcoCollectionItem {
     contact_person?: string;
     phone?: string;
   };
-  uco_status: string;
-  collection_priority: string;
+  uco_status: UcoStatus;
+  collection_priority: CollectionPriority;
   expected_volume_kg?: number;
   route_sequence?: number;
 }
@@ -45,7 +48,7 @@ export const MobileStatusUpdater: React.FC<MobileStatusUpdaterProps> = ({
     driver_notes: '',
   });
 
-  const statusOptions = [
+  const statusOptions: Array<{ value: UcoStatus; label: string; color: string }> = [
     { value: 'have_uco', label: 'Have UCO', color: 'bg-green-100 text-green-800' },
     { value: 'no_uco_reuse_staff', label: 'NO UCO (Reuse/Staff)', color: 'bg-blue-100 text-blue-800' },
     { value: 'no_uco_not_ready', label: 'No UCO (Not Ready)', color: 'bg-yellow-100 text-yellow-800' },
@@ -53,7 +56,7 @@ export const MobileStatusUpdater: React.FC<MobileStatusUpdaterProps> = ({
     { value: 'not_assessed', label: 'Not Assessed', color: 'bg-gray-100 text-gray-600' },
   ];
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: UcoStatus) => {
     setIsUpdating(true);
     try {
       await updateItem.mutateAsync({
@@ -74,7 +77,7 @@ export const MobileStatusUpdater: React.FC<MobileStatusUpdaterProps> = ({
     }
   };
 
-  const handleQuickUpdate = (status: string) => {
+  const handleQuickUpdate = (status: UcoStatus) => {
     setFormData({ ...formData, uco_status: status });
     handleStatusUpdate(status);
   };
@@ -98,8 +101,8 @@ export const MobileStatusUpdater: React.FC<MobileStatusUpdaterProps> = ({
             </div>
           </div>
           <div className="flex flex-col items-end space-y-1">
-            <UcoStatusBadge status={formData.uco_status as any} size="sm" />
-            <PriorityBadge priority={item.collection_priority as any} size="sm" />
+            <UcoStatusBadge status={formData.uco_status} size="sm" />
+            <PriorityBadge priority={item.collection_priority} size="sm" />
           </div>
         </div>
       </CardHeader>
