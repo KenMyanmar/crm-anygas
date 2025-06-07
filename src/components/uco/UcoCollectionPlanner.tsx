@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,19 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Truck, MapPin, Calendar, Users, Upload } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Truck, MapPin, Calendar, Users, Upload, Download, Route, Smartphone } from 'lucide-react';
 import { useUcoCollectionPlans, useUcoCollectionItems } from '@/hooks/useUcoCollectionPlans';
 import { useTownshipAnalytics, useRestaurantsByTownship } from '@/hooks/useTownshipAnalytics';
+import { useGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { UcoStatusBadge } from './UcoStatusBadge';
 import { PriorityBadge } from './PriorityBadge';
+import { GoogleSheetsImporter } from './GoogleSheetsImporter';
+import { MobileStatusUpdater } from './MobileStatusUpdater';
+import { UcoRouteOptimizer } from './UcoRouteOptimizer';
 
 export const UcoCollectionPlanner: React.FC = () => {
   const { profile } = useAuth();
   const { plans, createPlan } = useUcoCollectionPlans();
   const { analytics } = useTownshipAnalytics();
+  const { exportToGoogleSheets } = useGoogleSheetsIntegration();
   const [selectedTownship, setSelectedTownship] = useState<string>('');
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [newPlan, setNewPlan] = useState({
     plan_name: '',
     township: '',
@@ -28,6 +35,7 @@ export const UcoCollectionPlanner: React.FC = () => {
   });
 
   const { restaurants } = useRestaurantsByTownship(selectedTownship);
+  const { items: collectionItems } = useUcoCollectionItems(selectedPlanId);
 
   const handleCreatePlan = async () => {
     if (!profile?.id) {
@@ -58,21 +66,31 @@ export const UcoCollectionPlanner: React.FC = () => {
     }
   };
 
+  const handleExportPlan = async (planId: string) => {
+    try {
+      await exportToGoogleSheets.mutateAsync(planId);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Truck className="h-5 w-5 text-blue-500" />
-            <span>UCO Collection Planning</span>
+            <span>Enhanced UCO Collection Planning</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="create-plan">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="create-plan">Create Plan</TabsTrigger>
-              <TabsTrigger value="township-analytics">Township Analytics</TabsTrigger>
-              <TabsTrigger value="bulk-import">Bulk Import</TabsTrigger>
+              <TabsTrigger value="google-sheets">Google Sheets</TabsTrigger>
+              <TabsTrigger value="mobile-updates">Mobile Updates</TabsTrigger>
+              <TabsTrigger value="route-optimizer">Route Optimizer</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
             <TabsContent value="create-plan" className="space-y-4">
@@ -119,14 +137,6 @@ export const UcoCollectionPlanner: React.FC = () => {
                     placeholder="Enter driver name"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Truck Capacity (kg)</label>
-                  <Input
-                    type="number"
-                    value={newPlan.truck_capacity_kg}
-                    onChange={(e) => setNewPlan({ ...newPlan, truck_capacity_kg: Number(e.target.value) })}
-                  />
-                </div>
               </div>
               
               <Button onClick={handleCreatePlan} className="w-full">
@@ -134,7 +144,117 @@ export const UcoCollectionPlanner: React.FC = () => {
               </Button>
             </TabsContent>
 
-            <TabsContent value="township-analytics" className="space-y-4">
+            <TabsContent value="google-sheets" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <GoogleSheetsImporter 
+                  onImportComplete={(planId) => {
+                    setSelectedPlanId(planId);
+                    toast.success('Plan imported! Check the Route Optimizer tab.');
+                  }}
+                />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Download className="h-5 w-5 text-green-600" />
+                      <span>Export to Google Sheets</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Select Plan to Export</label>
+                      <Select onValueChange={setSelectedPlanId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {plans?.map((plan) => (
+                            <SelectItem key={plan.id} value={plan.id}>
+                              {plan.plan_name} - {plan.township}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => selectedPlanId && handleExportPlan(selectedPlanId)}
+                      disabled={!selectedPlanId}
+                      className="w-full"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export as CSV
+                    </Button>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      <p>Exports current plan data including status updates and collection details</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="mobile-updates" className="space-y-4">
+              <div className="grid gap-4">
+                {collectionItems?.length > 0 ? (
+                  collectionItems.map((item) => (
+                    <MobileStatusUpdater 
+                      key={item.id} 
+                      item={item as any}
+                      onUpdate={() => toast.success('Status updated successfully')}
+                    />
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <Smartphone className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="font-medium mb-2">No Collection Items</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Select a plan or import from Google Sheets to see mobile update interface
+                      </p>
+                      <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+                        Import Plan
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="route-optimizer" className="space-y-4">
+              {collectionItems?.length > 0 ? (
+                <UcoRouteOptimizer 
+                  stops={collectionItems as any}
+                  onOptimize={(optimizedStops) => {
+                    toast.success('Route optimized! Open in Google Maps to navigate.');
+                  }}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Route className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="font-medium mb-2">No Route to Optimize</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Select a collection plan to optimize the route
+                    </p>
+                    <Select onValueChange={setSelectedPlanId}>
+                      <SelectTrigger className="max-w-sm mx-auto">
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {plans?.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            {plan.plan_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-4">
               <div className="grid gap-4">
                 {analytics?.map((item) => (
                   <Card key={item.township}>
@@ -164,33 +284,6 @@ export const UcoCollectionPlanner: React.FC = () => {
                   </Card>
                 ))}
               </div>
-            </TabsContent>
-
-            <TabsContent value="bulk-import" className="space-y-4">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <div>
-                      <h3 className="font-medium">Import UCO Collection Data</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Upload your spreadsheet with restaurant data, UCO status, and priorities
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">
-                        Supported formats: Excel (.xlsx), CSV (.csv)
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Required columns: Restaurant Name, Township, UCO Status, Priority
-                      </p>
-                    </div>
-                    <Button className="w-full">
-                      Choose File to Import
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -224,9 +317,22 @@ export const UcoCollectionPlanner: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  View Plan
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSelectedPlanId(plan.id)}
+                  >
+                    Select
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleExportPlan(plan.id)}
+                  >
+                    <Download className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
