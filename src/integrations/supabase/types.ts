@@ -146,7 +146,11 @@ export type Database = {
       }
       dual_business_visits: {
         Row: {
+          collection_priority: string | null
+          competitor_gas_info: string | null
+          competitor_uco_info: string | null
           created_at: string | null
+          driver_notes: string | null
           gas_objective: string | null
           gas_outcome: string | null
           gas_revenue: number | null
@@ -155,7 +159,9 @@ export type Database = {
           next_visit_recommendation: string | null
           priority_level: string | null
           restaurant_id: string | null
+          route_sequence: number | null
           salesperson_uid: string | null
+          township: string | null
           uco_collected_kg: number | null
           uco_price_paid: number | null
           uco_quality_score: number | null
@@ -166,7 +172,11 @@ export type Database = {
           visit_type: string | null
         }
         Insert: {
+          collection_priority?: string | null
+          competitor_gas_info?: string | null
+          competitor_uco_info?: string | null
           created_at?: string | null
+          driver_notes?: string | null
           gas_objective?: string | null
           gas_outcome?: string | null
           gas_revenue?: number | null
@@ -175,7 +185,9 @@ export type Database = {
           next_visit_recommendation?: string | null
           priority_level?: string | null
           restaurant_id?: string | null
+          route_sequence?: number | null
           salesperson_uid?: string | null
+          township?: string | null
           uco_collected_kg?: number | null
           uco_price_paid?: number | null
           uco_quality_score?: number | null
@@ -186,7 +198,11 @@ export type Database = {
           visit_type?: string | null
         }
         Update: {
+          collection_priority?: string | null
+          competitor_gas_info?: string | null
+          competitor_uco_info?: string | null
           created_at?: string | null
+          driver_notes?: string | null
           gas_objective?: string | null
           gas_outcome?: string | null
           gas_revenue?: number | null
@@ -195,7 +211,9 @@ export type Database = {
           next_visit_recommendation?: string | null
           priority_level?: string | null
           restaurant_id?: string | null
+          route_sequence?: number | null
           salesperson_uid?: string | null
+          township?: string | null
           uco_collected_kg?: number | null
           uco_price_paid?: number | null
           uco_quality_score?: number | null
@@ -1008,6 +1026,135 @@ export type Database = {
           },
         ]
       }
+      uco_collection_items: {
+        Row: {
+          actual_volume_kg: number | null
+          collection_priority:
+            | Database["public"]["Enums"]["collection_priority_enum"]
+            | null
+          competitor_notes: string | null
+          completed_at: string | null
+          created_at: string | null
+          driver_notes: string | null
+          expected_volume_kg: number | null
+          id: string
+          plan_id: string | null
+          price_per_kg: number | null
+          quality_score: number | null
+          restaurant_id: string | null
+          route_sequence: number | null
+          uco_status: Database["public"]["Enums"]["uco_status_enum"] | null
+          updated_at: string | null
+          visit_time: string | null
+        }
+        Insert: {
+          actual_volume_kg?: number | null
+          collection_priority?:
+            | Database["public"]["Enums"]["collection_priority_enum"]
+            | null
+          competitor_notes?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          driver_notes?: string | null
+          expected_volume_kg?: number | null
+          id?: string
+          plan_id?: string | null
+          price_per_kg?: number | null
+          quality_score?: number | null
+          restaurant_id?: string | null
+          route_sequence?: number | null
+          uco_status?: Database["public"]["Enums"]["uco_status_enum"] | null
+          updated_at?: string | null
+          visit_time?: string | null
+        }
+        Update: {
+          actual_volume_kg?: number | null
+          collection_priority?:
+            | Database["public"]["Enums"]["collection_priority_enum"]
+            | null
+          competitor_notes?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          driver_notes?: string | null
+          expected_volume_kg?: number | null
+          id?: string
+          plan_id?: string | null
+          price_per_kg?: number | null
+          quality_score?: number | null
+          restaurant_id?: string | null
+          route_sequence?: number | null
+          uco_status?: Database["public"]["Enums"]["uco_status_enum"] | null
+          updated_at?: string | null
+          visit_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uco_collection_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "uco_collection_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uco_collection_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uco_collection_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uco_collection_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          driver_name: string | null
+          id: string
+          plan_date: string
+          plan_name: string
+          township: string
+          truck_capacity_kg: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          driver_name?: string | null
+          id?: string
+          plan_date: string
+          plan_name: string
+          township: string
+          truck_capacity_kg?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          driver_name?: string | null
+          id?: string
+          plan_date?: string
+          plan_name?: string
+          township?: string
+          truck_capacity_kg?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uco_collection_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
@@ -1415,6 +1562,18 @@ export type Database = {
           },
         ]
       }
+      township_uco_analytics: {
+        Row: {
+          active_suppliers: number | null
+          avg_volume_per_restaurant: number | null
+          potential_suppliers: number | null
+          total_collected_last_30_days: number | null
+          total_restaurants: number | null
+          township: string | null
+          visits_last_30_days: number | null
+        }
+        Relationships: []
+      }
       visit_tasks_detailed: {
         Row: {
           address: string | null
@@ -1527,6 +1686,7 @@ export type Database = {
         | "gas_customer"
         | "uco_supplier"
         | "dual_business"
+      collection_priority_enum: "confirmed" | "high" | "medium" | "low" | "skip"
       gas_customer_status:
         | "prospect"
         | "contacted"
@@ -1553,6 +1713,12 @@ export type Database = {
         | "OUT_FOR_DELIVERY"
         | "DELIVERED"
         | "CANCELLED"
+      uco_status_enum:
+        | "have_uco"
+        | "no_uco_reuse_staff"
+        | "no_uco_not_ready"
+        | "shop_closed"
+        | "not_assessed"
       uco_supplier_status:
         | "not_assessed"
         | "high_potential"
@@ -1684,6 +1850,7 @@ export const Constants = {
         "uco_supplier",
         "dual_business",
       ],
+      collection_priority_enum: ["confirmed", "high", "medium", "low", "skip"],
       gas_customer_status: [
         "prospect",
         "contacted",
@@ -1713,6 +1880,13 @@ export const Constants = {
         "OUT_FOR_DELIVERY",
         "DELIVERED",
         "CANCELLED",
+      ],
+      uco_status_enum: [
+        "have_uco",
+        "no_uco_reuse_staff",
+        "no_uco_not_ready",
+        "shop_closed",
+        "not_assessed",
       ],
       uco_supplier_status: [
         "not_assessed",

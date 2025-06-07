@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { DualBusinessVisitPlanner } from '@/components/visits/DualBusinessVisitPlanner';
+import { EnhancedDualBusinessVisitPlanner } from '@/components/visits/EnhancedDualBusinessVisitPlanner';
 import { DualBusinessDashboard } from '@/components/dashboard/DualBusinessDashboard';
+import { UcoCollectionPlanner } from '@/components/uco/UcoCollectionPlanner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -80,20 +81,33 @@ const DualBusinessPlannerPage = () => {
   return (
     <div className="container mx-auto p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="planner">Visit Planner</TabsTrigger>
+          <TabsTrigger value="uco-planning">UCO Planning</TabsTrigger>
           <TabsTrigger value="dashboard">Performance Dashboard</TabsTrigger>
+          <TabsTrigger value="analytics">Township Analytics</TabsTrigger>
         </TabsList>
         
         <TabsContent value="planner" className="mt-6">
-          <DualBusinessVisitPlanner
+          <EnhancedDualBusinessVisitPlanner
             restaurants={restaurants || []}
             onCreateVisitPlan={handleCreateVisitPlan}
           />
         </TabsContent>
         
+        <TabsContent value="uco-planning" className="mt-6">
+          <UcoCollectionPlanner />
+        </TabsContent>
+        
         <TabsContent value="dashboard" className="mt-6">
           <DualBusinessDashboard />
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="mt-6">
+          {/* Township analytics will be implemented here */}
+          <div className="text-center py-8 text-muted-foreground">
+            Township analytics coming soon...
+          </div>
         </TabsContent>
       </Tabs>
     </div>
