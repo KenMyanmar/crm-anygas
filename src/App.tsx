@@ -12,8 +12,8 @@ import { Toaster as SonnerToaster } from 'sonner';
 import DashboardWithAI from '@/components/dashboard/DashboardWithAI';
 import RestaurantListPage from '@/pages/restaurants/RestaurantListPage';
 import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
-import RestaurantDetailPage from '@/pages/restaurants/RestaurantDetailPage';
-import EditRestaurantPage from '@/pages/restaurants/EditRestaurantPage';
+import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
+import EditRestaurantPage from '@/pages/RestaurantEditPage';
 import LeadsPage from '@/pages/leads/LeadsPage';
 import AssignedLeadsPage from '@/pages/leads/AssignedLeadsPage';
 import MeetingsPage from '@/pages/leads/MeetingsPage';
@@ -45,7 +45,9 @@ const App = () => {
               <Route path="/" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
-                    <DashboardWithAI />
+                    <DashboardWithAI>
+                      <div />
+                    </DashboardWithAI>
                   </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
