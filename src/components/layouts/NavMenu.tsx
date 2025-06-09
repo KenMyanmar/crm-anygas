@@ -1,4 +1,3 @@
-
 import { FC, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -26,7 +25,10 @@ import {
   MapPin,
   Route,
   Calendar,
-  ShoppingCart
+  ShoppingCart,
+  Truck,
+  Map,
+  Activity
 } from 'lucide-react';
 
 interface MenuLinkProps {
@@ -71,6 +73,7 @@ const NavMenu: FC = () => {
   const [leadsGroupOpen, setLeadsGroupOpen] = useState(false);
   const [ordersGroupOpen, setOrdersGroupOpen] = useState(false);
   const [visitsGroupOpen, setVisitsGroupOpen] = useState(false);
+  const [ucoGroupOpen, setUcoGroupOpen] = useState(false);
   const [reportsGroupOpen, setReportsGroupOpen] = useState(false);
   const [adminGroupOpen, setAdminGroupOpen] = useState(false);
   const [restaurantsGroupOpen, setRestaurantsGroupOpen] = useState(false);
@@ -79,6 +82,7 @@ const NavMenu: FC = () => {
     const isLeadsActive = location.pathname.includes('/leads');
     const isOrdersActive = location.pathname.includes('/orders');
     const isVisitsActive = location.pathname.includes('/visits');
+    const isUcoActive = location.pathname.includes('/uco');
     const isReportsActive = location.pathname.includes('/reports');
     const isSettingsActive = location.pathname.includes('/admin');
     const isRestaurantsActive = location.pathname.includes('/restaurants');
@@ -86,6 +90,7 @@ const NavMenu: FC = () => {
     setLeadsGroupOpen(isLeadsActive);
     setOrdersGroupOpen(isOrdersActive);
     setVisitsGroupOpen(isVisitsActive);
+    setUcoGroupOpen(isUcoActive);
     setReportsGroupOpen(isReportsActive);
     setAdminGroupOpen(isSettingsActive);
     setRestaurantsGroupOpen(isRestaurantsActive);
@@ -139,6 +144,23 @@ const NavMenu: FC = () => {
               <MenuLink to="/visits" icon={Calendar} label="Visit Planner" />
               <MenuLink to="/visits/today" icon={MapPin} label="Today's Visits" />
               <MenuLink to="/visits/new" icon={Plus} label="New Visit Plan" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
+      </SidebarGroup>
+      
+      <SidebarGroup>
+        <div onClick={() => setUcoGroupOpen(!ucoGroupOpen)} className="cursor-pointer">
+          <SidebarGroupLabel>UCO Trucks Visit</SidebarGroupLabel>
+        </div>
+        {ucoGroupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <MenuLink to="/uco/dashboard" icon={Truck} label="UCO Dashboard" />
+              <MenuLink to="/uco/planner" icon={Calendar} label="Collection Plans" />
+              <MenuLink to="/uco/routes" icon={Route} label="Route Optimizer" />
+              <MenuLink to="/uco/mobile" icon={MapPin} label="Driver Interface" />
+              <MenuLink to="/uco/analytics" icon={Activity} label="UCO Analytics" />
             </SidebarMenu>
           </SidebarGroupContent>
         )}
