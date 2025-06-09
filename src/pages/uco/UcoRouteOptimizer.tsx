@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +39,7 @@ const UcoRouteOptimizer = () => {
         township: 'Yankin',
         address: '456 Oak Ave'
       },
-      uco_status: 'confirmed',
+      uco_status: 'have_uco',
       collection_priority: 'medium',
       expected_volume_kg: 15,
       route_sequence: 2,

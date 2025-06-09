@@ -13,6 +13,8 @@ export interface Restaurant {
   salesperson_id: string;
   created_at: string;
   updated_at: string;
+  gas_customer_status?: string;
+  uco_supplier_status?: string;
 }
 
 export const useRestaurants = () => {

@@ -54,7 +54,7 @@ const UcoMobileInterface = () => {
         contact_person: 'Jane Smith',
         phone: '+95987654321'
       },
-      uco_status: 'confirmed' as const,
+      uco_status: 'have_uco' as const,
       collection_priority: 'medium' as const,
       expected_volume_kg: 15,
       route_sequence: 2
