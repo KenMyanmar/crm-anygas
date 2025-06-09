@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MobileStatusUpdater } from '@/components/uco/MobileStatusUpdater';
 import { ArrowLeft, Truck, MapPin, Navigation, Phone } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 
@@ -28,6 +27,24 @@ const UcoMobileInterface = () => {
       );
     }
   }, []);
+
+  // Mock data for demonstration
+  const mockRestaurants = [
+    {
+      id: '1',
+      name: 'Restaurant A',
+      township: 'Yankin',
+      status: 'planned',
+      expectedVolume: 25
+    },
+    {
+      id: '2', 
+      name: 'Restaurant B',
+      township: 'Yankin',
+      status: 'en_route',
+      expectedVolume: 15
+    }
+  ];
 
   return (
     <div className="container mx-auto p-4 space-y-4 max-w-md">
@@ -76,8 +93,29 @@ const UcoMobileInterface = () => {
         </Card>
       </div>
 
-      {/* Mobile Status Updater Component */}
-      <MobileStatusUpdater />
+      {/* Restaurant Status Updates */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Today's Route</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {mockRestaurants.map((restaurant) => (
+            <div key={restaurant.id} className="p-3 border rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">{restaurant.name}</h3>
+                <Badge variant="outline">{restaurant.status}</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">{restaurant.township}</p>
+              <p className="text-sm">Expected: {restaurant.expectedVolume}kg</p>
+              <div className="flex space-x-2 mt-3">
+                <Button size="sm" variant="outline">En Route</Button>
+                <Button size="sm" variant="outline">Arrived</Button>
+                <Button size="sm">Complete</Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Status Legend */}
       <Card>

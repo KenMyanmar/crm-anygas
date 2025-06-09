@@ -49,7 +49,7 @@ const UcoCollectionPlanner = () => {
             <CardTitle>Import UCO Collection Plan</CardTitle>
           </CardHeader>
           <CardContent>
-            <GoogleSheetsImporter onComplete={() => setShowImporter(false)} />
+            <GoogleSheetsImporter onImportComplete={() => setShowImporter(false)} />
           </CardContent>
         </Card>
       ) : (

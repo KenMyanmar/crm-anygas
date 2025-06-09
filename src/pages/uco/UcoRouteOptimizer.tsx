@@ -18,6 +18,36 @@ const UcoRouteOptimizer = () => {
     setSelectedPlanId(planId);
   };
 
+  // Mock data for demonstration
+  const mockStops = [
+    {
+      id: '1',
+      restaurant: {
+        name: 'Restaurant A',
+        township: 'Yankin',
+        address: '123 Main St'
+      },
+      uco_status: 'have_uco',
+      collection_priority: 'high',
+      expected_volume_kg: 25,
+      route_sequence: 1,
+      estimated_time_minutes: 20
+    },
+    {
+      id: '2',
+      restaurant: {
+        name: 'Restaurant B', 
+        township: 'Yankin',
+        address: '456 Oak Ave'
+      },
+      uco_status: 'confirmed',
+      collection_priority: 'medium',
+      expected_volume_kg: 15,
+      route_sequence: 2,
+      estimated_time_minutes: 15
+    }
+  ];
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -108,7 +138,7 @@ const UcoRouteOptimizer = () => {
                       <Button>Optimize Route</Button>
                     </div>
                     
-                    <ExistingOptimizer />
+                    <ExistingOptimizer stops={mockStops} />
                     
                     <div className="space-y-2">
                       {items

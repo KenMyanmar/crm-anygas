@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
@@ -19,16 +20,16 @@ import MeetingsPage from '@/pages/leads/MeetingsPage';
 import OrdersPage from '@/pages/orders/OrdersPage';
 import NewOrderPage from '@/pages/orders/NewOrderPage';
 import OrderDetailPage from '@/pages/orders/OrderDetailPage';
-import ReportsPage from '@/pages/reports/ReportsPage';
+import ReportsPage from '@/pages/reports/ReportsMainPage';
 import LeadReportsPage from '@/pages/reports/LeadReportsPage';
-import PerformanceReportsPage from '@/pages/reports/PerformanceReportsPage';
-import UsersManagementPage from '@/pages/admin/UsersManagementPage';
+import PerformanceReportsPage from '@/pages/reports/PerformancePage';
+import UsersManagementPage from '@/pages/admin/UsersPage';
 import ProductsPage from '@/pages/admin/ProductsPage';
-import ImportDataPage from '@/pages/admin/ImportDataPage';
+import ImportDataPage from '@/pages/admin/ImportPage';
 import SettingsPage from '@/pages/admin/SettingsPage';
-import ProfilePage from '@/pages/profile/ProfilePage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import NotificationsPage from '@/pages/notifications/NotificationsPage';
+import ProfilePage from '@/pages/ProfilePage';
+import NotFoundPage from '@/pages/NotFound';
+import NotificationsPage from '@/pages/Notifications';
 import { visitRoutes } from '@/routes/visitRoutes';
 import { ucoRoutes } from '@/routes/ucoRoutes';
 
