@@ -13,6 +13,12 @@ const UcoCollectionPlanner = () => {
   const [showImporter, setShowImporter] = useState(false);
   const { importFromGoogleSheets, exportToGoogleSheets } = useGoogleSheetsIntegration();
 
+  const handleImportComplete = () => {
+    setShowImporter(false);
+    // Refresh the planner data
+    window.location.reload();
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -49,7 +55,7 @@ const UcoCollectionPlanner = () => {
             <CardTitle>Import UCO Collection Plan</CardTitle>
           </CardHeader>
           <CardContent>
-            <GoogleSheetsImporter onImportComplete={() => setShowImporter(false)} />
+            <GoogleSheetsImporter onImportComplete={handleImportComplete} />
           </CardContent>
         </Card>
       ) : (

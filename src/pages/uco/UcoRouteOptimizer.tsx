@@ -18,7 +18,7 @@ const UcoRouteOptimizer = () => {
     setSelectedPlanId(planId);
   };
 
-  // Mock data for demonstration
+  // Mock data for demonstration when no real data is available
   const mockStops = [
     {
       id: '1',
@@ -47,6 +47,17 @@ const UcoRouteOptimizer = () => {
       estimated_time_minutes: 15
     }
   ];
+
+  // Use real data if available, otherwise use mock data
+  const routeStops = items && items.length > 0 ? items.map(item => ({
+    id: item.id,
+    restaurant: item.restaurant || { name: 'Unknown Restaurant', township: 'Unknown', address: '' },
+    uco_status: item.uco_status || 'not_assessed',
+    collection_priority: item.collection_priority || 'medium',
+    expected_volume_kg: item.expected_volume_kg || 0,
+    route_sequence: item.route_sequence || 1,
+    estimated_time_minutes: 15
+  })) : mockStops;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -113,78 +124,69 @@ const UcoRouteOptimizer = () => {
 
         {/* Route Details */}
         <div className="lg:col-span-2">
-          {selectedPlanId ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2" />
-                  Route Optimization
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {items && items.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Estimated time: {Math.round(items.length * 0.5)} hours</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MapPin className="h-5 w-5 mr-2" />
+                Route Optimization
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {routeStops.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Estimated time: {Math.round(routeStops.length * 0.5)} hours</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Truck className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{routeStops.length} stops</span>
+                      </div>
+                    </div>
+                    <Button>Optimize Route</Button>
+                  </div>
+                  
+                  <ExistingOptimizer stops={routeStops} />
+                  
+                  <div className="space-y-2">
+                    {routeStops
+                      .sort((a, b) => (a.route_sequence || 0) - (b.route_sequence || 0))
+                      .map((stop, index) => (
+                      <div key={stop.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <div className="flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                          {index + 1}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Truck className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{items.length} stops</span>
+                        <div className="flex-1">
+                          <p className="font-medium">{stop.restaurant?.name}</p>
+                          <p className="text-sm text-muted-foreground">{stop.restaurant?.township}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Badge variant="outline">
+                            {stop.collection_priority}
+                          </Badge>
+                          {stop.expected_volume_kg && (
+                            <Badge variant="secondary">
+                              {stop.expected_volume_kg}kg
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                      <Button>Optimize Route</Button>
-                    </div>
-                    
-                    <ExistingOptimizer stops={mockStops} />
-                    
-                    <div className="space-y-2">
-                      {items
-                        .sort((a, b) => (a.route_sequence || 0) - (b.route_sequence || 0))
-                        .map((item, index) => (
-                        <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium">{item.restaurant?.name}</p>
-                            <p className="text-sm text-muted-foreground">{item.restaurant?.township}</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Badge variant="outline">
-                              {item.collection_priority}
-                            </Badge>
-                            {item.expected_volume_kg && (
-                              <Badge variant="secondary">
-                                {item.expected_volume_kg}kg
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">No collection items in this plan</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Route className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Select a Collection Plan</h3>
-                <p className="text-muted-foreground">
-                  Choose a collection plan from the left to optimize its route
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">No collection items available</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select a plan or create a new collection plan to optimize routes
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

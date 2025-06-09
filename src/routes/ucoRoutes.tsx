@@ -1,38 +1,57 @@
 
 import { Route } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import UcoTrucksDashboard from '@/pages/uco/UcoTrucksDashboard';
 import UcoCollectionPlanner from '@/pages/uco/UcoCollectionPlanner';
 import UcoRouteOptimizer from '@/pages/uco/UcoRouteOptimizer';
 import UcoMobileInterface from '@/pages/uco/UcoMobileInterface';
 import UcoAnalytics from '@/pages/uco/UcoAnalytics';
+import NewUcoPlanPage from '@/pages/uco/NewUcoPlanPage';
 
 export const ucoRoutes = (
   <>
     <Route path="/uco/dashboard" element={
-      <DashboardLayout>
-        <UcoTrucksDashboard />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <UcoTrucksDashboard />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/uco/planner" element={
-      <DashboardLayout>
-        <UcoCollectionPlanner />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <UcoCollectionPlanner />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/uco/planner/new" element={
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <NewUcoPlanPage />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/uco/routes" element={
-      <DashboardLayout>
-        <UcoRouteOptimizer />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <UcoRouteOptimizer />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/uco/mobile" element={
-      <DashboardLayout>
-        <UcoMobileInterface />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <UcoMobileInterface />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/uco/analytics" element={
-      <DashboardLayout>
-        <UcoAnalytics />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <UcoAnalytics />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
   </>
 );

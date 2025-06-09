@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MobileStatusUpdater } from '@/components/uco/MobileStatusUpdater';
 import { ArrowLeft, Truck, MapPin, Navigation, Phone } from 'lucide-react';
-import { format, isToday } from 'date-fns';
+import { format } from 'date-fns';
 
 const UcoMobileInterface = () => {
   const navigate = useNavigate();
@@ -29,22 +30,41 @@ const UcoMobileInterface = () => {
   }, []);
 
   // Mock data for demonstration
-  const mockRestaurants = [
+  const mockCollectionItems = [
     {
       id: '1',
-      name: 'Restaurant A',
-      township: 'Yankin',
-      status: 'planned',
-      expectedVolume: 25
+      restaurant: {
+        name: 'Restaurant A',
+        township: 'Yankin',
+        address: '123 Main St',
+        contact_person: 'John Doe',
+        phone: '+95912345678'
+      },
+      uco_status: 'have_uco' as const,
+      collection_priority: 'high' as const,
+      expected_volume_kg: 25,
+      route_sequence: 1
     },
     {
       id: '2', 
-      name: 'Restaurant B',
-      township: 'Yankin',
-      status: 'en_route',
-      expectedVolume: 15
+      restaurant: {
+        name: 'Restaurant B',
+        township: 'Yankin', 
+        address: '456 Oak Ave',
+        contact_person: 'Jane Smith',
+        phone: '+95987654321'
+      },
+      uco_status: 'confirmed' as const,
+      collection_priority: 'medium' as const,
+      expected_volume_kg: 15,
+      route_sequence: 2
     }
   ];
+
+  const handleStatusUpdate = () => {
+    console.log('Status updated successfully');
+    // Refresh data or show success message
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-4 max-w-md">
@@ -93,26 +113,18 @@ const UcoMobileInterface = () => {
         </Card>
       </div>
 
-      {/* Restaurant Status Updates */}
+      {/* Collection Items with Mobile Status Updater */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Today's Route</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {mockRestaurants.map((restaurant) => (
-            <div key={restaurant.id} className="p-3 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium">{restaurant.name}</h3>
-                <Badge variant="outline">{restaurant.status}</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mb-2">{restaurant.township}</p>
-              <p className="text-sm">Expected: {restaurant.expectedVolume}kg</p>
-              <div className="flex space-x-2 mt-3">
-                <Button size="sm" variant="outline">En Route</Button>
-                <Button size="sm" variant="outline">Arrived</Button>
-                <Button size="sm">Complete</Button>
-              </div>
-            </div>
+          {mockCollectionItems.map((item) => (
+            <MobileStatusUpdater 
+              key={item.id} 
+              item={item}
+              onUpdate={handleStatusUpdate}
+            />
           ))}
         </CardContent>
       </Card>
