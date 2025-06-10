@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { useDashboardData } from '@/hooks/useDashboardData';
 import { supabase } from '@/lib/supabase';
 import { 
   MessageCircle, 
@@ -12,12 +13,10 @@ import {
   Bot, 
   User, 
   X,
-  Zap,
   TrendingUp,
   MapPin,
   Users,
-  Lightbulb,
-  Minimize2
+  Lightbulb
 } from 'lucide-react';
 
 interface ChatMessage {
@@ -29,14 +28,12 @@ interface ChatMessage {
 }
 
 interface ModernAIChatPanelProps {
-  dashboardData?: any;
   userRole?: string;
   isOpen: boolean;
   onToggle: () => void;
 }
 
 const ModernAIChatPanel: React.FC<ModernAIChatPanelProps> = ({ 
-  dashboardData, 
   userRole = 'user',
   isOpen,
   onToggle 
@@ -47,6 +44,16 @@ const ModernAIChatPanel: React.FC<ModernAIChatPanelProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // Only load dashboard data when chat is opened
+  const { dashboardData, fetchDashboardData } = useDashboardData();
+
+  // Load dashboard data when chat opens for the first time
+  useEffect(() => {
+    if (isOpen && !dashboardData) {
+      fetchDashboardData();
+    }
+  }, [isOpen, dashboardData, fetchDashboardData]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

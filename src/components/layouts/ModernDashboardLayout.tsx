@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import TopNavigation from './TopNavigation';
 import ModernAIChatPanel from '../dashboard/ModernAIChatPanel';
-import { useDashboardData } from '@/hooks/useDashboardData';
 
 interface ModernDashboardLayoutProps {
   children: ReactNode;
@@ -14,7 +13,6 @@ const ModernDashboardLayout = ({ children }: ModernDashboardLayoutProps) => {
   const { profile, isLoading } = useAuth();
   const navigate = useNavigate();
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const { dashboardData } = useDashboardData();
 
   // Redirect to login if not authenticated
   if (!isLoading && !profile) {
@@ -42,7 +40,6 @@ const ModernDashboardLayout = ({ children }: ModernDashboardLayoutProps) => {
       </main>
 
       <ModernAIChatPanel
-        dashboardData={dashboardData}
         userRole={profile.role}
         isOpen={isChatOpen}
         onToggle={() => setIsChatOpen(!isChatOpen)}

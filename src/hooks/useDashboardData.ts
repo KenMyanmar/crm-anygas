@@ -4,24 +4,34 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { DashboardData, LeadStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { toast as sonnerToast } from 'sonner';
+
+let dashboardDataCache: DashboardData | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
 export const useDashboardData = () => {
   const { profile } = useAuth();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(dashboardDataCache);
+  const [isLoading, setIsLoading] = useState(!dashboardDataCache);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (forceRefresh = false) => {
+    // Check cache first
+    const now = Date.now();
+    if (!forceRefresh && dashboardDataCache && (now - lastFetchTime) < CACHE_DURATION) {
+      console.log('Using cached dashboard data');
+      setDashboardData(dashboardDataCache);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
       
-      console.log('Starting fetchDashboardData with profile:', profile);
+      console.log('Fetching fresh dashboard data');
       
-      // Call the Supabase function to get dashboard data
-      console.log('Attempting to call get_my_dashboard_data RPC');
       const { data, error } = await supabase.rpc('get_my_dashboard_data');
       
       if (error) {
@@ -29,17 +39,17 @@ export const useDashboardData = () => {
         throw error;
       }
       
-      console.log('Dashboard RPC data received:', data);
-      
       if (!data) {
         console.warn('No dashboard data returned from the RPC function');
-        // Show empty state instead of error
-        setDashboardData({
+        const emptyData: DashboardData = {
           lead_summary: [],
           upcoming_actions: [],
           recent_activity: [],
           notifications: []
-        });
+        };
+        setDashboardData(emptyData);
+        dashboardDataCache = emptyData;
+        lastFetchTime = now;
         return;
       }
       
@@ -75,11 +85,11 @@ export const useDashboardData = () => {
         })) : []
       };
       
-      console.log('Transformed dashboard data:', transformedData);
+      console.log('Dashboard data loaded successfully');
       setDashboardData(transformedData);
+      dashboardDataCache = transformedData;
+      lastFetchTime = now;
       
-      // Show success toast
-      sonnerToast.success('Dashboard data loaded successfully');
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message || 'Failed to load dashboard data');
@@ -92,7 +102,7 @@ export const useDashboardData = () => {
       // Use mock data if there's an error in development
       if (import.meta.env.DEV) {
         console.log('Using mock data for development');
-        setDashboardData({
+        const mockData: DashboardData = {
           lead_summary: [
             { status: 'CONTACT_STAGE', count: 12 },
             { status: 'MEETING_STAGE', count: 8 },
@@ -112,15 +122,8 @@ export const useDashboardData = () => {
               id: '2',
               restaurant_name: 'Silver Spoon Café',
               next_action_description: 'Arrange demo for new gas equipment',
-              next_action_date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+              next_action_date: new Date(Date.now() + 86400000).toISOString(),
               status: 'MEETING_STAGE'
-            },
-            {
-              id: '3',
-              restaurant_name: 'Yangon Tastes',
-              next_action_description: 'Confirm pricing for bulk order',
-              next_action_date: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
-              status: 'PRESENTATION_NEGOTIATION'
             }
           ],
           recent_activity: [
@@ -129,18 +132,6 @@ export const useDashboardData = () => {
               activity_message: 'Added new lead for Golden Palace Restaurant',
               created_at: new Date(Date.now() - 3600000).toISOString(),
               target_type: 'LEAD'
-            },
-            {
-              id: '2',
-              activity_message: 'Logged call with Silver Spoon Café manager',
-              created_at: new Date(Date.now() - 7200000).toISOString(),
-              target_type: 'CALL_LOG'
-            },
-            {
-              id: '3',
-              activity_message: 'Created new order #1234 for Yangon Tastes',
-              created_at: new Date(Date.now() - 10800000).toISOString(),
-              target_type: 'ORDER'
             }
           ],
           notifications: [
@@ -152,27 +143,12 @@ export const useDashboardData = () => {
               link: '/leads/4',
               read: false,
               created_at: new Date(Date.now() - 1800000).toISOString()
-            },
-            {
-              id: '2',
-              user_id: profile?.id || '',
-              title: 'Order Confirmed',
-              message: 'Order #5678 for Golden Palace has been confirmed',
-              link: '/orders/5678',
-              read: false,
-              created_at: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              id: '3',
-              user_id: profile?.id || '',
-              title: 'Follow-up Reminder',
-              message: 'Due follow-up with Silver Spoon Café',
-              link: '/leads/2',
-              read: true,
-              created_at: new Date(Date.now() - 86400000).toISOString()
             }
           ]
-        });
+        };
+        setDashboardData(mockData);
+        dashboardDataCache = mockData;
+        lastFetchTime = now;
       }
     } finally {
       setIsLoading(false);
@@ -180,16 +156,19 @@ export const useDashboardData = () => {
   };
 
   useEffect(() => {
-    console.log('useDashboardData useEffect triggered, profile:', profile);
-    if (profile) {
+    if (profile && !dashboardDataCache) {
       fetchDashboardData();
-    } else {
-      // Reset data when no profile
-      console.log('No profile detected in useDashboardData, resetting data');
+    } else if (!profile) {
       setDashboardData(null);
+      dashboardDataCache = null;
       setIsLoading(false);
     }
   }, [profile]);
 
-  return { dashboardData, isLoading, error, fetchDashboardData };
+  return { 
+    dashboardData, 
+    isLoading, 
+    error, 
+    fetchDashboardData: (forceRefresh = false) => fetchDashboardData(forceRefresh)
+  };
 };
