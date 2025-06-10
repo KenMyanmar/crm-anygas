@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
+import { Calendar, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 const localizer = momentLocalizer(moment);
 
 const CalendarPage = () => {
-  const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
+  const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -47,6 +47,10 @@ const CalendarPage = () => {
   const handleSelectSlot = (slotInfo: any) => {
     // Pre-fill the modal with the selected time slot
     setShowCreateModal(true);
+  };
+
+  const handleViewChange = (newView: View) => {
+    setView(newView);
   };
 
   const eventStyleGetter = (event: any) => {
@@ -107,7 +111,7 @@ const CalendarPage = () => {
           </Button>
         </div>
 
-        <Tabs value={view} onValueChange={(value) => setView(value as any)} className="space-y-4">
+        <Tabs value={view} onValueChange={handleViewChange} className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="month" className="flex items-center gap-2">
               <Grid className="h-4 w-4" />
@@ -147,7 +151,7 @@ const CalendarPage = () => {
                     startAccessor="start"
                     endAccessor="end"
                     view={view}
-                    onView={setView}
+                    onView={handleViewChange}
                     date={date}
                     onNavigate={setDate}
                     onSelectEvent={handleSelectEvent}

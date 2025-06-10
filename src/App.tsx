@@ -23,7 +23,7 @@ import LeadEditPage from '@/pages/LeadEditPage';
 import OrdersPage from '@/pages/orders/OrdersPage';
 import OrderDetailPage from '@/pages/OrderDetailPage';
 import OrderEditPage from '@/pages/OrderEditPage';
-import UcoDashboardPage from '@/pages/uco/UcoDashboardPage';
+import UcoDashboardPage from '@/pages/uco/UcoCollectionDashboard';
 import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';
 import UcoRouteOptimizationPage from '@/pages/uco/UcoRouteOptimizer';
 import SettingsPage from '@/pages/SettingsPage';
