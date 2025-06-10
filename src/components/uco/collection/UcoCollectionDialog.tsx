@@ -69,14 +69,47 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
     }
   };
 
+  const handlePhoneCall = (phone?: string) => {
+    if (phone) {
+      window.open(`tel:${phone}`, '_self');
+    }
+  };
+
+  const handleNavigation = (address?: string, name?: string) => {
+    if (address || name) {
+      const query = encodeURIComponent(`${name || ''} ${address || ''}`.trim());
+      window.open(`https://maps.google.com/?q=${query}`, '_blank');
+    }
+  };
+
   const showCollectionDetails = formData.uco_status === 'have_uco';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <span>Update Collection Status</span>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Collection Details - Stop #{item.route_sequence}</span>
+            <div className="flex space-x-2">
+              {item.restaurant?.phone && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePhoneCall(item.restaurant?.phone)}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleNavigation(item.restaurant?.address, item.restaurant?.name)}
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Navigate
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -100,6 +133,11 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
               {item.restaurant?.address && (
                 <div className="col-span-2">
                   <span>{item.restaurant.address}</span>
+                </div>
+              )}
+              {item.restaurant?.contact_person && (
+                <div className="col-span-2">
+                  <strong>Contact:</strong> {item.restaurant.contact_person}
                 </div>
               )}
             </div>
@@ -126,20 +164,21 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
           {/* Collection Details (only show if UCO status is 'have_uco') */}
           {showCollectionDetails && (
             <div className="space-y-4 border-t pt-4">
-              <h4 className="font-medium">Collection Details</h4>
+              <h4 className="font-medium text-green-700">✓ UCO Collection Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="volume">Volume Collected (kg)</Label>
+                  <Label htmlFor="volume">Volume Collected (kg) *</Label>
                   <Input
                     id="volume"
                     type="number"
-                    placeholder="25"
+                    step="0.1"
+                    placeholder="25.5"
                     value={formData.actual_volume_kg}
                     onChange={(e) => setFormData(prev => ({ ...prev, actual_volume_kg: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price per kg (MMK)</Label>
+                  <Label htmlFor="price">Price per kg (MMK) *</Label>
                   <Input
                     id="price"
                     type="number"
@@ -149,7 +188,7 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Quality Score</Label>
+                  <Label>Quality Score (1-5)</Label>
                   <div className="flex space-x-1">
                     {[1, 2, 3, 4, 5].map((score) => (
                       <Button
@@ -168,13 +207,13 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
             </div>
           )}
 
-          {/* Notes */}
+          {/* Notes Section */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="driver_notes">Driver Notes</Label>
+              <Label htmlFor="driver_notes">Collection Notes</Label>
               <Textarea
                 id="driver_notes"
-                placeholder="Any notes about the collection..."
+                placeholder="Any notes about the collection process, restaurant cooperation, etc..."
                 value={formData.driver_notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, driver_notes: e.target.value }))}
                 rows={3}
@@ -184,7 +223,7 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
               <Label htmlFor="competitor_notes">Competitor Information</Label>
               <Textarea
                 id="competitor_notes"
-                placeholder="Information about competitors in the area..."
+                placeholder="Information about competitors in the area, their prices, collection frequency..."
                 value={formData.competitor_notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, competitor_notes: e.target.value }))}
                 rows={2}
@@ -194,11 +233,11 @@ export const UcoCollectionDialog = ({ item, open, onOpenChange, onUpdate }: UcoC
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? 'Saving...' : 'Save Collection Data'}
             </Button>
           </div>
         </div>

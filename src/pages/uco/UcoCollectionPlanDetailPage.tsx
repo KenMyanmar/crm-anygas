@@ -1,17 +1,20 @@
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UcoBulkRestaurantSelector } from '@/components/uco/UcoBulkRestaurantSelector';
 import { PlanHeader } from '@/components/uco/plan-detail/PlanHeader';
 import { PlanInfoCards } from '@/components/uco/plan-detail/PlanInfoCards';
 import { CollectionItemsList } from '@/components/uco/plan-detail/CollectionItemsList';
 import { usePlanDetailPage } from '@/hooks/usePlanDetailPage';
+import { AlertCircle } from 'lucide-react';
 
 const UcoCollectionPlanDetailPage = () => {
   const {
     plan,
     items,
     itemsLoading,
+    itemsError,
     isOwner,
     showRestaurantSelector,
     setShowRestaurantSelector,
@@ -25,6 +28,9 @@ const UcoCollectionPlanDetailPage = () => {
       <div className="container mx-auto p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Plan Not Found</h1>
+          <p className="text-muted-foreground mb-4">
+            The collection plan you're looking for doesn't exist or you don't have permission to view it.
+          </p>
           <Button onClick={handleBack}>
             Back to Dashboard
           </Button>
@@ -44,6 +50,16 @@ const UcoCollectionPlanDetailPage = () => {
       />
 
       <PlanInfoCards plan={plan} />
+
+      {/* Error Alert */}
+      {itemsError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            There was an error loading the collection items. Please refresh the page or try again later.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <CollectionItemsList
         items={items}
