@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
@@ -21,7 +20,7 @@ import LeadsPage from '@/pages/leads/LeadsPage';
 import LeadDetailPage from '@/pages/LeadDetailPage';
 import LeadEditPage from '@/pages/LeadEditPage';
 import OrdersPage from '@/pages/orders/OrdersPage';
-import OrderDetailPage from '@/pages/OrderDetailPage';
+import OrderDetailPage from '@/pages/orders/OrderDetailPage';
 import OrderEditPage from '@/pages/OrderEditPage';
 import UcoDashboardPage from '@/pages/uco/UcoCollectionDashboard';
 import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';

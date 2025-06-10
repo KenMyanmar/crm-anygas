@@ -90,12 +90,12 @@ const NewOrderPage = () => {
         throw error;
       }
 
-      // Ensure we have a complete Restaurant object by setting default values for required fields
+      // Clean up phone field mapping - use phone directly without creating phone_primary
       const completeRestaurants = (data || []).map(restaurant => ({
         ...restaurant,
         id: restaurant.id || '',
         name: restaurant.name || '',
-        phone_primary: restaurant.phone || '', // Map phone to phone_primary for compatibility
+        phone: restaurant.phone || '', // Keep as phone, don't map to phone_primary
         created_at: restaurant.created_at || new Date().toISOString(),
         updated_at: restaurant.updated_at || new Date().toISOString()
       })) as Restaurant[];
