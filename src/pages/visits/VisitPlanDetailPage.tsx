@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { useVisitPlans } from '@/hooks/useVisitPlans';
 import { useVisitTasks } from '@/hooks/useVisitTasks';
 import { useAuth } from '@/context/AuthContext';
@@ -118,89 +117,85 @@ const VisitPlanDetailPage = () => {
 
   if (!currentPlan) {
     return (
-      <DashboardLayout>
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Visit plan not found</p>
-          <Button onClick={handleBack} className="mt-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Visit Planner
-          </Button>
-        </div>
-      </DashboardLayout>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Visit plan not found</p>
+        <Button onClick={handleBack} className="mt-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Visit Planner
+        </Button>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <VisitPlanHeader
-          plan={currentPlan}
-          onBack={handleBack}
-          onAddRestaurants={handleAddRestaurants}
+    <div className="space-y-6">
+      <VisitPlanHeader
+        plan={currentPlan}
+        onBack={handleBack}
+        onAddRestaurants={handleAddRestaurants}
+      />
+
+      {/* Collaboration Info */}
+      {!isMyPlan && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>
+                <strong>Viewing {currentPlan.creator?.full_name || 'team member'}'s plan.</strong> 
+                You can view all details and add comments. 
+                {currentPlan.creator?.full_name && ` Contact ${currentPlan.creator.full_name} to modify restaurants or settings.`}
+              </span>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <VisitPlanStats tasks={tasks} />
+
+      {/* Map Preview - Show only when there are tasks */}
+      {tasks.length > 0 && (
+        <VisitPlanMapPreview tasks={tasks} />
+      )}
+
+      <VisitPlanStatusSummary tasks={tasks} />
+
+      <VisitPlanNotes remarks={currentPlan.remarks} />
+
+      {/* Visit Tasks Table or Empty State */}
+      {tasks.length === 0 ? (
+        <EmptyVisitPlan onAddRestaurants={isMyPlan ? handleAddRestaurants : undefined} />
+      ) : (
+        <VisitTasksTable
+          tasks={tasks}
+          onStatusChange={handleStatusChange}
+          onPriorityChange={handlePriorityChange}
+          onRecordOutcome={handleRecordOutcome}
+          planCreatedBy={currentPlan.created_by}
         />
+      )}
 
-        {/* Collaboration Info */}
-        {!isMyPlan && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span>
-                  <strong>Viewing {currentPlan.creator?.full_name || 'team member'}'s plan.</strong> 
-                  You can view all details and add comments. 
-                  {currentPlan.creator?.full_name && ` Contact ${currentPlan.creator.full_name} to modify restaurants or settings.`}
-                </span>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <VisitPlanStats tasks={tasks} />
-
-        {/* Map Preview - Show only when there are tasks */}
-        {tasks.length > 0 && (
-          <VisitPlanMapPreview tasks={tasks} />
-        )}
-
-        <VisitPlanStatusSummary tasks={tasks} />
-
-        <VisitPlanNotes remarks={currentPlan.remarks} />
-
-        {/* Visit Tasks Table or Empty State */}
-        {tasks.length === 0 ? (
-          <EmptyVisitPlan onAddRestaurants={isMyPlan ? handleAddRestaurants : undefined} />
-        ) : (
-          <VisitTasksTable
-            tasks={tasks}
-            onStatusChange={handleStatusChange}
-            onPriorityChange={handlePriorityChange}
-            onRecordOutcome={handleRecordOutcome}
-            planCreatedBy={currentPlan.created_by}
-          />
-        )}
-
-        {/* Bulk Restaurant Selector Dialog - Only show if user owns the plan */}
-        {isMyPlan && (
-          <Dialog 
-            open={isAddRestaurantsDialogOpen} 
-            onOpenChange={setIsAddRestaurantsDialogOpen}
-          >
-            <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
-              <BulkRestaurantSelector
-                selectedRestaurants={selectedRestaurants}
-                onSelectionChange={setSelectedRestaurants}
-                onConfirm={handleBulkAddRestaurants}
-                onCancel={() => {
-                  setIsAddRestaurantsDialogOpen(false);
-                  setSelectedRestaurants([]);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-    </DashboardLayout>
+      {/* Bulk Restaurant Selector Dialog - Only show if user owns the plan */}
+      {isMyPlan && (
+        <Dialog 
+          open={isAddRestaurantsDialogOpen} 
+          onOpenChange={setIsAddRestaurantsDialogOpen}
+        >
+          <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
+            <BulkRestaurantSelector
+              selectedRestaurants={selectedRestaurants}
+              onSelectionChange={setSelectedRestaurants}
+              onConfirm={handleBulkAddRestaurants}
+              onCancel={() => {
+                setIsAddRestaurantsDialogOpen(false);
+                setSelectedRestaurants([]);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
 };
 

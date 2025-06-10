@@ -22,11 +22,17 @@ import LeadsPage from '@/pages/leads/LeadsPage';
 import LeadDetailPage from '@/pages/LeadDetailPage';
 import LeadEditPage from '@/pages/LeadEditPage';
 import OrdersPage from '@/pages/orders/OrdersPage';
+import NewOrderPage from '@/pages/orders/NewOrderPage';
 import OrderDetailPage from '@/pages/orders/OrderDetailPage';
 import OrderEditPage from '@/pages/OrderEditPage';
 import UcoDashboardPage from '@/pages/uco/UcoCollectionDashboard';
 import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';
 import UcoRouteOptimizationPage from '@/pages/uco/UcoRouteOptimizer';
+import VisitPlannerPage from '@/pages/visits/VisitPlannerPage';
+import TodaysVisitsPage from '@/pages/visits/TodaysVisitsPage';
+import NewVisitPlanPage from '@/pages/visits/NewVisitPlanPage';
+import VisitPlanDetailPage from '@/pages/visits/VisitPlanDetailPage';
+import TaskOutcomePage from '@/pages/visits/TaskOutcomePage';
 import SettingsPage from '@/pages/SettingsPage';
 import AdminPage from '@/pages/AdminPage';
 
@@ -52,10 +58,12 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/set-new-password" element={<SetNewPassword />} />
 
-              {/* Protected routes */}
+              {/* Protected routes with ModernDashboardLayout */}
               <Route path="/" element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <ModernDashboardLayout>
+                    <Dashboard />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               
@@ -67,62 +75,126 @@ function App() {
               
               <Route path="/tasks" element={
                 <ProtectedRoute>
-                  <TasksPage />
+                  <ModernDashboardLayout>
+                    <TasksPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
 
               {/* Restaurants routes */}
               <Route path="/restaurants" element={
                 <ProtectedRoute>
-                  <RestaurantsPage />
+                  <ModernDashboardLayout>
+                    <RestaurantsPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/restaurants/:id" element={
                 <ProtectedRoute>
-                  <RestaurantDetailPage />
+                  <ModernDashboardLayout>
+                    <RestaurantDetailPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/restaurants/:id/edit" element={
                 <ProtectedRoute>
-                  <RestaurantEditPage />
+                  <ModernDashboardLayout>
+                    <RestaurantEditPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
 
               {/* Leads routes */}
               <Route path="/leads" element={
                 <ProtectedRoute>
-                  <LeadsPage />
+                  <ModernDashboardLayout>
+                    <LeadsPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/leads/:id" element={
                 <ProtectedRoute>
-                  <LeadDetailPage />
+                  <ModernDashboardLayout>
+                    <LeadDetailPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/leads/:id/edit" element={
                 <ProtectedRoute>
-                  <LeadEditPage />
+                  <ModernDashboardLayout>
+                    <LeadEditPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
 
-              {/* Orders routes */}
+              {/* Orders routes - NOW PROPERLY IMPLEMENTED */}
               <Route path="/orders" element={
                 <ProtectedRoute>
-                  <OrdersPage />
+                  <ModernDashboardLayout>
+                    <OrdersPage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/orders/new" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <NewOrderPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/orders/:id" element={
                 <ProtectedRoute>
-                  <OrderDetailPage />
+                  <ModernDashboardLayout>
+                    <OrderDetailPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/orders/:id/edit" element={
                 <ProtectedRoute>
-                  <OrderEditPage />
+                  <ModernDashboardLayout>
+                    <OrderEditPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
 
-              {/* UCO Collection routes - Now properly wrapped with ModernDashboardLayout */}
+              {/* Visits routes - NOW PROPERLY IMPLEMENTED */}
+              <Route path="/visits" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <VisitPlannerPage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/visits/today" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <TodaysVisitsPage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/visits/new" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <NewVisitPlanPage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/visits/plans/:id" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <VisitPlanDetailPage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/visits/tasks/:id/outcome" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <TaskOutcomePage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+
+              {/* UCO Collection routes - Already properly wrapped with ModernDashboardLayout */}
               <Route path="/uco/dashboard" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
@@ -148,7 +220,9 @@ function App() {
               {/* Settings route */}
               <Route path="/settings" element={
                 <ProtectedRoute>
-                  <SettingsPage />
+                  <ModernDashboardLayout>
+                    <SettingsPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
 
