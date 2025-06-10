@@ -32,6 +32,7 @@ import NotificationsPage from '@/pages/Notifications';
 import { DualBusinessDashboard } from '@/components/dashboard/DualBusinessDashboard';
 import { visitRoutes } from '@/routes/visitRoutes';
 import { ucoRoutes } from '@/routes/ucoRoutes';
+import { authRoutes } from '@/routes/authRoutes';
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,9 @@ const App = () => {
         <SidebarProvider>
           <div className="min-h-screen bg-background">
             <Routes>
+              {/* Authentication Routes - MUST be before protected routes */}
+              {authRoutes}
+              
               <Route path="/" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>

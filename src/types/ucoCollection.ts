@@ -3,6 +3,7 @@ export interface UcoCollectionPlan {
   id: string;
   plan_name: string;
   townships: string[];
+  township?: string; // Added for backward compatibility
   plan_date: string;
   driver_name?: string;
   truck_capacity_kg: number;
