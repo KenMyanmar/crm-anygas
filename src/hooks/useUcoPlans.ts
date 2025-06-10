@@ -63,7 +63,7 @@ export const useUcoPlans = () => {
       const updateData = { ...updates };
       // Maintain backward compatibility
       if (updates.townships) {
-        updateData.township = updates.townships[0] || null;
+        updateData.townships = updates.townships;
       }
       
       const { data, error } = await supabase
