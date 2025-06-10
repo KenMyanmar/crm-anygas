@@ -25,8 +25,9 @@ export const TaskModal = ({ open, onClose, task }: TaskModalProps) => {
     description: task?.description || '',
     task_type: task?.task_type || 'other',
     priority: task?.priority || 'medium',
+    status: task?.status || 'pending',
     due_date: task?.due_date || '',
-    estimated_duration_minutes: task?.estimated_duration_minutes || '',
+    estimated_duration_minutes: task?.estimated_duration_minutes?.toString() || '',
     assigned_to_user_id: task?.assigned_to_user_id || profile?.id || '',
   });
 

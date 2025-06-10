@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
@@ -13,18 +14,18 @@ import SetNewPassword from '@/pages/SetNewPassword';
 import Dashboard from '@/pages/Dashboard';
 import CalendarPage from '@/components/calendar/CalendarPage';
 import TasksPage from '@/components/tasks/TasksPage';
-import RestaurantsPage from '@/pages/RestaurantsPage';
+import RestaurantsPage from '@/pages/restaurants/RestaurantListPage';
 import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
 import RestaurantEditPage from '@/pages/RestaurantEditPage';
-import LeadsPage from '@/pages/LeadsPage';
+import LeadsPage from '@/pages/leads/LeadsPage';
 import LeadDetailPage from '@/pages/LeadDetailPage';
 import LeadEditPage from '@/pages/LeadEditPage';
-import OrdersPage from '@/pages/OrdersPage';
+import OrdersPage from '@/pages/orders/OrdersPage';
 import OrderDetailPage from '@/pages/OrderDetailPage';
 import OrderEditPage from '@/pages/OrderEditPage';
 import UcoDashboardPage from '@/pages/uco/UcoDashboardPage';
 import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';
-import UcoRouteOptimizationPage from '@/pages/uco/UcoRouteOptimizationPage';
+import UcoRouteOptimizationPage from '@/pages/uco/UcoRouteOptimizer';
 import SettingsPage from '@/pages/SettingsPage';
 import AdminPage from '@/pages/AdminPage';
 
