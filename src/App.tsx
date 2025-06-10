@@ -29,7 +29,7 @@ import SettingsPage from '@/pages/admin/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFound';
 import NotificationsPage from '@/pages/Notifications';
-import DualBusinessDashboard from '@/components/dashboard/DualBusinessDashboard';
+import { DualBusinessDashboard } from '@/components/dashboard/DualBusinessDashboard';
 import { visitRoutes } from '@/routes/visitRoutes';
 import { ucoRoutes } from '@/routes/ucoRoutes';
 
