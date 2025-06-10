@@ -128,7 +128,12 @@ export const UcoTownshipMultiSelector = ({
                 <Checkbox
                   checked={allSelected}
                   ref={(el) => {
-                    if (el) el.indeterminate = someSelected;
+                    if (el) {
+                      const checkbox = el.querySelector('button');
+                      if (checkbox) {
+                        (checkbox as any).indeterminate = someSelected;
+                      }
+                    }
                   }}
                   onCheckedChange={handleSelectAll}
                 />

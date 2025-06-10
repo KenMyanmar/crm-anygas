@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { PriorityBadge } from './PriorityBadge';
 import { GoogleSheetsImporter } from './GoogleSheetsImporter';
 import { MobileStatusUpdater } from './MobileStatusUpdater';
 import { UcoRouteOptimizer } from './UcoRouteOptimizer';
+import { UcoTownshipMultiSelector } from './UcoTownshipMultiSelector';
 
 export const UcoCollectionPlanner: React.FC = () => {
   const { profile } = useAuth();
@@ -28,7 +30,7 @@ export const UcoCollectionPlanner: React.FC = () => {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [newPlan, setNewPlan] = useState({
     plan_name: '',
-    township: '',
+    townships: [] as string[],
     plan_date: new Date().toISOString().split('T')[0],
     driver_name: '',
     truck_capacity_kg: 500,
@@ -43,8 +45,8 @@ export const UcoCollectionPlanner: React.FC = () => {
       return;
     }
 
-    if (!newPlan.plan_name || !newPlan.township) {
-      toast.error('Please fill in plan name and township');
+    if (!newPlan.plan_name || newPlan.townships.length === 0) {
+      toast.error('Please fill in plan name and select at least one township');
       return;
     }
 
@@ -56,7 +58,7 @@ export const UcoCollectionPlanner: React.FC = () => {
       
       setNewPlan({
         plan_name: '',
-        township: '',
+        townships: [],
         plan_date: new Date().toISOString().split('T')[0],
         driver_name: '',
         truck_capacity_kg: 500,
@@ -100,26 +102,8 @@ export const UcoCollectionPlanner: React.FC = () => {
                   <Input
                     value={newPlan.plan_name}
                     onChange={(e) => setNewPlan({ ...newPlan, plan_name: e.target.value })}
-                    placeholder="e.g., Yankin Township UCO Collection"
+                    placeholder="e.g., Multi-Township UCO Collection"
                   />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Township</label>
-                  <Select
-                    value={newPlan.township}
-                    onValueChange={(value) => setNewPlan({ ...newPlan, township: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select township" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {analytics?.map((item) => (
-                        <SelectItem key={item.township} value={item.township}>
-                          {item.township} ({item.total_restaurants} restaurants)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Plan Date</label>
@@ -129,6 +113,15 @@ export const UcoCollectionPlanner: React.FC = () => {
                     onChange={(e) => setNewPlan({ ...newPlan, plan_date: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <UcoTownshipMultiSelector
+                selectedTownships={newPlan.townships}
+                onChange={(townships) => setNewPlan({ ...newPlan, townships })}
+                placeholder="Select townships for collection"
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Driver Name</label>
                   <Input
@@ -137,9 +130,18 @@ export const UcoCollectionPlanner: React.FC = () => {
                     placeholder="Enter driver name"
                   />
                 </div>
+                <div>
+                  <label className="text-sm font-medium">Truck Capacity (kg)</label>
+                  <Input
+                    type="number"
+                    value={newPlan.truck_capacity_kg}
+                    onChange={(e) => setNewPlan({ ...newPlan, truck_capacity_kg: parseInt(e.target.value) || 500 })}
+                    placeholder="500"
+                  />
+                </div>
               </div>
               
-              <Button onClick={handleCreatePlan} className="w-full">
+              <Button onClick={handleCreatePlan} className="w-full" disabled={newPlan.townships.length === 0}>
                 Create UCO Collection Plan
               </Button>
             </TabsContent>
@@ -170,7 +172,7 @@ export const UcoCollectionPlanner: React.FC = () => {
                         <SelectContent>
                           {plans?.map((plan) => (
                             <SelectItem key={plan.id} value={plan.id}>
-                              {plan.plan_name} - {plan.township}
+                              {plan.plan_name} - {plan.townships.join(', ')}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -303,7 +305,7 @@ export const UcoCollectionPlanner: React.FC = () => {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span className="flex items-center">
                       <MapPin className="h-3 w-3 mr-1" />
-                      {plan.township}
+                      {plan.townships.join(', ')}
                     </span>
                     <span className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
