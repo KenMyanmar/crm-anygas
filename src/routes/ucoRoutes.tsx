@@ -2,6 +2,8 @@
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
+import UcoCollectionDashboard from '@/pages/uco/UcoCollectionDashboard';
+import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';
 import UcoTrucksDashboard from '@/pages/uco/UcoTrucksDashboard';
 import UcoCollectionPlanner from '@/pages/uco/UcoCollectionPlanner';
 import UcoRouteOptimizer from '@/pages/uco/UcoRouteOptimizer';
@@ -14,7 +16,14 @@ export const ucoRoutes = (
     <Route path="/uco/dashboard" element={
       <ProtectedRoute>
         <ModernDashboardLayout>
-          <UcoTrucksDashboard />
+          <UcoCollectionDashboard />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/uco/plans/:id" element={
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <UcoCollectionPlanDetailPage />
         </ModernDashboardLayout>
       </ProtectedRoute>
     } />
