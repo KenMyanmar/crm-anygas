@@ -10,7 +10,7 @@ import { CalendarEventDetailsModal } from './CalendarEventDetailsModal';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { CalendarEvent } from '@/types/calendar';
 import { Plus, Calendar as CalendarIcon, List, Grid } from 'lucide-react';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 const localizer = momentLocalizer(moment);
@@ -96,7 +96,7 @@ const CalendarPage = () => {
   };
 
   return (
-    <DashboardLayout>
+    <ModernDashboardLayout>
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -183,7 +183,7 @@ const CalendarPage = () => {
           }}
         />
       </div>
-    </DashboardLayout>
+    </ModernDashboardLayout>
   );
 };
 

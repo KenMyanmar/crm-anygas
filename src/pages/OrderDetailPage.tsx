@@ -2,7 +2,7 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,20 +34,20 @@ const OrderDetailPage = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <ModernDashboardLayout>
         <div className="container mx-auto p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
             <div className="h-32 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </DashboardLayout>
+      </ModernDashboardLayout>
     );
   }
 
   if (!order) {
     return (
-      <DashboardLayout>
+      <ModernDashboardLayout>
         <div className="container mx-auto p-6">
           <div className="text-center">
             <h1 className="text-2xl font-bold">Order not found</h1>
@@ -59,12 +59,12 @@ const OrderDetailPage = () => {
             </Link>
           </div>
         </div>
-      </DashboardLayout>
+      </ModernDashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <ModernDashboardLayout>
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -175,7 +175,7 @@ const OrderDetailPage = () => {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+    </ModernDashboardLayout>
   );
 };
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,19 +89,19 @@ const OrderEditPage = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <ModernDashboardLayout>
         <div className="container mx-auto p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
             <div className="h-96 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </DashboardLayout>
+      </ModernDashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <ModernDashboardLayout>
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center space-x-4">
           <Link to={`/orders/${id}`}>
@@ -184,7 +184,7 @@ const OrderEditPage = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </ModernDashboardLayout>
   );
 };
 

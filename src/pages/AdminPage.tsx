@@ -1,5 +1,5 @@
 
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +66,7 @@ const AdminPage = () => {
   };
 
   return (
-    <DashboardLayout>
+    <ModernDashboardLayout>
       <div className="container mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
@@ -141,7 +141,7 @@ const AdminPage = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </ModernDashboardLayout>
   );
 };
 
