@@ -50,6 +50,7 @@ const UcoCollectionPlanDetailPage = () => {
         itemsLoading={itemsLoading}
         isOwner={isOwner}
         onAddRestaurants={() => setShowRestaurantSelector(true)}
+        planId={plan.id}
       />
 
       <Dialog open={showRestaurantSelector} onOpenChange={setShowRestaurantSelector}>
