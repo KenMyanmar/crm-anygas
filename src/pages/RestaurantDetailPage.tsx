@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -13,8 +12,9 @@ import RestaurantTimeline from '@/components/restaurants/RestaurantTimeline';
 import RestaurantNotes from '@/components/restaurants/RestaurantNotes';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Edit, Package, MapPin, FileText, Calendar, Users } from 'lucide-react';
+import { ChevronLeft, Edit, Package, MapPin, FileText, Calendar, Users, Truck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { RestaurantUcoInfo } from '@/components/restaurants/RestaurantUcoInfo';
 
 const RestaurantDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -122,7 +122,7 @@ const RestaurantDetailPage = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="info" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="info" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Info
@@ -134,6 +134,10 @@ const RestaurantDetailPage = () => {
             <TabsTrigger value="visits" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               Visits
+            </TabsTrigger>
+            <TabsTrigger value="uco" className="flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              UCO
             </TabsTrigger>
             <TabsTrigger value="leads" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -160,6 +164,10 @@ const RestaurantDetailPage = () => {
 
           <TabsContent value="visits">
             <RestaurantVisits restaurantId={restaurant.id} />
+          </TabsContent>
+
+          <TabsContent value="uco">
+            <RestaurantUcoInfo restaurantId={restaurant.id} />
           </TabsContent>
 
           <TabsContent value="leads">

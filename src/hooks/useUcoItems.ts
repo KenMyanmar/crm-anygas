@@ -121,9 +121,16 @@ export const useUcoItems = (planId?: string) => {
         }
       );
       
-      // Also invalidate to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ['uco-collection-items', planId] });
+      // Also invalidate related queries to ensure fresh data everywhere
+      queryClient.invalidateQueries({ queryKey: ['uco-collection-items'] });
       queryClient.invalidateQueries({ queryKey: ['uco-collection-plans'] });
+      
+      // Specifically refresh restaurant-related queries
+      if (data.restaurant_id) {
+        queryClient.invalidateQueries({ queryKey: ['restaurant-uco-data', data.restaurant_id] });
+      }
+      
+      toast.success('Collection item updated successfully');
     },
     onError: (error) => {
       console.error('Failed to update collection item:', error);
