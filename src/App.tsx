@@ -16,6 +16,7 @@ import Dashboard from '@/pages/Dashboard';
 import CalendarPage from '@/components/calendar/CalendarPage';
 import TasksPage from '@/components/tasks/TasksPage';
 import RestaurantsPage from '@/pages/restaurants/RestaurantListPage';
+import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
 import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
 import RestaurantEditPage from '@/pages/RestaurantEditPage';
 import LeadsPage from '@/pages/leads/LeadsPage';
@@ -81,11 +82,18 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              {/* Restaurants routes */}
+              {/* Restaurants routes - FIXED ORDER: new before :id */}
               <Route path="/restaurants" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
                     <RestaurantsPage />
+                  </ModernDashboardLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/restaurants/new" element={
+                <ProtectedRoute>
+                  <ModernDashboardLayout>
+                    <NewRestaurantPage />
                   </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
@@ -127,7 +135,7 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              {/* Orders routes - NOW PROPERLY IMPLEMENTED */}
+              {/* Orders routes - FIXED ORDER: new before :id */}
               <Route path="/orders" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
@@ -157,7 +165,7 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              {/* Visits routes - NOW PROPERLY IMPLEMENTED */}
+              {/* Visits routes - FIXED ORDER: new and today before :id */}
               <Route path="/visits" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
@@ -194,7 +202,7 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              {/* UCO Collection routes - Already properly wrapped with ModernDashboardLayout */}
+              {/* UCO Collection routes */}
               <Route path="/uco/dashboard" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
