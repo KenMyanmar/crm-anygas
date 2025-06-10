@@ -29,6 +29,7 @@ import SettingsPage from '@/pages/admin/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFound';
 import NotificationsPage from '@/pages/Notifications';
+import DualBusinessDashboard from '@/components/dashboard/DualBusinessDashboard';
 import { visitRoutes } from '@/routes/visitRoutes';
 import { ucoRoutes } from '@/routes/ucoRoutes';
 
@@ -44,16 +45,7 @@ const App = () => {
               <Route path="/" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
-                    <div className="space-y-6">
-                      <div className="text-center py-12">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                          Welcome to AnyGas Myanmar
-                        </h1>
-                        <p className="text-lg text-gray-600">
-                          Your comprehensive business management platform
-                        </p>
-                      </div>
-                    </div>
+                    <DualBusinessDashboard />
                   </ModernDashboardLayout>
                 </ProtectedRoute>
               } />

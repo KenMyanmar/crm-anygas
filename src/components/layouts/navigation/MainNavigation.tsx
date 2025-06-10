@@ -16,7 +16,10 @@ import {
   User,
   CalendarDays,
   MapPin,
-  Package
+  Package,
+  Truck,
+  Route,
+  Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +51,14 @@ const MainNavigation = () => {
   const visitItems = [
     { label: 'Visit Planner', icon: Calendar, path: '/visits' },
     { label: "Today's Visits", icon: MapPin, path: '/visits/today' }
+  ];
+
+  const ucoItems = [
+    { label: 'UCO Dashboard', icon: Truck, path: '/uco/dashboard' },
+    { label: 'Collection Plans', icon: Calendar, path: '/uco/planner' },
+    { label: 'Route Optimizer', icon: Route, path: '/uco/routes' },
+    { label: 'Driver Interface', icon: MapPin, path: '/uco/mobile' },
+    { label: 'UCO Analytics', icon: Activity, path: '/uco/analytics' }
   ];
 
   const orderItems = [
@@ -101,6 +112,13 @@ const MainNavigation = () => {
         icon={MapPin} 
         items={visitItems} 
         basePath="/visits" 
+      />
+
+      <NavigationDropdown 
+        label="UCO Trucks" 
+        icon={Truck} 
+        items={ucoItems} 
+        basePath="/uco" 
       />
       
       <NavigationDropdown 
