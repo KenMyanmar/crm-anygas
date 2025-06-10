@@ -39,9 +39,10 @@ export const UcoBulkRestaurantSelector = ({
 
   const uniqueTownships = [...new Set(restaurants?.map(r => r.township).filter(Boolean) || [])];
 
-  const handleRestaurantToggle = (restaurantId: string, checked: boolean) => {
+  const handleRestaurantToggle = (restaurantId: string, checked: boolean | string) => {
+    const isChecked = checked === true;
     setSelectedRestaurants(prev => 
-      checked 
+      isChecked 
         ? [...prev, restaurantId]
         : prev.filter(id => id !== restaurantId)
     );

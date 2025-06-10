@@ -113,8 +113,19 @@ const UcoCollectionPlanDetailPage = () => {
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4 text-green-600" />
               <div>
-                <p className="text-sm text-muted-foreground">Township</p>
-                <p className="font-medium">{plan.township}</p>
+                <p className="text-sm text-muted-foreground">Townships</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {plan.townships.slice(0, 2).map(township => (
+                    <Badge key={township} variant="outline" className="text-xs">
+                      {township}
+                    </Badge>
+                  ))}
+                  {plan.townships.length > 2 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{plan.townships.length - 2}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -210,7 +221,8 @@ const UcoCollectionPlanDetailPage = () => {
           <UcoBulkRestaurantSelector
             onConfirm={handleAddRestaurants}
             onCancel={() => setShowRestaurantSelector(false)}
-            selectedTownship={plan.township}
+            // Don't pre-filter by township for multi-township plans
+            selectedTownship={plan.townships.length === 1 ? plan.townships[0] : undefined}
           />
         </DialogContent>
       </Dialog>

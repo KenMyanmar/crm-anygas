@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -7,7 +6,7 @@ import { toast } from 'sonner';
 export interface UcoCollectionPlan {
   id: string;
   plan_name: string;
-  township: string;
+  townships: string[];
   plan_date: string;
   driver_name?: string;
   truck_capacity_kg: number;
@@ -55,7 +54,12 @@ export const useUcoCollectionPlans = () => {
         .order('plan_date', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Transform townships from string to array for backward compatibility
+      return data.map(plan => ({
+        ...plan,
+        townships: Array.isArray(plan.townships) ? plan.townships : [plan.township].filter(Boolean)
+      }));
     },
   });
 
@@ -63,12 +67,21 @@ export const useUcoCollectionPlans = () => {
     mutationFn: async (planData: Omit<UcoCollectionPlan, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('uco_collection_plans')
-        .insert(planData)
+        .insert({
+          ...planData,
+          // Store townships as JSON array and maintain backward compatibility
+          townships: planData.townships,
+          township: planData.townships[0] || null // Keep first township for backward compatibility
+        })
         .select()
         .single();
       
       if (error) throw error;
-      return data;
+      
+      return {
+        ...data,
+        townships: Array.isArray(data.townships) ? data.townships : [data.township].filter(Boolean)
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['uco-collection-plans'] });
@@ -82,15 +95,25 @@ export const useUcoCollectionPlans = () => {
 
   const updatePlan = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<UcoCollectionPlan> & { id: string }) => {
+      const updateData = { ...updates };
+      // Maintain backward compatibility
+      if (updates.townships) {
+        updateData.township = updates.townships[0] || null;
+      }
+      
       const { data, error } = await supabase
         .from('uco_collection_plans')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
       
       if (error) throw error;
-      return data;
+      
+      return {
+        ...data,
+        townships: Array.isArray(data.townships) ? data.townships : [data.township].filter(Boolean)
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['uco-collection-plans'] });

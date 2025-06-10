@@ -5,22 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUcoCollectionPlans } from '@/hooks/useUcoCollectionPlans';
-import { useTownshipAnalytics } from '@/hooks/useTownshipAnalytics';
+import { UcoTownshipMultiSelector } from '@/components/uco/UcoTownshipMultiSelector';
 import { useAuth } from '@/context/AuthContext';
-import { ArrowLeft, Truck, Calendar, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Truck, Calendar, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 const NewUcoPlanPage = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { createPlan } = useUcoCollectionPlans();
-  const { analytics } = useTownshipAnalytics();
   
   const [formData, setFormData] = useState({
     plan_name: '',
-    township: '',
+    townships: [] as string[],
     plan_date: new Date().toISOString().split('T')[0],
     driver_name: '',
     truck_capacity_kg: 500,
@@ -34,19 +32,22 @@ const NewUcoPlanPage = () => {
       return;
     }
 
-    if (!formData.plan_name || !formData.township) {
-      toast.error('Please fill in plan name and township');
+    if (!formData.plan_name || formData.townships.length === 0) {
+      toast.error('Please fill in plan name and select at least one township');
       return;
     }
 
     try {
       const newPlan = await createPlan.mutateAsync({
-        ...formData,
+        plan_name: formData.plan_name,
+        townships: formData.townships,
+        plan_date: formData.plan_date,
+        driver_name: formData.driver_name,
+        truck_capacity_kg: formData.truck_capacity_kg,
         created_by: profile.id,
       });
       
       toast.success('UCO collection plan created successfully');
-      // Redirect to plan detail page (like visits pattern)
       navigate(`/uco/plans/${newPlan.id}`);
     } catch (error) {
       console.error('Error creating plan:', error);
@@ -54,8 +55,27 @@ const NewUcoPlanPage = () => {
     }
   };
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const handleInputChange = (field: string, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const generatePlanName = (townships: string[]) => {
+    if (townships.length === 0) return '';
+    if (townships.length === 1) return `${townships[0]} UCO Collection`;
+    if (townships.length <= 3) return `${townships.join(', ')} UCO Collection`;
+    return `Multi-Township UCO Collection (${townships.length} areas)`;
+  };
+
+  const handleTownshipChange = (townships: string[]) => {
+    handleInputChange('townships', townships);
+    
+    // Auto-generate plan name if it's empty or was auto-generated
+    if (!formData.plan_name || formData.plan_name.includes('UCO Collection')) {
+      const suggestedName = generatePlanName(townships);
+      if (suggestedName) {
+        handleInputChange('plan_name', suggestedName);
+      }
+    }
   };
 
   return (
@@ -83,7 +103,7 @@ const NewUcoPlanPage = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="plan_name">Plan Name *</Label>
                   <Input
@@ -95,59 +115,44 @@ const NewUcoPlanPage = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="township">Township *</Label>
-                  <Select
-                    value={formData.township}
-                    onValueChange={(value) => handleInputChange('township', value)}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select township" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {analytics?.map((item) => (
-                        <SelectItem key={item.township} value={item.township}>
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="h-4 w-4" />
-                            <span>{item.township} ({item.total_restaurants} restaurants)</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <UcoTownshipMultiSelector
+                  selectedTownships={formData.townships}
+                  onChange={handleTownshipChange}
+                  placeholder="Select townships for collection"
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="plan_date">Collection Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="plan_date"
-                      type="date"
-                      value={formData.plan_date}
-                      onChange={(e) => handleInputChange('plan_date', e.target.value)}
-                      className="pl-10"
-                      required
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="plan_date">Collection Date *</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="plan_date"
+                        type="date"
+                        value={formData.plan_date}
+                        onChange={(e) => handleInputChange('plan_date', e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="driver_name">Driver Name</Label>
+                    <div className="relative">
+                      <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="driver_name"
+                        value={formData.driver_name}
+                        onChange={(e) => handleInputChange('driver_name', e.target.value)}
+                        placeholder="Enter driver name"
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="driver_name">Driver Name</Label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="driver_name"
-                      value={formData.driver_name}
-                      onChange={(e) => handleInputChange('driver_name', e.target.value)}
-                      placeholder="Enter driver name"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="truck_capacity">Truck Capacity (kg)</Label>
                   <div className="relative">
                     <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -174,7 +179,7 @@ const NewUcoPlanPage = () => {
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={createPlan.isPending}
+                  disabled={createPlan.isPending || formData.townships.length === 0}
                   className="min-w-[120px]"
                 >
                   {createPlan.isPending ? (

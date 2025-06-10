@@ -29,12 +29,12 @@ const UcoCollectionDashboard = () => {
 
   const filteredPlans = plans?.filter(plan => {
     const matchesSearch = plan.plan_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         plan.township.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTownship = townshipFilter === 'all' || plan.township === townshipFilter;
+                         plan.townships.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesTownship = townshipFilter === 'all' || plan.townships.includes(townshipFilter);
     return matchesSearch && matchesTownship;
   }) || [];
 
-  const uniqueTownships = [...new Set(plans?.map(plan => plan.township) || [])];
+  const uniqueTownships = [...new Set(plans?.flatMap(plan => plan.townships) || [])];
 
   if (isLoading) {
     return (
@@ -117,11 +117,22 @@ const UcoCollectionDashboard = () => {
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                      <span className="flex items-center space-x-1">
+                    <div className="flex items-start space-x-6 text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-1">
                         <MapPin className="h-4 w-4" />
-                        <span>{plan.township}</span>
-                      </span>
+                        <div className="flex flex-wrap gap-1">
+                          {plan.townships.slice(0, 2).map(township => (
+                            <Badge key={township} variant="secondary" className="text-xs">
+                              {township}
+                            </Badge>
+                          ))}
+                          {plan.townships.length > 2 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{plan.townships.length - 2} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                       {plan.driver_name && (
                         <span className="flex items-center space-x-1">
                           <Users className="h-4 w-4" />
