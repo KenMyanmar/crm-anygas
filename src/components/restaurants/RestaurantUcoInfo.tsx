@@ -10,11 +10,13 @@ interface RestaurantUcoInfoProps {
   restaurantId: string;
 }
 
+type UcoStatus = 'have_uco' | 'no_uco_reuse_staff' | 'no_uco_not_ready' | 'shop_closed' | 'not_assessed';
+
 interface UcoCollectionData {
   id: string;
   plan_name: string;
   plan_date: string;
-  uco_status: string;
+  uco_status: UcoStatus;
   actual_volume_kg?: number;
   price_per_kg?: number;
   quality_score?: number;
@@ -59,7 +61,7 @@ export const RestaurantUcoInfo = ({ restaurantId }: RestaurantUcoInfoProps) => {
         id: item.id,
         plan_name: item.plan?.plan_name || 'Unknown Plan',
         plan_date: item.plan?.plan_date || '',
-        uco_status: item.uco_status,
+        uco_status: (item.uco_status || 'not_assessed') as UcoStatus,
         actual_volume_kg: item.actual_volume_kg,
         price_per_kg: item.price_per_kg,
         quality_score: item.quality_score,
