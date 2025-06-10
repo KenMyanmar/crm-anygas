@@ -1119,7 +1119,8 @@ export type Database = {
           id: string
           plan_date: string
           plan_name: string
-          township: string
+          township: string | null
+          townships: Json | null
           truck_capacity_kg: number | null
           updated_at: string | null
         }
@@ -1130,7 +1131,8 @@ export type Database = {
           id?: string
           plan_date: string
           plan_name: string
-          township: string
+          township?: string | null
+          townships?: Json | null
           truck_capacity_kg?: number | null
           updated_at?: string | null
         }
@@ -1141,7 +1143,8 @@ export type Database = {
           id?: string
           plan_date?: string
           plan_name?: string
-          township?: string
+          township?: string | null
+          townships?: Json | null
           truck_capacity_kg?: number | null
           updated_at?: string | null
         }

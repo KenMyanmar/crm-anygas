@@ -20,24 +20,32 @@ export const useUcoPlans = () => {
 
       if (error) throw error;
       
-      // Transform townships from string to array for backward compatibility
+      // Transform data to ensure townships is always an array
       return data.map(plan => ({
         ...plan,
-        townships: Array.isArray(plan.townships) ? plan.townships : [plan.township].filter(Boolean)
+        townships: Array.isArray(plan.townships) && plan.townships.length > 0 
+          ? plan.townships 
+          : [plan.township].filter(Boolean)
       }));
     },
   });
 
   const createPlan = useMutation({
     mutationFn: async (planData: Omit<UcoCollectionPlan, 'id' | 'created_at' | 'updated_at'>) => {
+      const insertData = {
+        plan_name: planData.plan_name,
+        plan_date: planData.plan_date,
+        driver_name: planData.driver_name,
+        truck_capacity_kg: planData.truck_capacity_kg,
+        created_by: planData.created_by,
+        townships: planData.townships,
+        // Set township to first township for backward compatibility
+        township: planData.townships[0] || null
+      };
+
       const { data, error } = await supabase
         .from('uco_collection_plans')
-        .insert({
-          ...planData,
-          // Store townships as JSON array and maintain backward compatibility
-          townships: planData.townships,
-          township: planData.townships[0] || null // Keep first township for backward compatibility
-        })
+        .insert(insertData)
         .select()
         .single();
       
@@ -45,7 +53,9 @@ export const useUcoPlans = () => {
       
       return {
         ...data,
-        townships: Array.isArray(data.townships) ? data.townships : [data.township].filter(Boolean)
+        townships: Array.isArray(data.townships) && data.townships.length > 0 
+          ? data.townships 
+          : [data.township].filter(Boolean)
       };
     },
     onSuccess: () => {
@@ -61,9 +71,11 @@ export const useUcoPlans = () => {
   const updatePlan = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<UcoCollectionPlan> & { id: string }) => {
       const updateData = { ...updates };
-      // Maintain backward compatibility
+      
+      // If townships is being updated, also update the township field for backward compatibility
       if (updates.townships) {
         updateData.townships = updates.townships;
+        updateData.township = updates.townships[0] || null;
       }
       
       const { data, error } = await supabase
@@ -77,7 +89,9 @@ export const useUcoPlans = () => {
       
       return {
         ...data,
-        townships: Array.isArray(data.townships) ? data.townships : [data.township].filter(Boolean)
+        townships: Array.isArray(data.townships) && data.townships.length > 0 
+          ? data.townships 
+          : [data.township].filter(Boolean)
       };
     },
     onSuccess: () => {

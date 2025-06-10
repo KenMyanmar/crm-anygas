@@ -17,15 +17,20 @@ export const usePlanDetailPage = () => {
   const plan = plans?.find(p => p.id === id);
 
   useEffect(() => {
-    // Auto-open restaurant selector for empty plans (like visits)
+    // Auto-open restaurant selector for empty plans
     if (plan && items && items.length === 0) {
       setShowRestaurantSelector(true);
     }
   }, [plan, items]);
 
   const handleAddRestaurants = async (restaurantIds: string[]) => {
+    if (!id) {
+      toast.error('Plan ID is missing');
+      return;
+    }
+
     const newItems = restaurantIds.map((restaurantId, index) => ({
-      plan_id: id!,
+      plan_id: id,
       restaurant_id: restaurantId,
       route_sequence: (items?.length || 0) + index + 1,
       uco_status: 'not_assessed' as const,
