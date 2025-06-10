@@ -50,6 +50,78 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          all_day: boolean | null
+          assigned_to_user_id: string | null
+          created_at: string
+          created_by_user_id: string
+          description: string | null
+          end_datetime: string | null
+          event_type: string
+          id: string
+          lead_id: string | null
+          location: string | null
+          meeting_id: string | null
+          metadata: Json | null
+          order_id: string | null
+          priority: string | null
+          restaurant_id: string | null
+          start_datetime: string
+          status: string | null
+          title: string
+          uco_collection_item_id: string | null
+          updated_at: string
+          visit_task_id: string | null
+        }
+        Insert: {
+          all_day?: boolean | null
+          assigned_to_user_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          description?: string | null
+          end_datetime?: string | null
+          event_type: string
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          meeting_id?: string | null
+          metadata?: Json | null
+          order_id?: string | null
+          priority?: string | null
+          restaurant_id?: string | null
+          start_datetime: string
+          status?: string | null
+          title: string
+          uco_collection_item_id?: string | null
+          updated_at?: string
+          visit_task_id?: string | null
+        }
+        Update: {
+          all_day?: boolean | null
+          assigned_to_user_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          description?: string | null
+          end_datetime?: string | null
+          event_type?: string
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          meeting_id?: string | null
+          metadata?: Json | null
+          order_id?: string | null
+          priority?: string | null
+          restaurant_id?: string | null
+          start_datetime?: string
+          status?: string | null
+          title?: string
+          uco_collection_item_id?: string | null
+          updated_at?: string
+          visit_task_id?: string | null
+        }
+        Relationships: []
+      }
       calls: {
         Row: {
           call_date: string
@@ -243,6 +315,90 @@ export type Database = {
             columns: ["salesperson_uid"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enhanced_tasks: {
+        Row: {
+          assigned_to_user_id: string
+          calendar_event_id: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by_user_id: string
+          description: string | null
+          due_date: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          lead_id: string | null
+          order_id: string | null
+          parent_task_id: string | null
+          priority: string | null
+          restaurant_id: string | null
+          status: string | null
+          tags: Json | null
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_user_id: string
+          calendar_event_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by_user_id: string
+          description?: string | null
+          due_date?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          lead_id?: string | null
+          order_id?: string | null
+          parent_task_id?: string | null
+          priority?: string | null
+          restaurant_id?: string | null
+          status?: string | null
+          tags?: Json | null
+          task_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_user_id?: string
+          calendar_event_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          description?: string | null
+          due_date?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          lead_id?: string | null
+          order_id?: string | null
+          parent_task_id?: string | null
+          priority?: string | null
+          restaurant_id?: string | null
+          status?: string | null
+          tags?: Json | null
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enhanced_tasks_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enhanced_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -756,6 +912,97 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_patterns: {
+        Row: {
+          calendar_event_id: string
+          created_at: string
+          day_of_month: number | null
+          days_of_week: Json | null
+          end_date: string | null
+          id: string
+          interval_value: number | null
+          max_occurrences: number | null
+          month_of_year: number | null
+          pattern_type: string
+        }
+        Insert: {
+          calendar_event_id: string
+          created_at?: string
+          day_of_month?: number | null
+          days_of_week?: Json | null
+          end_date?: string | null
+          id?: string
+          interval_value?: number | null
+          max_occurrences?: number | null
+          month_of_year?: number | null
+          pattern_type: string
+        }
+        Update: {
+          calendar_event_id?: string
+          created_at?: string
+          day_of_month?: number | null
+          days_of_week?: Json | null
+          end_date?: string | null
+          id?: string
+          interval_value?: number | null
+          max_occurrences?: number | null
+          month_of_year?: number | null
+          pattern_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_patterns_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminders: {
+        Row: {
+          calendar_event_id: string
+          created_at: string
+          id: string
+          message: string | null
+          reminder_type: string
+          status: string | null
+          trigger_minutes_before: number
+          triggered_at: string | null
+          user_id: string
+        }
+        Insert: {
+          calendar_event_id: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reminder_type: string
+          status?: string | null
+          trigger_minutes_before?: number
+          triggered_at?: string | null
+          user_id: string
+        }
+        Update: {
+          calendar_event_id?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reminder_type?: string
+          status?: string | null
+          trigger_minutes_before?: number
+          triggered_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_id_mapping: {
         Row: {
           match_confidence: string | null
@@ -1157,6 +1404,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          default_reminder_minutes: number | null
+          email_enabled: boolean | null
+          id: string
+          in_app_enabled: boolean | null
+          meeting_reminder_minutes: number | null
+          push_enabled: boolean | null
+          task_reminder_minutes: number | null
+          uco_reminder_minutes: number | null
+          updated_at: string
+          user_id: string
+          visit_reminder_minutes: number | null
+        }
+        Insert: {
+          created_at?: string
+          default_reminder_minutes?: number | null
+          email_enabled?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          meeting_reminder_minutes?: number | null
+          push_enabled?: boolean | null
+          task_reminder_minutes?: number | null
+          uco_reminder_minutes?: number | null
+          updated_at?: string
+          user_id: string
+          visit_reminder_minutes?: number | null
+        }
+        Update: {
+          created_at?: string
+          default_reminder_minutes?: number | null
+          email_enabled?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          meeting_reminder_minutes?: number | null
+          push_enabled?: boolean | null
+          task_reminder_minutes?: number | null
+          uco_reminder_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+          visit_reminder_minutes?: number | null
+        }
+        Relationships: []
       }
       users: {
         Row: {

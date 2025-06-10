@@ -1,220 +1,166 @@
-
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 
-// page imports
-import RestaurantListPage from '@/pages/restaurants/RestaurantListPage';
-import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
+// Pages
+import Login from '@/pages/Login';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import SetNewPassword from '@/pages/SetNewPassword';
+import Dashboard from '@/pages/Dashboard';
+import CalendarPage from '@/components/calendar/CalendarPage';
+import TasksPage from '@/components/tasks/TasksPage';
+import RestaurantsPage from '@/pages/RestaurantsPage';
 import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
-import EditRestaurantPage from '@/pages/RestaurantEditPage';
-import LeadsPage from '@/pages/leads/LeadsPage';
-import AssignedLeadsPage from '@/pages/leads/AssignedLeadsPage';
-import MeetingsPage from '@/pages/leads/MeetingsPage';
-import OrdersPage from '@/pages/orders/OrdersPage';
-import NewOrderPage from '@/pages/orders/NewOrderPage';
-import OrderDetailPage from '@/pages/orders/OrderDetailPage';
-import ReportsPage from '@/pages/reports/ReportsMainPage';
-import LeadReportsPage from '@/pages/reports/LeadReportsPage';
-import PerformanceReportsPage from '@/pages/reports/PerformancePage';
-import UsersManagementPage from '@/pages/admin/UsersPage';
-import ProductsPage from '@/pages/admin/ProductsPage';
-import ImportDataPage from '@/pages/admin/ImportPage';
-import SettingsPage from '@/pages/admin/SettingsPage';
-import ProfilePage from '@/pages/ProfilePage';
-import NotFoundPage from '@/pages/NotFound';
-import NotificationsPage from '@/pages/Notifications';
-import { DualBusinessDashboard } from '@/components/dashboard/DualBusinessDashboard';
-import { visitRoutes } from '@/routes/visitRoutes';
-import { ucoRoutes } from '@/routes/ucoRoutes';
-import { authRoutes } from '@/routes/authRoutes';
+import RestaurantEditPage from '@/pages/RestaurantEditPage';
+import LeadsPage from '@/pages/LeadsPage';
+import LeadDetailPage from '@/pages/LeadDetailPage';
+import LeadEditPage from '@/pages/LeadEditPage';
+import OrdersPage from '@/pages/OrdersPage';
+import OrderDetailPage from '@/pages/OrderDetailPage';
+import OrderEditPage from '@/pages/OrderEditPage';
+import UcoDashboardPage from '@/pages/uco/UcoDashboardPage';
+import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';
+import UcoRouteOptimizationPage from '@/pages/uco/UcoRouteOptimizationPage';
+import SettingsPage from '@/pages/SettingsPage';
+import AdminPage from '@/pages/AdminPage';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
-const App = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SidebarProvider>
+        <Router>
           <div className="min-h-screen bg-background">
             <Routes>
-              {/* Authentication Routes - MUST be before protected routes */}
-              {authRoutes}
-              
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/set-new-password" element={<SetNewPassword />} />
+
+              {/* Protected routes */}
               <Route path="/" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <DualBusinessDashboard />
-                  </ModernDashboardLayout>
+                  <Dashboard />
                 </ProtectedRoute>
               } />
               
-              {/* Restaurants Routes */}
-              <Route path="/restaurants" element={
+              <Route path="/calendar" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <RestaurantListPage />
-                  </ModernDashboardLayout>
+                  <CalendarPage />
                 </ProtectedRoute>
               } />
-              <Route path="/restaurants/new" element={
+              
+              <Route path="/tasks" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <NewRestaurantPage />
-                  </ModernDashboardLayout>
+                  <TasksPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Restaurants routes */}
+              <Route path="/restaurants" element={
+                <ProtectedRoute>
+                  <RestaurantsPage />
                 </ProtectedRoute>
               } />
               <Route path="/restaurants/:id" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <RestaurantDetailPage />
-                  </ModernDashboardLayout>
+                  <RestaurantDetailPage />
                 </ProtectedRoute>
               } />
               <Route path="/restaurants/:id/edit" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <EditRestaurantPage />
-                  </ModernDashboardLayout>
+                  <RestaurantEditPage />
                 </ProtectedRoute>
               } />
 
-              {/* Leads Routes */}
+              {/* Leads routes */}
               <Route path="/leads" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <LeadsPage />
-                  </ModernDashboardLayout>
+                  <LeadsPage />
                 </ProtectedRoute>
               } />
-              <Route path="/leads/assigned" element={
+              <Route path="/leads/:id" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <AssignedLeadsPage />
-                  </ModernDashboardLayout>
+                  <LeadDetailPage />
                 </ProtectedRoute>
               } />
-              <Route path="/leads/meetings" element={
+              <Route path="/leads/:id/edit" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <MeetingsPage />
-                  </ModernDashboardLayout>
+                  <LeadEditPage />
                 </ProtectedRoute>
               } />
 
-              {/* Visit Routes */}
-              {visitRoutes}
-
-              {/* UCO Routes */}
-              {ucoRoutes}
-
-              {/* Orders Routes */}
+              {/* Orders routes */}
               <Route path="/orders" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <OrdersPage />
-                  </ModernDashboardLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/orders/new" element={
-                <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <NewOrderPage />
-                  </ModernDashboardLayout>
+                  <OrdersPage />
                 </ProtectedRoute>
               } />
               <Route path="/orders/:id" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <OrderDetailPage />
-                  </ModernDashboardLayout>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/orders/:id/edit" element={
+                <ProtectedRoute>
+                  <OrderEditPage />
                 </ProtectedRoute>
               } />
 
-              {/* Reports Routes */}
-              <Route path="/reports" element={
+              {/* UCO Collection routes */}
+              <Route path="/uco/dashboard" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <ReportsPage />
-                  </ModernDashboardLayout>
+                  <UcoDashboardPage />
                 </ProtectedRoute>
               } />
-              <Route path="/reports/leads" element={
+              <Route path="/uco/plans/:id" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <LeadReportsPage />
-                  </ModernDashboardLayout>
+                  <UcoCollectionPlanDetailPage />
                 </ProtectedRoute>
               } />
-              <Route path="/reports/performance" element={
+              <Route path="/uco/routes" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <PerformanceReportsPage />
-                  </ModernDashboardLayout>
+                  <UcoRouteOptimizationPage />
                 </ProtectedRoute>
               } />
 
-              {/* Admin Routes */}
-              <Route path="/admin/users" element={
+              {/* Settings route */}
+              <Route path="/settings" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <UsersManagementPage />
-                  </ModernDashboardLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/products" element={
-                <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <ProductsPage />
-                  </ModernDashboardLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/import" element={
-                <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <ImportDataPage />
-                  </ModernDashboardLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/settings" element={
-                <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <SettingsPage />
-                  </ModernDashboardLayout>
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
 
-              {/* Profile & Notifications */}
-              <Route path="/profile" element={
+              {/* Admin route */}
+              <Route path="/admin" element={
                 <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <ProfilePage />
-                  </ModernDashboardLayout>
+                  <AdminPage />
                 </ProtectedRoute>
               } />
-              <Route path="/notifications" element={
-                <ProtectedRoute>
-                  <ModernDashboardLayout>
-                    <NotificationsPage />
-                  </ModernDashboardLayout>
-                </ProtectedRoute>
-              } />
-
-              {/* 404 Route */}
-              <Route path="*" element={<NotFoundPage />} />
+              
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            <Toaster />
-            <SonnerToaster position="bottom-right" />
           </div>
-        </SidebarProvider>
+          <Toaster />
+          <SonnerToaster position="top-right" />
+        </Router>
       </AuthProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;

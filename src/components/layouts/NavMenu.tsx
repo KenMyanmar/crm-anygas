@@ -1,220 +1,157 @@
-import { FC, useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useSidebar } from '@/components/ui/sidebar';
+
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { 
-  SidebarGroup, 
-  SidebarGroupLabel, 
-  SidebarGroupContent, 
-  SidebarMenu, 
-  SidebarMenuItem, 
-  SidebarMenuButton 
-} from '@/components/ui/sidebar';
-import { 
-  BarChart, 
-  FileText, 
-  Home, 
-  Package, 
-  Search, 
-  Settings, 
+  Home,
   Users,
-  Clipboard,
-  CalendarDays,
-  Bell,
-  Plus,
-  MapPin,
-  Route,
+  Phone,
+  Package,
+  ClipboardList,
+  BarChart3,
+  Settings,
   Calendar,
-  ShoppingCart,
-  Truck,
-  Map,
-  Activity
+  CheckSquare,
+  Bell,
+  Truck
 } from 'lucide-react';
 
-interface MenuLinkProps {
-  to: string;
-  icon: React.ComponentType<any>;
-  label: string;
-  end?: boolean;
-}
-
-const MenuLink: FC<MenuLinkProps> = ({ to, icon: Icon, label, end = false }) => {
-  const sidebar = useSidebar();
+const NavMenu = () => {
   const location = useLocation();
-  
-  const isActive = end 
-    ? location.pathname === to
-    : location.pathname === to || location.pathname.startsWith(`${to}/`);
-  
-  const baseClasses = "flex items-center py-2 px-3 rounded-md transition-colors";
-  const activeClasses = "bg-primary/10 text-primary font-medium border-l-2 border-primary";
-  const inactiveClasses = "hover:bg-muted/50 text-muted-foreground hover:text-foreground";
-  
-  const combinedClasses = `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
+
+  const menuItems = [
+    {
+      title: 'Dashboard',
+      href: '/',
+      icon: Home,
+    },
+    {
+      title: 'Calendar',
+      href: '/calendar',
+      icon: Calendar,
+    },
+    {
+      title: 'Tasks',
+      href: '/tasks',
+      icon: CheckSquare,
+    },
+    {
+      title: 'Restaurants',
+      href: '/restaurants',
+      icon: Users,
+    },
+    {
+      title: 'Leads',
+      href: '/leads',
+      icon: Phone,
+      children: [
+        { title: 'All Leads', href: '/leads' },
+        { title: 'Assigned to Me', href: '/leads/assigned' },
+        { title: 'Meetings', href: '/leads/meetings' },
+        { title: 'Calls', href: '/leads/calls' },
+      ],
+    },
+    {
+      title: 'Orders',
+      href: '/orders',
+      icon: Package,
+      children: [
+        { title: 'All Orders', href: '/orders' },
+        { title: 'Pending', href: '/orders/pending' },
+        { title: 'Approved', href: '/orders/approved' },
+        { title: 'Delivered', href: '/orders/delivered' },
+      ],
+    },
+    {
+      title: 'Visits',
+      href: '/visits',
+      icon: ClipboardList,
+      children: [
+        { title: 'Today\'s Visits', href: '/visits/today' },
+        { title: 'Visit Planner', href: '/visits/planner' },
+        { title: 'Dual Business', href: '/visits/dual-business' },
+      ],
+    },
+    {
+      title: 'UCO Collection',
+      href: '/uco',
+      icon: Truck,
+      children: [
+        { title: 'Dashboard', href: '/uco/dashboard' },
+        { title: 'Collection Planner', href: '/uco/planner' },
+        { title: 'Route Optimizer', href: '/uco/routes' },
+        { title: 'Mobile Interface', href: '/uco/mobile' },
+        { title: 'Analytics', href: '/uco/analytics' },
+      ],
+    },
+    {
+      title: 'Reports',
+      href: '/reports',
+      icon: BarChart3,
+      children: [
+        { title: 'Overview', href: '/reports' },
+        { title: 'Leads Analysis', href: '/reports/leads' },
+        { title: 'Sales Performance', href: '/reports/performance' },
+        { title: 'Orders & Sales', href: '/reports/orders-sales' },
+        { title: 'Visits Report', href: '/reports/visits' },
+        { title: 'Restaurants Report', href: '/reports/restaurants' },
+      ],
+    },
+    {
+      title: 'Settings',
+      href: '/settings',
+      icon: Settings,
+    },
+  ];
+
+  const isActiveLink = (href: string) => {
+    if (href === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(href);
+  };
 
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild>
-        <NavLink to={to} className={combinedClasses} end={end}>
-          <Icon className="h-5 w-5 mr-2 flex-shrink-0" />
-          {!sidebar.state.includes("collapsed") && <span>{label}</span>}
-        </NavLink>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
-};
+    <nav className="space-y-1 p-2">
+      {menuItems.map((item) => {
+        const isActive = isActiveLink(item.href);
+        const Icon = item.icon;
 
-const NavMenu: FC = () => {
-  const { profile } = useAuth();
-  const sidebar = useSidebar();
-  const location = useLocation();
-  const isAdminOrManager = profile?.role === 'admin' || profile?.role === 'manager';
-  
-  const [leadsGroupOpen, setLeadsGroupOpen] = useState(false);
-  const [ordersGroupOpen, setOrdersGroupOpen] = useState(false);
-  const [visitsGroupOpen, setVisitsGroupOpen] = useState(false);
-  const [ucoGroupOpen, setUcoGroupOpen] = useState(false);
-  const [reportsGroupOpen, setReportsGroupOpen] = useState(false);
-  const [adminGroupOpen, setAdminGroupOpen] = useState(false);
-  const [restaurantsGroupOpen, setRestaurantsGroupOpen] = useState(false);
-  
-  useEffect(() => {
-    const isLeadsActive = location.pathname.includes('/leads');
-    const isOrdersActive = location.pathname.includes('/orders');
-    const isVisitsActive = location.pathname.includes('/visits');
-    const isUcoActive = location.pathname.includes('/uco');
-    const isReportsActive = location.pathname.includes('/reports');
-    const isSettingsActive = location.pathname.includes('/admin');
-    const isRestaurantsActive = location.pathname.includes('/restaurants');
-    
-    setLeadsGroupOpen(isLeadsActive);
-    setOrdersGroupOpen(isOrdersActive);
-    setVisitsGroupOpen(isVisitsActive);
-    setUcoGroupOpen(isUcoActive);
-    setReportsGroupOpen(isReportsActive);
-    setAdminGroupOpen(isSettingsActive);
-    setRestaurantsGroupOpen(isRestaurantsActive);
-  }, [location.pathname]);
-
-  return (
-    <div className="space-y-1">
-      <SidebarGroup>
-        <SidebarMenu>
-          <MenuLink to="/" icon={Home} label="Dashboard" end={true} />
-          <MenuLink to="/notifications" icon={Bell} label="Notifications" />
-        </SidebarMenu>
-      </SidebarGroup>
-
-      <SidebarGroup>
-        <div onClick={() => setRestaurantsGroupOpen(!restaurantsGroupOpen)} className="cursor-pointer">
-          <SidebarGroupLabel>Restaurants</SidebarGroupLabel>
-        </div>
-        {restaurantsGroupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/restaurants" icon={Search} label="All Restaurants" />
-              <MenuLink to="/restaurants/new" icon={Plus} label="New Restaurant" />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        )}
-      </SidebarGroup>
-      
-      <SidebarGroup>
-        <div onClick={() => setLeadsGroupOpen(!leadsGroupOpen)} className="cursor-pointer">
-          <SidebarGroupLabel>Leads</SidebarGroupLabel>
-        </div>
-        {leadsGroupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/leads" icon={FileText} label="All Leads" />
-              <MenuLink to="/leads/assigned" icon={Clipboard} label="Assigned to Me" />
-              <MenuLink to="/leads/meetings" icon={CalendarDays} label="Meetings" />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        )}
-      </SidebarGroup>
-
-      <SidebarGroup>
-        <div onClick={() => setVisitsGroupOpen(!visitsGroupOpen)} className="cursor-pointer">
-          <SidebarGroupLabel>Visits</SidebarGroupLabel>
-        </div>
-        {visitsGroupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/visits" icon={Calendar} label="Visit Planner" />
-              <MenuLink to="/visits/today" icon={MapPin} label="Today's Visits" />
-              <MenuLink to="/visits/new" icon={Plus} label="New Visit Plan" />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        )}
-      </SidebarGroup>
-      
-      <SidebarGroup>
-        <div onClick={() => setUcoGroupOpen(!ucoGroupOpen)} className="cursor-pointer">
-          <SidebarGroupLabel>UCO Trucks Visit</SidebarGroupLabel>
-        </div>
-        {ucoGroupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/uco/dashboard" icon={Truck} label="UCO Dashboard" />
-              <MenuLink to="/uco/planner" icon={Calendar} label="Collection Plans" />
-              <MenuLink to="/uco/routes" icon={Route} label="Route Optimizer" />
-              <MenuLink to="/uco/mobile" icon={MapPin} label="Driver Interface" />
-              <MenuLink to="/uco/analytics" icon={Activity} label="UCO Analytics" />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        )}
-      </SidebarGroup>
-      
-      <SidebarGroup>
-        <div onClick={() => setOrdersGroupOpen(!ordersGroupOpen)} className="cursor-pointer">
-          <SidebarGroupLabel>Orders</SidebarGroupLabel>
-        </div>
-        {ordersGroupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/orders" icon={ShoppingCart} label="Order Management" />
-              <MenuLink to="/orders/new" icon={Plus} label="Create Order" />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        )}
-      </SidebarGroup>
-      
-      <SidebarGroup>
-        <div onClick={() => setReportsGroupOpen(!reportsGroupOpen)} className="cursor-pointer">
-          <SidebarGroupLabel>Reports</SidebarGroupLabel>
-        </div>
-        {reportsGroupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <MenuLink to="/reports" icon={BarChart} label="Sales Reports" />
-              <MenuLink to="/reports/leads" icon={BarChart} label="Lead Reports" />
-              <MenuLink to="/reports/performance" icon={BarChart} label="Performance" />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        )}
-      </SidebarGroup>
-      
-      {isAdminOrManager && (
-        <SidebarGroup>
-          <div onClick={() => setAdminGroupOpen(!adminGroupOpen)} className="cursor-pointer">
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+        return (
+          <div key={item.href}>
+            <Link
+              to={item.href}
+              className={cn(
+                'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+            >
+              <Icon className="mr-3 h-4 w-4" />
+              {item.title}
+            </Link>
+            {item.children && isActive && (
+              <div className="ml-6 mt-1 space-y-1">
+                {item.children.map((child) => (
+                  <Link
+                    key={child.href}
+                    to={child.href}
+                    className={cn(
+                      'block px-3 py-1 text-xs rounded-md transition-colors',
+                      location.pathname === child.href
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    {child.title}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-          {adminGroupOpen && (
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {profile?.role === 'admin' && (
-                  <MenuLink to="/admin/users" icon={Users} label="Users" />
-                )}
-                <MenuLink to="/admin/products" icon={Package} label="Products" />
-                <MenuLink to="/admin/import" icon={FileText} label="Import Data" />
-                <MenuLink to="/admin/settings" icon={Settings} label="Settings" />
-              </SidebarMenu>
-            </SidebarGroupContent>
-          )}
-        </SidebarGroup>
-      )}
-    </div>
+        );
+      })}
+    </nav>
   );
 };
 
