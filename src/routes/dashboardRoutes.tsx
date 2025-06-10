@@ -1,12 +1,47 @@
 
 import { Route } from 'react-router-dom';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import Dashboard from '@/pages/Dashboard';
+import CalendarPage from '@/components/calendar/CalendarPage';
+import TasksPage from '@/components/tasks/TasksPage';
+import SettingsPage from '@/pages/SettingsPage';
+import AdminPage from '@/pages/AdminPage';
 
-export const dashboardRoutes = (
-  <Route path="/" element={
-    <ModernDashboardLayout>
-      <Dashboard />
-    </ModernDashboardLayout>
+export const dashboardRoutes = [
+  <Route key="dashboard" path="/" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <Dashboard />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  
+  <Route key="calendar" path="/calendar" element={
+    <ProtectedRoute>
+      <CalendarPage />
+    </ProtectedRoute>
+  } />,
+  
+  <Route key="tasks" path="/tasks" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <TasksPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+
+  <Route key="settings" path="/settings" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <SettingsPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+
+  <Route key="admin" path="/admin" element={
+    <ProtectedRoute>
+      <AdminPage />
+    </ProtectedRoute>
   } />
-);
+];

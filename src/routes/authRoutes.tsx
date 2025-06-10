@@ -5,11 +5,9 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import SetNewPassword from '@/pages/SetNewPassword';
 
-export const authRoutes = (
-  <>
-    <Route path="/login" element={<Login />} />
-    <Route path="/forgot-password" element={<ForgotPassword />} />
-    <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/set-new-password" element={<SetNewPassword />} />
-  </>
-);
+export const authRoutes = [
+  <Route key="login" path="/login" element={<Login />} />,
+  <Route key="forgot-password" path="/forgot-password" element={<ForgotPassword />} />,
+  <Route key="reset-password" path="/reset-password" element={<ResetPassword />} />,
+  <Route key="set-new-password" path="/set-new-password" element={<SetNewPassword />} />
+];

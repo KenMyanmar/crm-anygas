@@ -1,32 +1,39 @@
 
 import { Route } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import RestaurantsList from '@/pages/placeholder/RestaurantsPage';
-import RestaurantDetails from '@/pages/RestaurantDetailPage';
-import CreateRestaurant from '@/pages/restaurants/NewRestaurantPage';
-import EditRestaurant from '@/pages/RestaurantEditPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
+import RestaurantsPage from '@/pages/restaurants/RestaurantListPage';
+import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
+import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
+import RestaurantEditPage from '@/pages/RestaurantEditPage';
 
-export const restaurantRoutes = (
-  <>
-    <Route path="/restaurants" element={
-      <DashboardLayout>
-        <RestaurantsList />
-      </DashboardLayout>
-    } />
-    <Route path="/restaurants/:id" element={
-      <DashboardLayout>
-        <RestaurantDetails />
-      </DashboardLayout>
-    } />
-    <Route path="/restaurants/new" element={
-      <DashboardLayout>
-        <CreateRestaurant />
-      </DashboardLayout>
-    } />
-    <Route path="/restaurants/:id/edit" element={
-      <DashboardLayout>
-        <EditRestaurant />
-      </DashboardLayout>
-    } />
-  </>
-);
+export const restaurantRoutes = [
+  <Route key="restaurants" path="/restaurants" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <RestaurantsPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="restaurants-new" path="/restaurants/new" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <NewRestaurantPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="restaurants-detail" path="/restaurants/:id" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <RestaurantDetailPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="restaurants-edit" path="/restaurants/:id/edit" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <RestaurantEditPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />
+];

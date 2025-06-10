@@ -2,65 +2,30 @@
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
-import UcoCollectionDashboard from '@/pages/uco/UcoCollectionDashboard';
+import UcoDashboardPage from '@/pages/uco/UcoCollectionDashboard';
 import UcoCollectionPlanDetailPage from '@/pages/uco/UcoCollectionPlanDetailPage';
-import UcoTrucksDashboard from '@/pages/uco/UcoTrucksDashboard';
-import UcoCollectionPlanner from '@/pages/uco/UcoCollectionPlanner';
-import UcoRouteOptimizer from '@/pages/uco/UcoRouteOptimizer';
-import UcoMobileInterface from '@/pages/uco/UcoMobileInterface';
-import UcoAnalytics from '@/pages/uco/UcoAnalytics';
-import NewUcoPlanPage from '@/pages/uco/NewUcoPlanPage';
+import UcoRouteOptimizationPage from '@/pages/uco/UcoRouteOptimizer';
 
-export const ucoRoutes = (
-  <>
-    <Route path="/uco/dashboard" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <UcoCollectionDashboard />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/uco/plans/:id" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <UcoCollectionPlanDetailPage />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/uco/planner" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <UcoCollectionPlanner />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/uco/planner/new" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <NewUcoPlanPage />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/uco/routes" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <UcoRouteOptimizer />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/uco/mobile" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <UcoMobileInterface />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/uco/analytics" element={
-      <ProtectedRoute>
-        <ModernDashboardLayout>
-          <UcoAnalytics />
-        </ModernDashboardLayout>
-      </ProtectedRoute>
-    } />
-  </>
-);
+export const ucoRoutes = [
+  <Route key="uco-dashboard" path="/uco/dashboard" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <UcoDashboardPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="uco-plans-detail" path="/uco/plans/:id" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <UcoCollectionPlanDetailPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="uco-routes" path="/uco/routes" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <UcoRouteOptimizationPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />
+];

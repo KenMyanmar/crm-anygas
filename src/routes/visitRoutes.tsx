@@ -1,38 +1,47 @@
 
 import { Route } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import VisitPlanner from '@/pages/visits/VisitPlannerPage';
-import TodayVisits from '@/pages/visits/TodaysVisitsPage';
-import CreateVisit from '@/pages/visits/NewVisitPlanPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
+import VisitPlannerPage from '@/pages/visits/VisitPlannerPage';
+import TodaysVisitsPage from '@/pages/visits/TodaysVisitsPage';
+import NewVisitPlanPage from '@/pages/visits/NewVisitPlanPage';
 import VisitPlanDetailPage from '@/pages/visits/VisitPlanDetailPage';
 import TaskOutcomePage from '@/pages/visits/TaskOutcomePage';
 
-export const visitRoutes = (
-  <>
-    <Route path="/visits" element={
-      <DashboardLayout>
-        <VisitPlanner />
-      </DashboardLayout>
-    } />
-    <Route path="/visits/today" element={
-      <DashboardLayout>
-        <TodayVisits />
-      </DashboardLayout>
-    } />
-    <Route path="/visits/new" element={
-      <DashboardLayout>
-        <CreateVisit />
-      </DashboardLayout>
-    } />
-    <Route path="/visits/plans/:id" element={
-      <DashboardLayout>
+export const visitRoutes = [
+  <Route key="visits" path="/visits" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <VisitPlannerPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="visits-today" path="/visits/today" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <TodaysVisitsPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="visits-new" path="/visits/new" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <NewVisitPlanPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="visits-plans-detail" path="/visits/plans/:id" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
         <VisitPlanDetailPage />
-      </DashboardLayout>
-    } />
-    <Route path="/visits/tasks/:id/outcome" element={
-      <DashboardLayout>
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="visits-tasks-outcome" path="/visits/tasks/:id/outcome" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
         <TaskOutcomePage />
-      </DashboardLayout>
-    } />
-  </>
-);
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />
+];
