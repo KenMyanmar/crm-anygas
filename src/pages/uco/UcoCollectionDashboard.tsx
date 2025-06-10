@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,21 +39,19 @@ const UcoCollectionDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-64"></div>
-          <div className="grid gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-muted rounded"></div>
-            ))}
-          </div>
+      <div className="animate-pulse space-y-6">
+        <div className="h-8 bg-muted rounded w-64"></div>
+        <div className="grid gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-32 bg-muted rounded"></div>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -1,7 +1,9 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 
@@ -120,20 +122,26 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              {/* UCO Collection routes */}
+              {/* UCO Collection routes - Now properly wrapped with ModernDashboardLayout */}
               <Route path="/uco/dashboard" element={
                 <ProtectedRoute>
-                  <UcoDashboardPage />
+                  <ModernDashboardLayout>
+                    <UcoDashboardPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/uco/plans/:id" element={
                 <ProtectedRoute>
-                  <UcoCollectionPlanDetailPage />
+                  <ModernDashboardLayout>
+                    <UcoCollectionPlanDetailPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
               <Route path="/uco/routes" element={
                 <ProtectedRoute>
-                  <UcoRouteOptimizationPage />
+                  <ModernDashboardLayout>
+                    <UcoRouteOptimizationPage />
+                  </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
 
