@@ -111,7 +111,7 @@ const CalendarPage = () => {
           </Button>
         </div>
 
-        <Tabs value={view} onValueChange={handleViewChange} className="space-y-4">
+        <Tabs value={view} onValueChange={(value) => handleViewChange(value as View)} className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="month" className="flex items-center gap-2">
               <Grid className="h-4 w-4" />
