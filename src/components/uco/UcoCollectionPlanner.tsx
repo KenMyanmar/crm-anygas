@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Truck, MapPin, Calendar, Users, Upload, Download, Route, Smartphone } from 'lucide-react';
-import { useUcoCollectionPlans, useUcoCollectionItems } from '@/hooks/useUcoCollectionPlans';
+import { useUcoPlans } from '@/hooks/useUcoPlans';
+import { useUcoItems } from '@/hooks/useUcoItems';
 import { useTownshipAnalytics, useRestaurantsByTownship } from '@/hooks/useTownshipAnalytics';
 import { useGoogleSheetsIntegration } from '@/hooks/useGoogleSheetsIntegration';
 import { useAuth } from '@/context/AuthContext';
@@ -22,7 +23,7 @@ import { UcoTownshipMultiSelector } from './UcoTownshipMultiSelector';
 
 export const UcoCollectionPlanner: React.FC = () => {
   const { profile } = useAuth();
-  const { plans, createPlan } = useUcoCollectionPlans();
+  const { plans, createPlan } = useUcoPlans();
   const { analytics } = useTownshipAnalytics();
   const { exportToGoogleSheets } = useGoogleSheetsIntegration();
   const [selectedTownship, setSelectedTownship] = useState<string>('');
@@ -37,7 +38,7 @@ export const UcoCollectionPlanner: React.FC = () => {
   });
 
   const { restaurants } = useRestaurantsByTownship(selectedTownship);
-  const { items: collectionItems } = useUcoCollectionItems(selectedPlanId);
+  const { items: collectionItems } = useUcoItems(selectedPlanId);
 
   const handleCreatePlan = async () => {
     if (!profile?.id) {

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUcoCollectionPlans } from '@/hooks/useUcoCollectionPlans';
+import { useUcoPlans } from '@/hooks/useUcoPlans';
 import { useAuth } from '@/context/AuthContext';
 import { Truck, Plus, Calendar, MapPin, Users, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
@@ -14,7 +13,8 @@ import { format } from 'date-fns';
 const UcoCollectionDashboard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { plans, isLoading } = useUcoCollectionPlans();
+  const { plans, isLoading } = useUcoPlans();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [townshipFilter, setTownshipFilter] = useState('all');

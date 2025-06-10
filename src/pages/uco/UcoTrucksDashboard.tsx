@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useUcoCollectionPlans } from '@/hooks/useUcoCollectionPlans';
+import { useUcoPlans } from '@/hooks/useUcoPlans';
 import { 
   Truck, 
   Calendar, 
@@ -21,7 +20,7 @@ import { format, isToday, isTomorrow } from 'date-fns';
 
 const UcoTrucksDashboard = () => {
   const navigate = useNavigate();
-  const { plans, isLoading } = useUcoCollectionPlans();
+  const { plans, isLoading } = useUcoPlans();
 
   const todaysPlans = plans?.filter(plan => plan.plan_date && isToday(new Date(plan.plan_date))) || [];
   const tomorrowsPlans = plans?.filter(plan => plan.plan_date && isTomorrow(new Date(plan.plan_date))) || [];

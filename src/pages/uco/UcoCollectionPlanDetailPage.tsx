@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useUcoCollectionPlans, useUcoCollectionItems } from '@/hooks/useUcoCollectionPlans';
+import { useUcoPlans } from '@/hooks/useUcoPlans';
+import { useUcoItems } from '@/hooks/useUcoItems';
 import { useAuth } from '@/context/AuthContext';
 import { UcoBulkRestaurantSelector } from '@/components/uco/UcoBulkRestaurantSelector';
 import { ArrowLeft, Plus, MapPin, Truck, Calendar, Users, Route } from 'lucide-react';
@@ -16,8 +16,8 @@ const UcoCollectionPlanDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { plans } = useUcoCollectionPlans();
-  const { items, isLoading: itemsLoading, bulkCreateItems } = useUcoCollectionItems(id);
+  const { plans } = useUcoPlans();
+  const { items, isLoading: itemsLoading, bulkCreateItems } = useUcoItems(id);
   const [showRestaurantSelector, setShowRestaurantSelector] = useState(false);
 
   const plan = plans?.find(p => p.id === id);
