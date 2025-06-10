@@ -9,7 +9,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 
 // page imports
-import DashboardWithAI from '@/components/dashboard/DashboardWithAI';
 import RestaurantListPage from '@/pages/restaurants/RestaurantListPage';
 import NewRestaurantPage from '@/pages/restaurants/NewRestaurantPage';
 import RestaurantDetailPage from '@/pages/RestaurantDetailPage';
@@ -45,9 +44,16 @@ const App = () => {
               <Route path="/" element={
                 <ProtectedRoute>
                   <ModernDashboardLayout>
-                    <DashboardWithAI>
-                      <div />
-                    </DashboardWithAI>
+                    <div className="space-y-6">
+                      <div className="text-center py-12">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                          Welcome to AnyGas Myanmar
+                        </h1>
+                        <p className="text-lg text-gray-600">
+                          Your comprehensive business management platform
+                        </p>
+                      </div>
+                    </div>
                   </ModernDashboardLayout>
                 </ProtectedRoute>
               } />
