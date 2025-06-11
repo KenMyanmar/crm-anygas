@@ -8,6 +8,7 @@ import { queryClient } from '@/config/queryClient';
 
 // Route imports
 import { authRoutes } from '@/routes/authRoutes';
+import { adminRoutes } from '@/routes/adminRoutes';
 import { dashboardRoutes } from '@/routes/dashboardRoutes';
 import { restaurantRoutes } from '@/routes/restaurantRoutes';
 import { leadRoutes } from '@/routes/leadRoutes';
@@ -26,6 +27,7 @@ function App() {
               {authRoutes}
 
               {/* Protected routes */}
+              {adminRoutes}
               {dashboardRoutes}
               {restaurantRoutes}
               {leadRoutes}
