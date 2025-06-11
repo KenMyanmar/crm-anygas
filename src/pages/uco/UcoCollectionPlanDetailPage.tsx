@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UcoBulkRestaurantSelector } from '@/components/uco/UcoBulkRestaurantSelector';
 import { PlanHeader } from '@/components/uco/plan-detail/PlanHeader';
@@ -73,6 +73,9 @@ const UcoCollectionPlanDetailPage = () => {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Add Restaurants to Collection Plan</DialogTitle>
+            <DialogDescription>
+              Select restaurants to add to your UCO collection plan. You can filter by township and search for specific restaurants.
+            </DialogDescription>
           </DialogHeader>
           <UcoBulkRestaurantSelector
             onConfirm={handleAddRestaurants}

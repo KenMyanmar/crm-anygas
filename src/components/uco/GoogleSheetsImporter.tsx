@@ -30,7 +30,12 @@ export const GoogleSheetsImporter: React.FC<GoogleSheetsImporterProps> = ({
   const isValidUrl = sheetsUrl && parseGoogleSheetsUrl(sheetsUrl);
 
   const handleImport = async () => {
-    if (!isValidUrl || !planName || !township) return;
+    if (!isValidUrl || !planName || !township) {
+      console.error('Missing required fields:', { isValidUrl, planName, township });
+      return;
+    }
+
+    console.log('Starting Google Sheets import with:', { sheetsUrl, planName, township });
 
     try {
       const result = await importFromGoogleSheets.mutateAsync({
@@ -38,6 +43,8 @@ export const GoogleSheetsImporter: React.FC<GoogleSheetsImporterProps> = ({
         planName,
         township,
       });
+      
+      console.log('Import successful:', result);
       
       if (onImportComplete && result.plan) {
         onImportComplete(result.plan.id);
@@ -48,7 +55,7 @@ export const GoogleSheetsImporter: React.FC<GoogleSheetsImporterProps> = ({
       setPlanName('');
       setTownship('');
     } catch (error) {
-      console.error('Import failed:', error);
+      console.error('Import failed with error:', error);
     }
   };
 
@@ -67,6 +74,8 @@ export const GoogleSheetsImporter: React.FC<GoogleSheetsImporterProps> = ({
             <strong>Required format:</strong> Restaurant Name, Township, UCO Status, Priority, Expected Volume, Route Sequence, Notes
             <br />
             <strong>Example:</strong> Restaurant ABC, Yankin, have_uco, high, 25, 1, Good quality supplier
+            <br />
+            <strong>Important:</strong> Make sure your Google Sheet is publicly viewable (Anyone with link can view)
           </AlertDescription>
         </Alert>
 
@@ -134,6 +143,7 @@ export const GoogleSheetsImporter: React.FC<GoogleSheetsImporterProps> = ({
           <p>1. Make sure your Google Sheet is publicly viewable (Anyone with link can view)</p>
           <p>2. First row should contain headers</p>
           <p>3. Restaurants will be matched by name and township</p>
+          <p>4. If restaurants don't exist in the system, they won't be imported</p>
         </div>
       </CardContent>
     </Card>
