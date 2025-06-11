@@ -1,6 +1,7 @@
 
 import { Route } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import ModernDashboardLayout from '@/components/layouts/ModernDashboardLayout';
 import ReportsMainPage from '@/pages/reports/ReportsMainPage';
 import OrdersSalesReportPage from '@/pages/reports/OrdersSalesReportPage';
 import VisitsReportPage from '@/pages/reports/VisitsReportPage';
@@ -11,34 +12,46 @@ import PerformanceReports from '@/pages/reports/PerformancePage';
 export const reportRoutes = (
   <>
     <Route path="/reports" element={
-      <DashboardLayout>
-        <ReportsMainPage />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <ReportsMainPage />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/reports/orders-sales" element={
-      <DashboardLayout>
-        <OrdersSalesReportPage />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <OrdersSalesReportPage />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/reports/visits" element={
-      <DashboardLayout>
-        <VisitsReportPage />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <VisitsReportPage />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/reports/restaurants" element={
-      <DashboardLayout>
-        <RestaurantsReportPage />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <RestaurantsReportPage />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/reports/leads" element={
-      <DashboardLayout>
-        <LeadReports />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <LeadReports />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
     <Route path="/reports/performance" element={
-      <DashboardLayout>
-        <PerformanceReports />
-      </DashboardLayout>
+      <ProtectedRoute>
+        <ModernDashboardLayout>
+          <PerformanceReports />
+        </ModernDashboardLayout>
+      </ProtectedRoute>
     } />
   </>
 );
