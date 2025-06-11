@@ -15,6 +15,7 @@ import { leadRoutes } from '@/routes/leadRoutes';
 import { orderRoutes } from '@/routes/orderRoutes';
 import { visitRoutes } from '@/routes/visitRoutes';
 import { ucoRoutes } from '@/routes/ucoRoutes';
+import { reportRoutes } from '@/routes/reportRoutes';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               {orderRoutes}
               {visitRoutes}
               {ucoRoutes}
+              {reportRoutes}
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
