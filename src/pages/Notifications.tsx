@@ -1,136 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext';
-import { UserNotification } from '@/types';
+import React from 'react';
+import { useNotifications } from '@/context/NotificationContext';
 import NotificationsCard from '@/components/dashboard/NotificationsCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BellOff } from 'lucide-react';
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const { profile } = useAuth();
-
-  const fetchNotifications = async () => {
-    try {
-      setIsLoading(true);
-      
-      if (!profile?.id) {
-        setIsLoading(false);
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', profile.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Transform the data to match UserNotification type
-      const transformedData: UserNotification[] = data.map((item) => ({
-        id: item.id,
-        user_id: item.user_id,
-        title: item.title,
-        message: item.message,
-        link: item.link,
-        read: item.is_read, // Note the field name difference
-        created_at: item.created_at
-      }));
-      
-      setNotifications(transformedData);
-    } catch (error: any) {
-      console.error('Error fetching notifications:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load notifications',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [profile]);
-
-  const handleMarkAsRead = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id);
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Update local state to reflect the change
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === id 
-            ? { ...notification, read: true } 
-            : notification
-        )
-      );
-      
-      toast({
-        title: 'Success',
-        description: 'Notification marked as read',
-      });
-    } catch (error: any) {
-      console.error('Error marking notification as read:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update notification',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      if (!profile?.id || notifications.length === 0) return;
-      
-      const unreadNotifications = notifications.filter(n => !n.read);
-      if (unreadNotifications.length === 0) return;
-      
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', profile.id)
-        .eq('is_read', false);
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Update local state to reflect all notifications as read
-      setNotifications(prev => 
-        prev.map(notification => ({ ...notification, read: true }))
-      );
-      
-      toast({
-        title: 'Success',
-        description: 'All notifications marked as read',
-      });
-    } catch (error: any) {
-      console.error('Error marking all notifications as read:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update notifications',
-        variant: 'destructive',
-      });
-    }
-  };
+  const { 
+    notifications, 
+    isLoading, 
+    markAsRead, 
+    markAllAsRead,
+    unreadCount
+  } = useNotifications();
 
   return (
     <div className="space-y-6">
@@ -138,8 +21,8 @@ const NotificationsPage = () => {
         <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
         <Button 
           variant="outline"
-          onClick={handleMarkAllAsRead}
-          disabled={!notifications.some(n => !n.read) || isLoading}
+          onClick={markAllAsRead}
+          disabled={unreadCount === 0 || isLoading}
         >
           Mark all as read
         </Button>
@@ -156,7 +39,7 @@ const NotificationsPage = () => {
       ) : notifications.length > 0 ? (
         <NotificationsCard 
           notifications={notifications} 
-          onMarkAsRead={handleMarkAsRead}
+          onMarkAsRead={markAsRead}
         />
       ) : (
         <Card className="p-8 text-center">

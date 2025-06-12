@@ -1,4 +1,3 @@
-
 import { FC, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -24,15 +23,17 @@ import {
   UserPlus,
   CalendarDays 
 } from 'lucide-react';
+import { useNotifications } from '@/context/NotificationContext';
 
 interface HeaderProps {
   unreadNotifications: number;
 }
 
-const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
+const Header: FC<HeaderProps> = () => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { unreadCount } = useNotifications();
   const [upcomingMeetings, setUpcomingMeetings] = useState(0);
   
   // React Strict Mode guard
@@ -117,9 +118,9 @@ const Header: FC<HeaderProps> = ({ unreadNotifications }) => {
           aria-label="View notifications"
         >
           <Bell className="h-5 w-5" />
-          {unreadNotifications > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-              {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>

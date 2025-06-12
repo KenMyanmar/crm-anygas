@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { DashboardData, LeadStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { useNotifications } from '@/context/NotificationContext';
 
 let dashboardDataCache: DashboardData | null = null;
 let lastFetchTime = 0;
@@ -11,6 +11,7 @@ const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
 export const useDashboardData = () => {
   const { profile } = useAuth();
+  const { notifications } = useNotifications();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(dashboardDataCache);
   const [isLoading, setIsLoading] = useState(!dashboardDataCache);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +46,7 @@ export const useDashboardData = () => {
           lead_summary: [],
           upcoming_actions: [],
           recent_activity: [],
-          notifications: []
+          notifications: notifications || []
         };
         setDashboardData(emptyData);
         dashboardDataCache = emptyData;
@@ -53,7 +54,7 @@ export const useDashboardData = () => {
         return;
       }
       
-      // Transform the data to match our interface
+      // Transform the data to match our interface, but use notifications from context
       const transformedData: DashboardData = {
         lead_summary: Array.isArray(data.leads_by_status) ? data.leads_by_status.map((item: any) => ({
           status: item.status as LeadStatus,
@@ -74,15 +75,7 @@ export const useDashboardData = () => {
           activity_message: item.activity_message,
           created_at: item.created_at
         })) : [],
-        notifications: Array.isArray(data.user_notifications) ? data.user_notifications.map((item: any) => ({
-          id: item.id,
-          user_id: item.user_id,
-          title: item.title,
-          message: item.message,
-          link: item.link,
-          read: item.read,
-          created_at: item.created_at
-        })) : []
+        notifications: notifications || []
       };
       
       console.log('Dashboard data loaded successfully');
@@ -134,17 +127,7 @@ export const useDashboardData = () => {
               target_type: 'LEAD'
             }
           ],
-          notifications: [
-            {
-              id: '1',
-              user_id: profile?.id || '',
-              title: 'New Lead Assigned',
-              message: 'You have been assigned a new lead for Ocean View Restaurant',
-              link: '/leads/4',
-              read: false,
-              created_at: new Date(Date.now() - 1800000).toISOString()
-            }
-          ]
+          notifications: notifications || []
         };
         setDashboardData(mockData);
         dashboardDataCache = mockData;
@@ -154,6 +137,13 @@ export const useDashboardData = () => {
       setIsLoading(false);
     }
   };
+
+  // Update dashboard data when notifications change
+  useEffect(() => {
+    if (dashboardData && notifications) {
+      setDashboardData(prev => prev ? { ...prev, notifications } : null);
+    }
+  }, [notifications, dashboardData]);
 
   useEffect(() => {
     if (profile && !dashboardDataCache) {

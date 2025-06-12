@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw, Download, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useNotifications } from '@/context/NotificationContext';
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +19,7 @@ interface DashboardHeaderProps {
 const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { refreshNotifications } = useNotifications();
   
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -26,6 +27,13 @@ const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
     month: 'long', 
     day: 'numeric' 
   });
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      onRefresh(),
+      refreshNotifications()
+    ]);
+  };
 
   return (
     <div className="flex flex-col space-y-4">
@@ -51,7 +59,7 @@ const DashboardHeader = ({ onRefresh }: DashboardHeaderProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={onRefresh} className="h-9 w-9">
+                <Button variant="outline" size="icon" onClick={handleRefresh} className="h-9 w-9">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
