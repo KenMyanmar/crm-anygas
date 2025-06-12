@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Restaurant } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { hasAdminAccess } from '@/utils/roleUtils';
+import { deleteRestaurant } from '@/utils/restaurantDeleteUtils';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import RestaurantInfo from '@/components/restaurants/RestaurantInfo';
 import RestaurantActivity from '@/components/restaurants/RestaurantActivity';
@@ -12,14 +15,28 @@ import RestaurantTimeline from '@/components/restaurants/RestaurantTimeline';
 import RestaurantNotes from '@/components/restaurants/RestaurantNotes';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Edit, Package, MapPin, FileText, Calendar, Users, Truck } from 'lucide-react';
+import { ChevronLeft, Edit, Package, MapPin, FileText, Calendar, Users, Truck, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { RestaurantUcoInfo } from '@/components/restaurants/RestaurantUcoInfo';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const RestaurantDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { profile } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -64,6 +81,39 @@ const RestaurantDetailPage = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteRestaurant = async () => {
+    if (!restaurant || !id) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteRestaurant(id);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+        // Navigate back to restaurants list after successful deletion
+        navigate('/restaurants');
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error deleting restaurant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete restaurant",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -112,12 +162,41 @@ const RestaurantDetailPage = () => {
               </p>
             </div>
           </div>
-          <Link to={`/restaurants/${restaurant.id}/edit`}>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Restaurant
-            </Button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link to={`/restaurants/${restaurant.id}/edit`}>
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Restaurant
+              </Button>
+            </Link>
+            {hasAdminAccess(profile?.role) && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isDeleting}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {isDeleting ? 'Deleting...' : 'Delete Restaurant'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Restaurant</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{restaurant.name}"? This action cannot be undone and will permanently delete the restaurant and all related data including orders, leads, visits, and meetings.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteRestaurant}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete Permanently
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}

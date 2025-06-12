@@ -1941,6 +1941,13 @@ export type Database = {
           message: string
         }[]
       }
+      delete_restaurant_safely: {
+        Args: { restaurant_uuid: string }
+        Returns: {
+          success: boolean
+          message: string
+        }[]
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
