@@ -19,7 +19,8 @@ import {
   Package,
   Truck,
   Route,
-  Activity
+  Activity,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,7 +74,8 @@ const MainNavigation = () => {
 
   const adminItems = [
     ...(profile?.role === 'admin' ? [{ label: 'Users', icon: Users, path: '/admin/users' }] : []),
-    { label: 'Products', icon: Package, path: '/admin/products' }
+    { label: 'Products', icon: Package, path: '/admin/products' },
+    { label: 'Restaurant Management', icon: Building2, path: '/admin/restaurants' }
   ];
 
   return (
