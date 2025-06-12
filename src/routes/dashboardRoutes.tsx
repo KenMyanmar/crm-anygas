@@ -7,12 +7,21 @@ import CalendarPage from '@/components/calendar/CalendarPage';
 import TasksPage from '@/components/tasks/TasksPage';
 import SettingsPage from '@/pages/SettingsPage';
 import AdminPage from '@/pages/AdminPage';
+import ProfilePage from '@/pages/ProfilePage';
 
 export const dashboardRoutes = [
   <Route key="dashboard" path="/" element={
     <ProtectedRoute>
       <ModernDashboardLayout>
         <Dashboard />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  
+  <Route key="profile" path="/profile" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <ProfilePage />
       </ModernDashboardLayout>
     </ProtectedRoute>
   } />,
