@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -20,7 +21,8 @@ const NewRestaurantPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [followUpData, setFollowUpData] = useState<any>(null);
   
-  const isAdmin: boolean = hasAdminAccess(profile?.role || '');
+  // Ensure isAdmin is properly typed as boolean
+  const isAdmin = Boolean(hasAdminAccess(profile?.role || ''));
   
   const [formData, setFormData] = useState({
     name: '',
