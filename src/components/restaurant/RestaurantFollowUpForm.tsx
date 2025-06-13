@@ -17,7 +17,6 @@ import { Switch } from '@/components/ui/switch';
 import { useUsers } from '@/hooks/useLeads';
 
 interface FollowUpFormData {
-  title: string;
   description: string;
   dueDate: string;
   dueTime: string;
@@ -29,17 +28,18 @@ interface RestaurantFollowUpFormProps {
   onSubmit: (followUpData: FollowUpFormData) => void;
   isLoading?: boolean;
   defaultAssignee?: string;
+  restaurantName?: string;
 }
 
 export const RestaurantFollowUpForm: React.FC<RestaurantFollowUpFormProps> = ({
   onSubmit,
   isLoading = false,
-  defaultAssignee
+  defaultAssignee,
+  restaurantName
 }) => {
   const { users } = useUsers();
   const [isEnabled, setIsEnabled] = useState(false);
   const [formData, setFormData] = useState<FollowUpFormData>({
-    title: 'Follow up with restaurant',
     description: '',
     dueDate: '',
     dueTime: '09:00',
@@ -63,6 +63,9 @@ export const RestaurantFollowUpForm: React.FC<RestaurantFollowUpFormProps> = ({
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toISOString().split('T')[0];
 
+  // Generate task title preview
+  const taskTitlePreview = restaurantName ? `Follow up with ${restaurantName}` : 'Follow up with restaurant';
+
   return (
     <Card className="mt-6">
       <CardHeader>
@@ -82,18 +85,13 @@ export const RestaurantFollowUpForm: React.FC<RestaurantFollowUpFormProps> = ({
       {isEnabled && (
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="follow-up-title">Task Title</Label>
-                <Input
-                  id="follow-up-title"
-                  value={formData.title}
-                  onChange={(e) => handleFieldChange('title', e.target.value)}
-                  placeholder="Follow up with restaurant"
-                  required
-                />
-              </div>
+            {/* Show auto-generated task title */}
+            <div className="p-3 bg-gray-50 rounded-lg border">
+              <Label className="text-sm font-medium text-gray-700">Task Title (Auto-generated)</Label>
+              <p className="text-sm text-gray-900 mt-1">{taskTitlePreview}</p>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="follow-up-assignee">Assign To</Label>
                 <Select
@@ -113,6 +111,26 @@ export const RestaurantFollowUpForm: React.FC<RestaurantFollowUpFormProps> = ({
                         </div>
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="follow-up-priority">Priority</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => 
+                    handleFieldChange('priority', value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low Priority</SelectItem>
+                    <SelectItem value="medium">Medium Priority</SelectItem>
+                    <SelectItem value="high">High Priority</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -138,26 +156,6 @@ export const RestaurantFollowUpForm: React.FC<RestaurantFollowUpFormProps> = ({
                   onChange={(e) => handleFieldChange('dueTime', e.target.value)}
                   required
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="follow-up-priority">Priority</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => 
-                    handleFieldChange('priority', value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low Priority</SelectItem>
-                    <SelectItem value="medium">Medium Priority</SelectItem>
-                    <SelectItem value="high">High Priority</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 

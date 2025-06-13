@@ -34,7 +34,12 @@ const NewRestaurantPage = () => {
   });
 
   const handleFollowUpSubmit = (data: any) => {
-    setFollowUpData(data);
+    // Auto-generate the task title based on restaurant name
+    const taskTitle = formData.name ? `Follow up with ${formData.name}` : 'Follow up with restaurant';
+    setFollowUpData({
+      ...data,
+      title: taskTitle
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,6 +124,7 @@ const NewRestaurantPage = () => {
             onSubmit={handleFollowUpSubmit}
             isLoading={isSubmitting}
             defaultAssignee={formData.salesperson_id}
+            restaurantName={formData.name}
           />
 
           <RestaurantFormActions
