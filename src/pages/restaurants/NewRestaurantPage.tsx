@@ -20,8 +20,8 @@ const NewRestaurantPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [followUpData, setFollowUpData] = useState<any>(null);
   
-  // Ensure isAdmin is properly typed as boolean with explicit type casting
-  const isAdmin: boolean = hasAdminAccess(profile?.role || '') === true;
+  // Explicitly convert to boolean to resolve TypeScript error
+  const isAdmin = Boolean(hasAdminAccess(profile?.role));
   
   const [formData, setFormData] = useState({
     name: '',
