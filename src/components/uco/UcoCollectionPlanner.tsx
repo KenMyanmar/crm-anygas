@@ -26,6 +26,7 @@ export const UcoCollectionPlanner: React.FC = () => {
     setIsImportDialogOpen,
     setNewPlan,
     handleCreatePlan,
+    handleSelectPlan,
     handleExportPlan,
     isCreating,
   } = useUcoCollectionPlanner();
@@ -94,7 +95,7 @@ export const UcoCollectionPlanner: React.FC = () => {
 
       <RecentPlans
         plans={plans}
-        onSelectPlan={setSelectedPlanId}
+        onSelectPlan={handleSelectPlan}
         onExportPlan={handleExportPlan}
       />
     </div>

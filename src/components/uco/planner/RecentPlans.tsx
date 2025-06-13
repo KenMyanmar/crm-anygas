@@ -19,8 +19,12 @@ export const RecentPlans = ({ plans, onSelectPlan, onExportPlan }: RecentPlansPr
       <CardContent>
         <div className="space-y-3">
           {plans?.slice(0, 5).map((plan) => (
-            <div key={plan.id} className="flex justify-between items-center p-3 border rounded-lg">
-              <div>
+            <div 
+              key={plan.id} 
+              className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+              onClick={() => onSelectPlan(plan.id)}
+            >
+              <div className="flex-1">
                 <h4 className="font-medium">{plan.plan_name}</h4>
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   <span className="flex items-center">
@@ -43,14 +47,20 @@ export const RecentPlans = ({ plans, onSelectPlan, onExportPlan }: RecentPlansPr
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onSelectPlan(plan.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectPlan(plan.id);
+                  }}
                 >
                   Select
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onExportPlan(plan.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExportPlan(plan.id);
+                  }}
                 >
                   <Download className="h-3 w-3" />
                 </Button>

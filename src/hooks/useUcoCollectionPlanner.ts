@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useUcoPlans } from '@/hooks/useUcoPlans';
 import { useTownshipAnalytics, useRestaurantsByTownship } from '@/hooks/useTownshipAnalytics';
@@ -16,6 +17,7 @@ interface NewPlanState {
 }
 
 export const useUcoCollectionPlanner = () => {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const { plans, createPlan } = useUcoPlans();
   const { analytics } = useTownshipAnalytics();
@@ -64,6 +66,10 @@ export const useUcoCollectionPlanner = () => {
     }
   };
 
+  const handleSelectPlan = (planId: string) => {
+    navigate(`/uco/plans/${planId}`);
+  };
+
   const handleExportPlan = async (planId: string) => {
     try {
       await exportToGoogleSheets.mutateAsync(planId);
@@ -91,6 +97,7 @@ export const useUcoCollectionPlanner = () => {
     setIsImportDialogOpen,
     setNewPlan,
     handleCreatePlan,
+    handleSelectPlan,
     handleExportPlan,
     
     // Loading states
