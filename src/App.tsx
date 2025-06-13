@@ -1,4 +1,5 @@
 
+
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import { ucoRoutes } from './routes/ucoRoutes';
 import { reportRoutes } from './routes/reportRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { publicRoutes } from './routes/publicRoutes';
+import { visitRoutes } from './routes/visitRoutes';
 import { Toaster } from '@/components/ui/toaster';
 import { NotificationProvider } from '@/context/NotificationContext';
 
@@ -41,6 +43,9 @@ function App() {
                 {/* Order Routes */}
                 {orderRoutes}
 
+                {/* Visit Routes */}
+                {visitRoutes}
+
                 {/* UCO Routes */}
                 {ucoRoutes}
 
@@ -60,3 +65,4 @@ function App() {
 }
 
 export default App;
+
