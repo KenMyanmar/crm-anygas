@@ -20,7 +20,7 @@ const NewRestaurantPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [followUpData, setFollowUpData] = useState<any>(null);
   
-  const isAdmin = hasAdminAccess(profile?.role);
+  const isAdmin: boolean = hasAdminAccess(profile?.role || '');
   
   const [formData, setFormData] = useState({
     name: '',
