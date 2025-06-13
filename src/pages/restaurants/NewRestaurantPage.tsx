@@ -1,10 +1,9 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { useUsers } from '@/hooks/useLeads';
-import { hasAdminAccess } from '@/utils/roleUtils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { RestaurantFollowUpForm } from '@/components/restaurant/RestaurantFollowUpForm';
@@ -15,13 +14,9 @@ import { useFollowUpTaskManager } from '@/hooks/useFollowUpTaskManager';
 const NewRestaurantPage = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { users, isLoading: usersLoading } = useUsers();
   const { createFollowUpTask } = useFollowUpTaskManager();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [followUpData, setFollowUpData] = useState<any>(null);
-  
-  // Explicitly convert to boolean to resolve TypeScript error
-  const isAdmin = Boolean(hasAdminAccess(profile?.role));
   
   const [formData, setFormData] = useState({
     name: '',
@@ -130,8 +125,6 @@ const NewRestaurantPage = () => {
           <RestaurantFormActions
             isSubmitting={isSubmitting}
             isFormValid={isFormValid}
-            usersLoading={usersLoading}
-            isAdmin={isAdmin}
             onCancel={() => navigate('/restaurants')}
           />
         </form>
