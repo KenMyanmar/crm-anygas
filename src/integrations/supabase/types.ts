@@ -403,6 +403,47 @@ export type Database = {
           },
         ]
       }
+      follow_up_escalations: {
+        Row: {
+          created_at: string | null
+          escalated_at: string | null
+          escalated_to_user_id: string
+          escalation_reason: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          escalated_at?: string | null
+          escalated_to_user_id: string
+          escalation_reason?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          escalated_at?: string | null
+          escalated_to_user_id?: string
+          escalation_reason?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_escalations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           assigned_to_user_id: string
@@ -1933,6 +1974,16 @@ export type Database = {
       }
     }
     Functions: {
+      check_overdue_tasks: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          task_id: string
+          restaurant_name: string
+          assigned_user_name: string
+          due_date: string
+          hours_overdue: number
+        }[]
+      }
       delete_all_restaurants_safely: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1951,6 +2002,12 @@ export type Database = {
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_manager_user_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+        }[]
       }
       get_my_dashboard_data: {
         Args: Record<PropertyKey, never>

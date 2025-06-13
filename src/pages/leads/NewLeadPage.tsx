@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ChevronLeft } from 'lucide-react';
+import { RestaurantFollowUpForm } from '@/components/restaurant/RestaurantFollowUpForm';
+import { useFollowUpTaskManager } from '@/hooks/useFollowUpTaskManager';
 
 interface RestaurantData {
   id?: string;
@@ -32,9 +34,11 @@ const NewLeadPage = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { users, isLoading: usersLoading } = useUsers();
+  const { createFollowUpTask } = useFollowUpTaskManager();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantData | null>(null);
   const [assignedToUserId, setAssignedToUserId] = useState(profile?.id || '');
+  const [followUpData, setFollowUpData] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,9 +90,17 @@ const NewLeadPage = () => {
         throw leadError;
       }
 
+      // Create follow-up task if scheduled
+      if (followUpData) {
+        await createFollowUpTask.mutateAsync({
+          ...followUpData,
+          restaurantId,
+        });
+      }
+
       toast({
         title: "Lead created successfully",
-        description: `The new lead for ${selectedRestaurant.name} has been added to the pipeline`,
+        description: `The new lead for ${selectedRestaurant.name} has been added to the pipeline${followUpData ? ' with follow-up task scheduled' : ''}`,
       });
 
       navigate('/leads');
@@ -102,6 +114,10 @@ const NewLeadPage = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFollowUpSubmit = (data: any) => {
+    setFollowUpData(data);
   };
 
   const isFormValid = selectedRestaurant && assignedToUserId && 
@@ -162,6 +178,12 @@ const NewLeadPage = () => {
               </div>
             </CardContent>
           </Card>
+
+          <RestaurantFollowUpForm
+            onSubmit={handleFollowUpSubmit}
+            isLoading={isSubmitting}
+            defaultAssignee={assignedToUserId}
+          />
 
           <div className="flex gap-2 pt-4">
             <Button 
