@@ -95,7 +95,7 @@ const NewRestaurantPage = () => {
     }
   };
 
-  const isFormValid = formData.name && formData.township && formData.salesperson_id;
+  const isFormValid: boolean = Boolean(formData.name && formData.township && formData.salesperson_id);
 
   return (
     <div className="container mx-auto py-6 max-w-2xl">
