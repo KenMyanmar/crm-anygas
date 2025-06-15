@@ -1,10 +1,13 @@
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UcoStatusBadge } from '@/components/uco/UcoStatusBadge';
 import { Droplets, TrendingUp, Calendar, History, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface UcoCollectionHistory {
   id: string;
@@ -24,21 +27,91 @@ interface RestaurantUcoInfoProps {
     uco_price_per_kg?: number;
     last_uco_collection_date?: string;
   };
-  ucoHistory?: UcoCollectionHistory[];
   onAddToCollection?: () => void;
 }
 
 export const RestaurantUcoInfo = ({ 
   restaurant, 
-  ucoHistory = [],
   onAddToCollection 
 }: RestaurantUcoInfoProps) => {
+  const [ucoHistory, setUcoHistory] = useState<UcoCollectionHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUcoHistory();
+  }, [restaurant.id]);
+
+  const fetchUcoHistory = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch UCO collection history from uco_collection_items table
+      const { data, error } = await supabase
+        .from('uco_collection_items')
+        .select(`
+          id,
+          completed_at,
+          actual_volume_kg,
+          price_per_kg,
+          quality_score,
+          plan_id
+        `)
+        .eq('restaurant_id', restaurant.id)
+        .not('completed_at', 'is', null)
+        .not('actual_volume_kg', 'is', null)
+        .order('completed_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching UCO history:', error);
+        return;
+      }
+
+      // Transform data to match UcoCollectionHistory interface
+      const historyData: UcoCollectionHistory[] = data?.map(item => ({
+        id: item.id,
+        collection_date: item.completed_at,
+        volume_kg: item.actual_volume_kg || 0,
+        price_per_kg: item.price_per_kg || 0,
+        total_amount: (item.actual_volume_kg || 0) * (item.price_per_kg || 0),
+        quality_score: item.quality_score
+      })) || [];
+
+      setUcoHistory(historyData);
+    } catch (error) {
+      console.error('Error in fetchUcoHistory:', error);
+      toast.error('Failed to load UCO collection history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const totalCollected = ucoHistory.reduce((sum, h) => sum + h.volume_kg, 0);
   const totalRevenue = ucoHistory.reduce((sum, h) => sum + h.total_amount, 0);
   const avgQuality = ucoHistory.length > 0 
     ? ucoHistory.filter(h => h.quality_score).reduce((sum, h) => sum + (h.quality_score || 0), 0) / 
       ucoHistory.filter(h => h.quality_score).length
     : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading UCO Information...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="h-16 bg-muted rounded"></div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

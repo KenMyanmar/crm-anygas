@@ -15,6 +15,9 @@ export interface Restaurant {
   updated_at: string;
   gas_customer_status?: string;
   uco_supplier_status?: string;
+  avg_uco_volume_kg?: number;
+  uco_price_per_kg?: number;
+  last_uco_collection_date?: string;
 }
 
 export const useRestaurants = () => {
@@ -29,7 +32,12 @@ export const useRestaurants = () => {
 
       const { data, error: fetchError } = await supabase
         .from('restaurants')
-        .select('*')
+        .select(`
+          *,
+          avg_uco_volume_kg,
+          uco_price_per_kg,
+          last_uco_collection_date
+        `)
         .order('name');
 
       if (fetchError) {

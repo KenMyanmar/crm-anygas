@@ -49,7 +49,13 @@ const RestaurantDetailPage = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
+        .select(`
+          *,
+          avg_uco_volume_kg,
+          uco_price_per_kg,
+          last_uco_collection_date,
+          uco_supplier_status
+        `)
         .eq('id', id)
         .single();
 
@@ -57,8 +63,13 @@ const RestaurantDetailPage = () => {
         throw error;
       }
 
-      // Map the data to match the Restaurant interface
-      const restaurantData: Restaurant = {
+      // Map the data to match the Restaurant interface with UCO fields
+      const restaurantData: Restaurant & {
+        avg_uco_volume_kg?: number;
+        uco_price_per_kg?: number;
+        last_uco_collection_date?: string;
+        uco_supplier_status?: string;
+      } = {
         id: data.id,
         name: data.name,
         phone: data.phone || '',
@@ -68,7 +79,11 @@ const RestaurantDetailPage = () => {
         remarks: data.remarks || '',
         created_at: data.created_at,
         updated_at: data.updated_at,
-        salesperson_id: data.salesperson_id
+        salesperson_id: data.salesperson_id,
+        avg_uco_volume_kg: data.avg_uco_volume_kg,
+        uco_price_per_kg: data.uco_price_per_kg,
+        last_uco_collection_date: data.last_uco_collection_date,
+        uco_supplier_status: data.uco_supplier_status
       };
 
       setRestaurant(restaurantData);
@@ -246,7 +261,7 @@ const RestaurantDetailPage = () => {
           </TabsContent>
 
           <TabsContent value="uco">
-            <RestaurantUcoInfo restaurantId={restaurant.id} />
+            <RestaurantUcoInfo restaurant={restaurant} />
           </TabsContent>
 
           <TabsContent value="leads">
