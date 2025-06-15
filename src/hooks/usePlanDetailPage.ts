@@ -37,36 +37,37 @@ export const usePlanDetailPage = () => {
     }
   }, [plan, items, itemsError]);
 
-  const handleAddRestaurants = async (restaurantIds: string[]) => {
+  const handleAddRestaurants = async (data: { restaurantIds: string[]; expectedVolumes: Record<string, number> }) => {
     if (!id) {
       toast.error('Plan ID is missing');
       return;
     }
 
-    if (restaurantIds.length === 0) {
+    if (data.restaurantIds.length === 0) {
       toast.error('Please select at least one restaurant');
       return;
     }
 
-    console.log('Adding restaurants to plan:', { planId: id, restaurantIds });
+    console.log('Adding restaurants to plan:', { planId: id, data });
 
     // Get the current highest route sequence
     const currentMaxSequence = items?.reduce((max, item) => 
       Math.max(max, item.route_sequence || 0), 0
     ) || 0;
 
-    const newItems = restaurantIds.map((restaurantId, index) => ({
+    const newItems = data.restaurantIds.map((restaurantId, index) => ({
       plan_id: id,
       restaurant_id: restaurantId,
       route_sequence: currentMaxSequence + index + 1,
       uco_status: 'not_assessed' as const,
       collection_priority: 'medium' as const,
+      expected_volume_kg: data.expectedVolumes[restaurantId] || null,
     }));
 
     try {
       await bulkCreateItems.mutateAsync(newItems);
       setShowRestaurantSelector(false);
-      toast.success(`Successfully added ${restaurantIds.length} restaurants to the collection plan`);
+      toast.success(`Successfully added ${data.restaurantIds.length} restaurants to the collection plan`);
     } catch (error) {
       toast.error('Failed to add restaurants to plan');
       console.error('Error adding restaurants:', error);
