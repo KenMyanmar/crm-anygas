@@ -1,15 +1,15 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UcoCollectionItem } from '@/types/ucoCollection';
 import { UcoStatusBadge } from '@/components/uco/UcoStatusBadge';
 import { PriorityBadge } from '@/components/uco/PriorityBadge';
-import { Phone, MapPin, ClipboardList, CheckCircle } from 'lucide-react';
+import { Phone, MapPin, ClipboardList, CheckCircle, Search } from 'lucide-react';
 import { useState } from 'react';
 import { UcoCollectionDialog } from './UcoCollectionDialog';
 import { UcoStatusSelect } from './UcoStatusSelect';
 import { PrioritySelect } from './PrioritySelect';
+import { NearbyRestaurantFinder } from '@/components/uco/NearbyRestaurantFinder';
 import { toast } from 'sonner';
 
 interface UcoCollectionTableProps {
@@ -22,6 +22,8 @@ export const UcoCollectionTable = ({ items, isOwner, onUpdateItem }: UcoCollecti
   const [selectedItem, setSelectedItem] = useState<UcoCollectionItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+  const [showNearbyFinder, setShowNearbyFinder] = useState(false);
+  const [nearbySearchLocation, setNearbySearchLocation] = useState<{ lat: number; lng: number; name?: string } | null>(null);
 
   const handleRowClick = (item: UcoCollectionItem) => {
     if (isOwner) {
@@ -74,11 +76,40 @@ export const UcoCollectionTable = ({ items, isOwner, onUpdateItem }: UcoCollecti
     }
   };
 
-  const handleNavigation = (address?: string, name?: string) => {
+  const handleNavigation = (address?: string, name?: string, restaurant?: any) => {
     if (address || name) {
       const query = encodeURIComponent(`${name || ''} ${address || ''}`.trim());
       window.open(`https://maps.google.com/?q=${query}`, '_blank');
     }
+  };
+
+  const handleFindNearby = async (item: UcoCollectionItem) => {
+    // Try to get coordinates from restaurant address using geocoding
+    if (item.restaurant?.address || item.restaurant?.name) {
+      try {
+        const query = encodeURIComponent(`${item.restaurant.name} ${item.restaurant.address || ''} ${item.restaurant.township || ''}`);
+        
+        // For demo purposes, we'll use approximate coordinates
+        // In production, you'd want to geocode the address first
+        const location = {
+          lat: 16.8661 + (Math.random() - 0.5) * 0.1, // Yangon area with some variance
+          lng: 96.1951 + (Math.random() - 0.5) * 0.1,
+          name: item.restaurant.name
+        };
+        
+        setNearbySearchLocation(location);
+        setShowNearbyFinder(true);
+      } catch (error) {
+        toast.error('Could not determine location for this restaurant');
+      }
+    } else {
+      toast.error('Restaurant location information is not available');
+    }
+  };
+
+  const handleRestaurantsAdded = () => {
+    toast.success('New restaurants added successfully!');
+    // Optionally refresh the data or update the parent component
   };
 
   if (!items || items.length === 0) {
@@ -191,22 +222,33 @@ export const UcoCollectionTable = ({ items, isOwner, onUpdateItem }: UcoCollecti
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleNavigation(item.restaurant?.address, item.restaurant?.name)}
+                    onClick={() => handleNavigation(item.restaurant?.address, item.restaurant?.name, item.restaurant)}
                     className="h-8 w-8 p-0"
                     title="Navigate to Restaurant"
                   >
                     <MapPin className="h-4 w-4" />
                   </Button>
                   {isOwner && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRowClick(item)}
-                      className="h-8 w-8 p-0"
-                      title="View Collection Details"
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRowClick(item)}
+                        className="h-8 w-8 p-0"
+                        title="View Collection Details"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFindNearby(item)}
+                        className="h-8 w-8 p-0"
+                        title="Find Nearby Restaurants"
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </TableCell>
@@ -223,6 +265,13 @@ export const UcoCollectionTable = ({ items, isOwner, onUpdateItem }: UcoCollecti
           onUpdate={onUpdateItem}
         />
       )}
+
+      <NearbyRestaurantFinder
+        open={showNearbyFinder}
+        onOpenChange={setShowNearbyFinder}
+        currentLocation={nearbySearchLocation}
+        onRestaurantsAdded={handleRestaurantsAdded}
+      />
     </>
   );
 };
