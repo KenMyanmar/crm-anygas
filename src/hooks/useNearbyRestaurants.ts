@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { NearbyRestaurantService, NearbyRestaurant } from '@/services/nearbyRestaurantService';
 import { RestaurantMatchingService } from '@/services/restaurantMatchingService';
@@ -12,7 +11,7 @@ export const useNearbyRestaurants = () => {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
 
   const nearbyService = new NearbyRestaurantService(
-    'AIzaSyDGPGzAYJtZEG0j7i8-J8nJkNZEg8DkdEY' // You can move this to env later
+    'AIzaSyA7nrAwDyBVjOQWnSZJoHlBIY6dDOnMUX8'
   );
   const matchingService = new RestaurantMatchingService();
 
@@ -24,7 +23,7 @@ export const useNearbyRestaurants = () => {
 
     setLoading(true);
     try {
-      console.log(`Finding nearby restaurants at ${lat}, ${lng}`);
+      console.log(`Finding nearby restaurants at ${lat}, ${lng} with radius ${radius || 3000}m`);
       
       // Find nearby restaurants using Google Places API
       const nearbyRestaurants = await nearbyService.findNearbyRestaurants(lat, lng, radius);

@@ -12,6 +12,7 @@ export interface NearbyRestaurant {
   rating?: number;
   user_ratings_total?: number;
   is_existing?: boolean;
+  types?: string[];
 }
 
 export class NearbyRestaurantService {
@@ -29,7 +30,7 @@ export class NearbyRestaurantService {
   async findNearbyRestaurants(
     lat: number, 
     lng: number, 
-    radius: number = 5000
+    radius: number = 3000
   ): Promise<NearbyRestaurant[]> {
     try {
       await this.loader.load();
@@ -38,35 +39,51 @@ export class NearbyRestaurantService {
         document.createElement('div')
       );
 
-      const request: google.maps.places.PlaceSearchRequest = {
-        location: new google.maps.LatLng(lat, lng),
-        radius: radius,
-        type: 'restaurant'
-      };
+      // Search for multiple restaurant types
+      const searchTypes = ['restaurant', 'food', 'meal_takeaway', 'cafe'];
+      const allResults: google.maps.places.PlaceResult[] = [];
 
-      return new Promise((resolve, reject) => {
-        service.nearbySearch(request, async (results, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-            const restaurants: NearbyRestaurant[] = [];
-            
-            // Limit to first 20 results
-            const limitedResults = results.slice(0, 20);
-            
-            for (const place of limitedResults) {
-              if (place.place_id && place.geometry?.location) {
-                const detailedPlace = await this.getPlaceDetails(place.place_id);
-                if (detailedPlace) {
-                  restaurants.push(detailedPlace);
-                }
-              }
+      for (const type of searchTypes) {
+        const request: google.maps.places.PlaceSearchRequest = {
+          location: new google.maps.LatLng(lat, lng),
+          radius: radius,
+          type: type as any
+        };
+
+        const results = await new Promise<google.maps.places.PlaceResult[]>((resolve, reject) => {
+          service.nearbySearch(request, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+              resolve(results);
+            } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+              resolve([]);
+            } else {
+              reject(new Error(`Places search failed: ${status}`));
             }
-            
-            resolve(restaurants);
-          } else {
-            reject(new Error(`Places search failed: ${status}`));
-          }
+          });
         });
-      });
+
+        allResults.push(...results);
+      }
+
+      // Remove duplicates based on place_id
+      const uniqueResults = allResults.filter((place, index, array) => 
+        array.findIndex(p => p.place_id === place.place_id) === index
+      );
+
+      // Limit to first 30 results and get details
+      const limitedResults = uniqueResults.slice(0, 30);
+      const restaurants: NearbyRestaurant[] = [];
+      
+      for (const place of limitedResults) {
+        if (place.place_id && place.geometry?.location) {
+          const detailedPlace = await this.getPlaceDetails(place.place_id);
+          if (detailedPlace) {
+            restaurants.push(detailedPlace);
+          }
+        }
+      }
+      
+      return restaurants;
     } catch (error) {
       console.error('Error finding nearby restaurants:', error);
       throw error;
@@ -88,7 +105,8 @@ export class NearbyRestaurantService {
           'formatted_phone_number',
           'geometry',
           'rating',
-          'user_ratings_total'
+          'user_ratings_total',
+          'types'
         ]
       }, (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place) {
@@ -101,7 +119,8 @@ export class NearbyRestaurantService {
             longitude: place.geometry!.location!.lng(),
             township: this.extractTownship(place.formatted_address!),
             rating: place.rating,
-            user_ratings_total: place.user_ratings_total
+            user_ratings_total: place.user_ratings_total,
+            types: place.types
           };
           resolve(restaurant);
         } else {
@@ -112,14 +131,38 @@ export class NearbyRestaurantService {
   }
 
   private extractTownship(address: string): string {
-    // Extract township from Myanmar address format
+    // Enhanced township extraction for Myanmar addresses
     const parts = address.split(',').map(part => part.trim());
     
-    // Look for common Myanmar township patterns
+    // Common Myanmar township patterns (English and Myanmar)
+    const townshipPatterns = [
+      /(.+?)\s*(Township|တောင်သူ|မြို့နယ်|ခရိုင်)/i,
+      /(.+?)\s*Tsp/i,
+      /(.+?)\s*T\/S/i
+    ];
+
     for (const part of parts) {
-      if (part.includes('Township') || part.includes('တောင်သူ') || 
-          part.includes('မြို့နယ်') || part.includes('ခရိုင်')) {
-        return part.replace(/Township|တောင်သူ|မြို့နယ်|ခရိုင်/g, '').trim();
+      for (const pattern of townshipPatterns) {
+        const match = part.match(pattern);
+        if (match) {
+          return match[1].trim();
+        }
+      }
+    }
+
+    // Common Myanmar townships
+    const knownTownships = [
+      'Yangon', 'Mandalay', 'Bahan', 'Kamayut', 'Sanchaung', 'Mayangon', 
+      'Insein', 'Hlaing', 'Kyimyindaing', 'Lanmadaw', 'Latha', 'Mingala Taungnyunt',
+      'Pazundaung', 'Botataung', 'Dagon', 'Seikkan', 'Thingangyun', 'Yankin',
+      'South Okkalapa', 'North Okkalapa', 'Thaketa', 'Dawbon', 'Tamwe'
+    ];
+
+    for (const part of parts) {
+      for (const township of knownTownships) {
+        if (part.toLowerCase().includes(township.toLowerCase())) {
+          return township;
+        }
       }
     }
     

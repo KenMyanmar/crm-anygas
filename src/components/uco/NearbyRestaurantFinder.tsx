@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Search, Plus, CheckCircle } from 'lucide-react';
+import { MapPin, Search, Plus, CheckCircle, Map } from 'lucide-react';
 import { useNearbyRestaurants } from '@/hooks/useNearbyRestaurants';
+import { NearbyRestaurantMap } from './NearbyRestaurantMap';
 import { toast } from 'sonner';
 
 interface NearbyRestaurantFinderProps {
@@ -23,9 +24,10 @@ export const NearbyRestaurantFinder = ({
   currentLocation,
   onRestaurantsAdded
 }: NearbyRestaurantFinderProps) => {
-  const [searchRadius, setSearchRadius] = useState(5000);
+  const [searchRadius, setSearchRadius] = useState(3000);
   const [customLat, setCustomLat] = useState('');
   const [customLng, setCustomLng] = useState('');
+  const [showMap, setShowMap] = useState(true);
 
   const {
     loading,
@@ -67,20 +69,41 @@ export const NearbyRestaurantFinder = ({
     }
   };
 
+  const handleRestaurantMapClick = (restaurant: any) => {
+    if (!restaurant.is_existing) {
+      toggleRestaurantSelection(restaurant.place_id);
+    }
+  };
+
   const newRestaurants = restaurants.filter(r => !r.is_existing);
   const existingRestaurants = restaurants.filter(r => r.is_existing);
 
+  const searchLocation = customLat && customLng 
+    ? { lat: parseFloat(customLat), lng: parseFloat(customLng) }
+    : currentLocation;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5 text-blue-500" />
-            <span>Find Nearby Restaurants</span>
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-5 w-5 text-blue-500" />
+              <span>Find Nearby Restaurants</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMap(!showMap)}
+              className="flex items-center space-x-1"
+            >
+              <Map className="h-4 w-4" />
+              <span>{showMap ? 'Hide' : 'Show'} Map</span>
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto max-h-[calc(95vh-120px)]">
           {/* Search Controls */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
             <div>
@@ -90,7 +113,7 @@ export const NearbyRestaurantFinder = ({
                 value={searchRadius}
                 onChange={(e) => setSearchRadius(parseInt(e.target.value))}
                 min="1000"
-                max="10000"
+                max="5000"
                 step="500"
               />
             </div>
@@ -130,6 +153,27 @@ export const NearbyRestaurantFinder = ({
                 Current location: {currentLocation.name || 'Selected location'} 
                 ({currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)})
               </span>
+            </div>
+          )}
+
+          {/* Map View */}
+          {showMap && searchLocation && restaurants.length > 0 && (
+            <div className="border rounded-lg overflow-hidden">
+              <div className="p-3 bg-muted/30 border-b">
+                <h3 className="font-medium flex items-center space-x-2">
+                  <Map className="h-4 w-4" />
+                  <span>Restaurant Locations</span>
+                  <Badge variant="outline" className="ml-2">
+                    {restaurants.length} found
+                  </Badge>
+                </h3>
+              </div>
+              <NearbyRestaurantMap
+                centerLocation={searchLocation}
+                restaurants={restaurants}
+                onRestaurantClick={handleRestaurantMapClick}
+                selectedRestaurants={selectedRestaurants}
+              />
             </div>
           )}
 
@@ -199,7 +243,7 @@ export const NearbyRestaurantFinder = ({
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{restaurant.name}</TableCell>
-                      <TableCell className="text-sm">{restaurant.address}</TableCell>
+                      <TableCell className="text-sm max-w-xs truncate">{restaurant.address}</TableCell>
                       <TableCell>{restaurant.township}</TableCell>
                       <TableCell>{restaurant.phone || '—'}</TableCell>
                       <TableCell>
