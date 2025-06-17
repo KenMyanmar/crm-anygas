@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ const UcoLeadsDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [volumeFilter, setVolumeFilter] = useState('all');
   const { restaurants, isLoading } = useRestaurants();
+  const navigate = useNavigate();
 
   // Filter for UCO-related restaurants
   const ucoLeads = restaurants?.filter(restaurant => {
@@ -32,6 +34,20 @@ const UcoLeadsDashboard = () => {
     const matchesStatus = statusFilter === 'all' || restaurant.uco_supplier_status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
+
+  const handleRestaurantClick = (restaurantId: string) => {
+    navigate(`/restaurants/${restaurantId}`);
+  };
+
+  const handleEditRestaurant = (restaurantId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/restaurants/${restaurantId}/edit`);
+  };
+
+  const handleViewRestaurant = (restaurantId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/restaurants/${restaurantId}`);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -154,26 +170,26 @@ const UcoLeadsDashboard = () => {
                     </TableRow>
                   ) : (
                     ucoLeads.map((restaurant) => (
-                      <TableRow key={restaurant.id}>
-                        <TableCell>
-                          <div>
+                      <TableRow key={restaurant.id} className="hover:bg-muted/50 cursor-pointer">
+                        <TableCell onClick={() => handleRestaurantClick(restaurant.id)}>
+                          <div className="hover:text-blue-600 transition-colors">
                             <p className="font-medium">{restaurant.name}</p>
                             <p className="text-sm text-muted-foreground">{restaurant.contact_person}</p>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => handleRestaurantClick(restaurant.id)}>
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-3 w-3 text-muted-foreground" />
                             <span className="text-sm">{restaurant.township}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => handleRestaurantClick(restaurant.id)}>
                           {getStatusBadge(restaurant.uco_supplier_status || 'not_assessed')}
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => handleRestaurantClick(restaurant.id)}>
                           {getVolumeBadge(restaurant.avg_uco_volume_kg)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => handleRestaurantClick(restaurant.id)}>
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
                             <span className="text-sm">
@@ -184,7 +200,7 @@ const UcoLeadsDashboard = () => {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => handleRestaurantClick(restaurant.id)}>
                           <Badge variant="outline" className="text-xs">
                             <Route className="h-3 w-3 mr-1" />
                             Route TBD
@@ -192,10 +208,20 @@ const UcoLeadsDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-1">
-                            <Button size="sm" variant="ghost">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={(e) => handleViewRestaurant(restaurant.id, e)}
+                              title="View restaurant details"
+                            >
                               <Eye className="h-3 w-3" />
                             </Button>
-                            <Button size="sm" variant="ghost">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={(e) => handleEditRestaurant(restaurant.id, e)}
+                              title="Edit restaurant"
+                            >
                               <Edit className="h-3 w-3" />
                             </Button>
                           </div>

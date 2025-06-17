@@ -1044,6 +1044,142 @@ export type Database = {
           },
         ]
       }
+      restaurant_activities: {
+        Row: {
+          activity_type: string
+          completed_date: string | null
+          created_at: string | null
+          created_by_user_id: string | null
+          description: string | null
+          id: string
+          next_action: string | null
+          next_action_date: string | null
+          outcome: string | null
+          restaurant_id: string
+          scheduled_date: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          activity_type: string
+          completed_date?: string | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          description?: string | null
+          id?: string
+          next_action?: string | null
+          next_action_date?: string | null
+          outcome?: string | null
+          restaurant_id: string
+          scheduled_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          activity_type?: string
+          completed_date?: string | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          description?: string | null
+          id?: string
+          next_action?: string | null
+          next_action_date?: string | null
+          outcome?: string | null
+          restaurant_id?: string
+          scheduled_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_activities_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_activities_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_activities_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_contact_info: {
+        Row: {
+          best_contact_time: string | null
+          contact_notes: string | null
+          created_at: string | null
+          email: string | null
+          full_address: string | null
+          id: string
+          opening_hours: Json | null
+          preferred_contact_method: string | null
+          primary_phone: string | null
+          restaurant_id: string
+          secondary_phone: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          best_contact_time?: string | null
+          contact_notes?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_address?: string | null
+          id?: string
+          opening_hours?: Json | null
+          preferred_contact_method?: string | null
+          primary_phone?: string | null
+          restaurant_id: string
+          secondary_phone?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          best_contact_time?: string | null
+          contact_notes?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_address?: string | null
+          id?: string
+          opening_hours?: Json | null
+          preferred_contact_method?: string | null
+          primary_phone?: string | null
+          restaurant_id?: string
+          secondary_phone?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_contact_info_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_contact_info_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_id_mapping: {
         Row: {
           match_confidence: string | null
@@ -1067,6 +1203,64 @@ export type Database = {
           restaurant_township?: string | null
         }
         Relationships: []
+      }
+      restaurant_notes: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by_user_id: string | null
+          id: string
+          is_important: boolean | null
+          note_type: string
+          restaurant_id: string
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by_user_id?: string | null
+          id?: string
+          is_important?: boolean | null
+          note_type?: string
+          restaurant_id: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by_user_id?: string | null
+          id?: string
+          is_important?: boolean | null
+          note_type?: string
+          restaurant_id?: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_notes_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_notes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "dual_business_restaurant_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_notes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurants: {
         Row: {
