@@ -28,6 +28,14 @@ export interface Restaurant {
   updated_at: string;
   created_by_user_id?: string;
   salesperson_id?: string;
+  gas_customer_status?: string;
+  uco_supplier_status?: string;
+  avg_uco_volume_kg?: number;
+  uco_price_per_kg?: number;
+  last_uco_collection_date?: string;
+  business_types?: string[];
+  gas_consumption_estimate?: string;
+  competitor_info?: any;
 }
 
 export interface Lead {

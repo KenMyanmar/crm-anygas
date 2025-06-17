@@ -18,6 +18,9 @@ export interface Restaurant {
   avg_uco_volume_kg?: number;
   uco_price_per_kg?: number;
   last_uco_collection_date?: string;
+  business_types?: string[];
+  gas_consumption_estimate?: string;
+  competitor_info?: any;
 }
 
 export const useRestaurants = () => {
@@ -36,7 +39,10 @@ export const useRestaurants = () => {
           *,
           avg_uco_volume_kg,
           uco_price_per_kg,
-          last_uco_collection_date
+          last_uco_collection_date,
+          business_types,
+          gas_consumption_estimate,
+          competitor_info
         `)
         .order('name');
 
