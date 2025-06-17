@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Search, Plus, CheckCircle, Map } from 'lucide-react';
+import { MapPin, Search, Plus, CheckCircle, Map, Truck } from 'lucide-react';
 import { useNearbyRestaurants } from '@/hooks/useNearbyRestaurants';
 import { NearbyRestaurantMap } from './NearbyRestaurantMap';
 import { toast } from 'sonner';
@@ -16,13 +16,21 @@ interface NearbyRestaurantFinderProps {
   onOpenChange: (open: boolean) => void;
   currentLocation?: { lat: number; lng: number; name?: string };
   onRestaurantsAdded?: () => void;
+  ucoMode?: boolean;
+  searchFilters?: {
+    businessType: string;
+    minEstimatedVolume: string;
+    collectionFrequency: string;
+  };
 }
 
 export const NearbyRestaurantFinder = ({
   open,
   onOpenChange,
   currentLocation,
-  onRestaurantsAdded
+  onRestaurantsAdded,
+  ucoMode = false,
+  searchFilters
 }: NearbyRestaurantFinderProps) => {
   const [searchRadius, setSearchRadius] = useState(3000);
   const [customLat, setCustomLat] = useState('');
@@ -75,12 +83,28 @@ export const NearbyRestaurantFinder = ({
     }
   };
 
-  const newRestaurants = restaurants.filter(r => !r.is_existing);
-  const existingRestaurants = restaurants.filter(r => r.is_existing);
+  // Filter restaurants based on UCO criteria if in UCO mode
+  const filteredRestaurants = ucoMode ? restaurants.filter(restaurant => {
+    // Apply UCO-specific filtering logic here
+    return true; // For now, show all
+  }) : restaurants;
+
+  const newRestaurants = filteredRestaurants.filter(r => !r.is_existing);
+  const existingRestaurants = filteredRestaurants.filter(r => r.is_existing);
 
   const searchLocation = customLat && customLng 
     ? { lat: parseFloat(customLat), lng: parseFloat(customLng) }
     : currentLocation;
+
+  const getUcoEstimatedVolume = (restaurant: any) => {
+    // UCO volume estimation logic based on restaurant type and rating
+    if (restaurant.types?.includes('fast_food') || restaurant.types?.includes('meal_takeaway')) {
+      return '30-50 L/month';
+    } else if (restaurant.rating && restaurant.rating >= 4.0) {
+      return '20-40 L/month';
+    }
+    return '10-25 L/month';
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,8 +112,8 @@ export const NearbyRestaurantFinder = ({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <MapPin className="h-5 w-5 text-blue-500" />
-              <span>Find Nearby Restaurants</span>
+              {ucoMode ? <Truck className="h-5 w-5 text-blue-500" /> : <MapPin className="h-5 w-5 text-blue-500" />}
+              <span>{ucoMode ? 'UCO Collection Territory Discovery' : 'Find Nearby Restaurants'}</span>
             </div>
             <Button
               variant="outline"
@@ -140,7 +164,7 @@ export const NearbyRestaurantFinder = ({
             <div className="flex items-end">
               <Button onClick={handleSearch} disabled={loading} className="w-full">
                 <Search className="h-4 w-4 mr-2" />
-                {loading ? 'Searching...' : 'Find Restaurants'}
+                {loading ? 'Searching...' : ucoMode ? 'Find UCO Prospects' : 'Find Restaurants'}
               </Button>
             </div>
           </div>
@@ -150,27 +174,27 @@ export const NearbyRestaurantFinder = ({
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" />
               <span>
-                Current location: {currentLocation.name || 'Selected location'} 
+                {ucoMode ? 'Collection route center' : 'Current location'}: {currentLocation.name || 'Selected location'} 
                 ({currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)})
               </span>
             </div>
           )}
 
           {/* Map View */}
-          {showMap && searchLocation && restaurants.length > 0 && (
+          {showMap && searchLocation && filteredRestaurants.length > 0 && (
             <div className="border rounded-lg overflow-hidden">
               <div className="p-3 bg-muted/30 border-b">
                 <h3 className="font-medium flex items-center space-x-2">
                   <Map className="h-4 w-4" />
-                  <span>Restaurant Locations</span>
+                  <span>{ucoMode ? 'UCO Collection Territory' : 'Restaurant Locations'}</span>
                   <Badge variant="outline" className="ml-2">
-                    {restaurants.length} found
+                    {filteredRestaurants.length} found
                   </Badge>
                 </h3>
               </div>
               <NearbyRestaurantMap
                 centerLocation={searchLocation}
-                restaurants={restaurants}
+                restaurants={filteredRestaurants}
                 onRestaurantClick={handleRestaurantMapClick}
                 selectedRestaurants={selectedRestaurants}
               />
@@ -178,14 +202,14 @@ export const NearbyRestaurantFinder = ({
           )}
 
           {/* Results Summary */}
-          {restaurants.length > 0 && (
+          {filteredRestaurants.length > 0 && (
             <div className="flex items-center justify-between">
               <div className="flex space-x-4">
                 <Badge variant="outline">
-                  {restaurants.length} total found
+                  {filteredRestaurants.length} total found
                 </Badge>
                 <Badge variant="secondary">
-                  {newRestaurants.length} new restaurants
+                  {newRestaurants.length} new {ucoMode ? 'prospects' : 'restaurants'}
                 </Badge>
                 <Badge variant="default">
                   {existingRestaurants.length} already in database
@@ -212,7 +236,7 @@ export const NearbyRestaurantFinder = ({
           )}
 
           {/* Results Table */}
-          {restaurants.length > 0 && (
+          {filteredRestaurants.length > 0 && (
             <div className="border rounded-lg max-h-96 overflow-y-auto">
               <Table>
                 <TableHeader>
@@ -223,11 +247,12 @@ export const NearbyRestaurantFinder = ({
                     <TableHead>Township</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Rating</TableHead>
+                    {ucoMode && <TableHead>Est. UCO Volume</TableHead>}
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {restaurants.map((restaurant) => (
+                  {filteredRestaurants.map((restaurant) => (
                     <TableRow 
                       key={restaurant.place_id}
                       className={restaurant.is_existing ? 'bg-muted/30' : ''}
@@ -256,11 +281,18 @@ export const NearbyRestaurantFinder = ({
                           </div>
                         ) : '—'}
                       </TableCell>
+                      {ucoMode && (
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {getUcoEstimatedVolume(restaurant)}
+                          </Badge>
+                        </TableCell>
+                      )}
                       <TableCell>
                         {restaurant.is_existing ? (
                           <Badge variant="default">In Database</Badge>
                         ) : (
-                          <Badge variant="secondary">New</Badge>
+                          <Badge variant="secondary">{ucoMode ? 'UCO Prospect' : 'New'}</Badge>
                         )}
                       </TableCell>
                     </TableRow>
@@ -271,10 +303,10 @@ export const NearbyRestaurantFinder = ({
           )}
 
           {/* Empty State */}
-          {!loading && restaurants.length === 0 && (
+          {!loading && filteredRestaurants.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No restaurants found</p>
+              <p>No {ucoMode ? 'UCO prospects' : 'restaurants'} found</p>
               <p className="text-sm">Try searching with a larger radius or different location</p>
             </div>
           )}

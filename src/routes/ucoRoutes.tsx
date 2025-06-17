@@ -9,6 +9,7 @@ import UcoCollectionPlanner from '@/pages/uco/UcoCollectionPlanner';
 import UcoMobileInterface from '@/pages/uco/UcoMobileInterface';
 import UcoAnalytics from '@/pages/uco/UcoAnalytics';
 import NewUcoPlanPage from '@/pages/uco/NewUcoPlanPage';
+import UcoRestaurantLeadsPage from '@/pages/uco/UcoRestaurantLeadsPage';
 
 export const ucoRoutes = [
   <Route key="uco-dashboard" path="/uco/dashboard" element={
@@ -50,6 +51,13 @@ export const ucoRoutes = [
     <ProtectedRoute>
       <ModernDashboardLayout>
         <UcoRouteOptimizationPage />
+      </ModernDashboardLayout>
+    </ProtectedRoute>
+  } />,
+  <Route key="uco-restaurant-leads" path="/uco/restaurant-leads" element={
+    <ProtectedRoute>
+      <ModernDashboardLayout>
+        <UcoRestaurantLeadsPage />
       </ModernDashboardLayout>
     </ProtectedRoute>
   } />,

@@ -32,7 +32,8 @@ import {
   UserPlus,
   Truck,
   Route,
-  Activity
+  Activity,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -176,6 +177,7 @@ const MobileNavigation = ({ unreadNotifications }: MobileNavigationProps) => {
           <NavButton icon={Truck} label="UCO Dashboard" path="/uco/dashboard" />
           <NavButton icon={Calendar} label="Collection Plans" path="/uco/planner" />
           <NavButton icon={Route} label="Route Optimizer" path="/uco/routes" />
+          <NavButton icon={Building2} label="Restaurant Leads" path="/uco/restaurant-leads" />
           <NavButton icon={MapPin} label="Driver Interface" path="/uco/mobile" />
           <NavButton icon={Activity} label="UCO Analytics" path="/uco/analytics" />
 

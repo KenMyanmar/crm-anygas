@@ -58,6 +58,7 @@ const MainNavigation = () => {
     { label: 'UCO Dashboard', icon: Truck, path: '/uco/dashboard' },
     { label: 'Collection Plans', icon: Calendar, path: '/uco/planner' },
     { label: 'Route Optimizer', icon: Route, path: '/uco/routes' },
+    { label: 'Restaurant Leads', icon: Building2, path: '/uco/restaurant-leads' },
     { label: 'Driver Interface', icon: MapPin, path: '/uco/mobile' },
     { label: 'UCO Analytics', icon: Activity, path: '/uco/analytics' }
   ];
